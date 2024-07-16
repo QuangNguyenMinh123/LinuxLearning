@@ -1,0 +1,1 @@
+su dung SIGCULD de ngan ngua viec hinh thanh zombie process

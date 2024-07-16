@@ -1,0 +1,3 @@
+Viet 1 chuong trinh A tao ra 1 tien trinh con B, 
+in ra PID va PPID cua chung, du dung system waitpid() 
+de lay dc trang thai ket thuc cua tien trinh con B

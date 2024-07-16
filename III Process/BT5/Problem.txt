@@ -1,0 +1,1 @@
+Viet 1 chuong trinh A tao ra 1 tien trinh con B roi in ra PID va PPID cua chung
