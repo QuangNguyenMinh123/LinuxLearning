@@ -1,0 +1,3 @@
+Tao file test.txt va ghi 1 doan du lieu bat ki. Thwc hien ghi ra man hinh cac
+ thong tin: loai file, ten file, thoi gian chinh sua file lan cuoi, kich thuoc.
+  Su dung struct stat
