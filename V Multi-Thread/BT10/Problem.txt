@@ -1,0 +1,4 @@
+ Cung một ví dụ mà multi-thread không cung cấp hiệu suất tốt hơn các giải pháp single-thread
+If you have no idle resources, multi-threading has no advantages, so the overhead would actually make
+your overall runtime longer. For example, if you have a collection of tasks to perform and they are 
+CPU-intensive calculations

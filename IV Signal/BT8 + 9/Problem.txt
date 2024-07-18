@@ -1,0 +1,2 @@
+Viet chuong trinh in ra thong diep bat ki khi nhan to
+ hop phim Ctrrl + C. Dang ky action cho SIGUSR1 va SIGUSR2
