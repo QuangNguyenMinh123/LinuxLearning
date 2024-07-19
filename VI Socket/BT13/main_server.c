@@ -6,11 +6,13 @@
 #include <sys/socket.h>     /* for socket APIs */ 
 #include <sys/types.h>
 #include <pthread.h>
+#include "keyboard_input.h"
 /*******************************************************************/
-char bufSend[100] = {0};
-char bufReceive[100] = {0};
+char bufSend[255] = {0};
+char bufReceive[255] = {0};
 pthread_t threadSend, threadReceive;
 int clientSocket;
+int servSockD;
 /* string store data to send to client */
 char serMsg[255] = "Hello Client, this is host\n";
 /*******************************************************************/
@@ -29,14 +31,14 @@ void *serverSend(void *args)
 
 void *serverReceive(void *args)
 {
-
+    
 }
 /*******************************************************************/
 int main(int argc, char const* argv[]) 
 {
     memset(serMsg, 0, sizeof(serMsg));
     /* create server socket similar to what was done in client program */
-	int servSockD = socket(AF_INET, SOCK_STREAM, 0);
+	servSockD = socket(AF_INET, SOCK_STREAM, 0);
 	/* define server address */
 	struct sockaddr_in servAddr;
 	servAddr.sin_family = AF_INET;
@@ -59,6 +61,8 @@ int main(int argc, char const* argv[])
     {
         printf("Server receiving thread is created\n");
     }
+    keyboard_input_init(bufSend);
     while (1);
+    keyboard_input_deinit();
 	return 0;
 }
