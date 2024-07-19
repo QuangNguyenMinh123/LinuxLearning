@@ -24,6 +24,10 @@ int main(int argc, char const* argv[])
 { 
 	int sockD = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in servAddr;
+	servAddr.sin_family = AF_INET;
+	servAddr.sin_port = htons(9001);        /* use some unused port number */ 
+	servAddr.sin_addr.s_addr = INADDR_ANY;
+	int connectStatus = connect(sockD, (struct sockaddr*)&servAddr, sizeof(servAddr));
     if (pthread_create(&threadSend,NULL,&clientSend,NULL))
     {
         printf("client sending thread is created\n");
@@ -32,10 +36,6 @@ int main(int argc, char const* argv[])
     {
         printf("client receiving thread is created\n");
     }
-	servAddr.sin_family = AF_INET;
-	servAddr.sin_port = htons(9001);// use some unused port number 
-	servAddr.sin_addr.s_addr = INADDR_ANY;s
-	int connectStatus = connect(sockD, (struct sockaddr*)&servAddr, sizeof(servAddr));
 	if (connectStatus == -1) { 
 		printf("Error...\n");
 	}
