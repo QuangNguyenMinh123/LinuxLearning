@@ -5,6 +5,7 @@
 #include <sys/socket.h>     /* for socket APIs */ 
 #include <sys/types.h>
 #include <pthread.h>
+#include <sys/ioctl.h>
 /*******************************************************************/
 char bufSend[100] = {0};
 char bufReceive[255] = {0};
@@ -18,6 +19,7 @@ void *clientSend()
 
 void *clientReceive()
 {
+    int count;
     while (1)
     {
         recv(sockD, bufReceive, sizeof(bufReceive), 0);
@@ -38,15 +40,18 @@ int main(int argc, char const* argv[])
         printf("client receiving thread is created\n");
     }
 	servAddr.sin_family = AF_INET;
-	servAddr.sin_port = htons(9001);        /* use some unused port number */ 
+	servAddr.sin_port = htons(9001);        /* port number */ 
 	servAddr.sin_addr.s_addr = INADDR_ANY;
 	int connectStatus = connect(sockD, (struct sockaddr*)&servAddr, sizeof(servAddr));
 	if (connectStatus == -1) { 
 		printf("Error...\n");
 	}
+    else
+        printf("Connected\n");
     int err = 0;
     socklen_t size = sizeof (err);
 
     while(1);
+    printf("Disconnected\n");
 	return 0;
 }
