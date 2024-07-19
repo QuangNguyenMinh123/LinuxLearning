@@ -57,7 +57,6 @@ int main(int argc, char *argv[])
         handle_error("connect()");
     chat(socketDesc);
 #else
-    int len;
     int newSocketDesc;
     if (argc < 2)
     {
@@ -73,7 +72,7 @@ int main(int argc, char *argv[])
     /* If device is host */
     /* Initialize server address */
     serverAdr.sin_family = AF_INET;
-    serverAdr.sin_port = hton(portNo);
+    serverAdr.sin_port = htons(portNo);
     serverAdr.sin_addr.s_addr = INADDR_ANY;
     /* Attach socket to server address */
     if (bind(socketDesc, (struct sockaddr*)&serverAdr, sizeof(serverAdr)) == -1)

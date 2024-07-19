@@ -1,4 +1,4 @@
-.PHONY: compile build clean run all
+.PHONY: clean client server
 
 A := .
 CUR_DIR := .
@@ -10,32 +10,46 @@ OBJ_DIR := $(CUR_DIR)/obj
 INC_DIR := $(CUR_DIR)/inc
 SRC_DIR := $(CUR_DIR)/src
 COMPILER := gcc
-MAIN_O_DIR := $(OBJ_DIR)/main.o
+MAIN_CLIENT_O_DIR := $(OBJ_DIR)/main_client.o
+MAIN_SERVER_O_DIR := $(OBJ_DIR)/main_server.o
 
 SRC_FILES := $(foreach SRC_DIR, $(SRC_DIR), $(wildcard $(SRC_DIR)/*.c))
 INC_FILES := $(foreach INC_DIR, $(INC_DIR), $(wildcard $(INC_DIR)/*.h))
 
 OBJ_FILES := $(notdir $(SRC_FILES))
 OBJ_FILES := $(subst .c,.o, $(OBJ_FILES))
-PATH_OBJS := $(foreach OBJ_FILES, $(OBJ_FILES), $(OBJ_DIR)/$(OBJ_FILES))
-PATH_OBJS += $(MAIN_O_DIR)
+PATH_CLIENT_OBJS := $(foreach OBJ_FILES, $(OBJ_FILES), $(OBJ_DIR)/$(OBJ_FILES))
+PATH_CLIENT_OBJS += $(MAIN_CLIENT_O_DIR)
+PATH_SERVER_OBJS := $(foreach OBJ_FILES, $(OBJ_FILES), $(OBJ_DIR)/$(OBJ_FILES))
+PATH_SERVER_OBJS += $(MAIN_SERVER_O_DIR)
 
 vpath %.c $(SRC_DIR)
 vpath %.h $(INC_DIR)
 
-build: $(OBJ_FILES) main.o
-	@$(COMPILER) $(PATH_OBJS) -o $(BIN_DIR)/app
+build_client: $(OBJ_FILES) main_client.o
+	@$(COMPILER) $(PATH_CLIENT_OBJS) -o $(BIN_DIR)/client
+
+build_server: $(OBJ_FILES) main_server.o
+	@$(COMPILER) $(PATH_SERVER_OBJS) -o $(BIN_DIR)/server
 
 %.o: %.c $(INC_FILES)
 	@$(COMPILER) -I$(INC_DIR) -c $< -o $(OBJ_DIR)/$@
 
-main.o:
-	@$(COMPILER) -I$(INC_DIR) -c main.c -o $(CUR_DIR)/$(OBJ_DIR)/main.o
+main_client.o:
+	@$(COMPILER) -I$(INC_DIR) -c main_client.c -o $(CUR_DIR)/$(OBJ_DIR)/main_client.o
 
-run:
-	@$(BIN_DIR)/app
+main_server.o:
+	@$(COMPILER) -I$(INC_DIR) -c main_server.c -o $(CUR_DIR)/$(OBJ_DIR)/main_server.o
 
-all: clean build run
+run_client:
+	@$(BIN_DIR)/client
+
+run_server:
+	@$(BIN_DIR)/server
+
+client: clean build_client run_client
+
+server: clean build_server run_server
 
 clean:
 	@rm -rf $(OBJ_DIR)/*.o
