@@ -28,6 +28,7 @@ void chat(int socketDesc)
             printf("Client exit ...\n");
             break;
         }
+        
         // Nhan thong diep tu server bang ham read
         num_read = read(socketDesc, recvbuff, sizeof(recvbuff));
         if (num_read < 0)
