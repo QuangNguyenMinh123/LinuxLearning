@@ -2,8 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 /*******************************************************************/
 #define BUFFER_SIZE         256
+#define handle_error(msg)   \
+    do {perror(msg); exit (EXIT_FAILURE);} while (0)
 /*******************************************************************/
 void chat(int socketDesc)
 {
@@ -21,7 +26,7 @@ void chat(int socketDesc)
         num_write = write(socketDesc, sendbuff, sizeof(sendbuff));
         if (num_write < 0)
         {
-            handler_error("read()");
+            handle_error("read()");
         }
         if (strncmp("exit", sendbuff, 4) == 0)
         {
@@ -33,7 +38,7 @@ void chat(int socketDesc)
         num_read = read(socketDesc, recvbuff, sizeof(recvbuff));
         if (num_read < 0)
         {
-            handler_error("read()");
+            handle_error("read()");
         }
         if (strncmp("exit", recvbuff, 4) == 0)
         {

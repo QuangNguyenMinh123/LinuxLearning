@@ -7,6 +7,8 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include "chat.h"
 /*******************************************************************/
 #define TRUE                1
 #define FALSE               0
@@ -53,7 +55,7 @@ int main(int argc, char *argv[])
     /* Connecting to server */
     if (connect(socketDesc, (struct sockaddr*)&serverAdr, sizeof(serverAdr)) != 0)
         handle_error("connect()");
-    chat();
+    chat(socketDesc);
 #else
     int len;
     int newSocketDesc;
