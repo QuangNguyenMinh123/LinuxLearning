@@ -8,37 +8,27 @@
 #define FALSE           0
 static pthread_t threadKeyboardInput;
 static char* bufferStart = 0;
-static char *bufferPtr = 0;
-static int dataAvail = FALSE;
+static volatile int dataAvail = FALSE;
 /*******************************************************************/
-static void* keyboardHandler()
+void* keyboardHandler()
 {
     char ch = 0;
     while (1)
     {
-        ch = getchar();
-        if (ch == '\n')
-        {
-            *bufferPtr = 0;
-            dataAvail = TRUE;
-            bufferPtr = bufferStart;
-        }
-        else
-        {
-            *bufferPtr = ch;
-            bufferPtr++;
-            dataAvail = FALSE;
-        }
+        scanf("%s", bufferStart);
+        dataAvail = TRUE;
     }
 }
 /*******************************************************************/
 void keyboard_input_init(char *str)
 {
+    /* str: string that saves input from keyboard, or buffer that used
+    to send data to host/client 
+    syntax: keyboard_input_init(sendbuff) */
     if (pthread_create(&threadKeyboardInput,NULL, &keyboardHandler,NULL) == 0)
     {
         printf("Server sending thread is created\n");
         bufferStart = str;
-        bufferPtr = str;
     }
     else
     {
@@ -52,11 +42,6 @@ int keyboard_input_dataAvail(void)
     {
         dataAvail = FALSE;
         return TRUE;
-    }
-    else
-    {
-        dataAvail = TRUE;
-        return FALSE;
     }
 
 }

@@ -8,7 +8,6 @@
 #include <pthread.h>
 #include "keyboard_input.h"
 /*******************************************************************/
-char bufSend[255] = {0};
 char bufReceive[255] = {0};
 pthread_t threadSend, threadReceive;
 int clientSocket;
@@ -18,20 +17,25 @@ char serMsg[255] = "Hello Client, this is host\n";
 /*******************************************************************/
 void *serverSend(void *args)
 {
-    int i = 0;
     while (1)
     {
-	    /* send's messages to client socket */
-        sprintf(serMsg, "%d\n",i);
-	    write(clientSocket, serMsg, sizeof(serMsg));
-        i++;
-        sleep(1);
+        if (keyboard_input_dataAvail())
+        {
+            write(clientSocket, serMsg, sizeof(serMsg));
+            printf("Host sends: %s\n",serMsg);
+        }
+        
     }
 }
 
 void *serverReceive(void *args)
 {
-    
+    // int check = read(servSockD, bufReceive, sizeof(bufReceive));
+    // while (check > 0)
+    // {
+    //     check = read(servSockD, bufReceive, sizeof(bufReceive));
+    //     printf("Host receives: %s\n",bufReceive);
+    // }
 }
 /*******************************************************************/
 int main(int argc, char const* argv[]) 
@@ -50,9 +54,10 @@ int main(int argc, char const* argv[])
     printf("Port is bound\n");
 	/* listen for connections */
     printf("Waiting for connection...\n");
-	listen(servSockD, 1);
+	listen(servSockD, 100);
 	clientSocket = accept(servSockD, NULL, NULL);
     write(clientSocket, serMsg, sizeof(serMsg));
+    keyboard_input_init(serMsg);
     if (pthread_create(&threadSend,NULL,serverSend,NULL))
     {
         printf("Server sending thread is created\n");
@@ -61,7 +66,6 @@ int main(int argc, char const* argv[])
     {
         printf("Server receiving thread is created\n");
     }
-    keyboard_input_init(bufSend);
     while (1);
     keyboard_input_deinit();
 	return 0;

@@ -6,24 +6,33 @@
 #include <sys/types.h>
 #include <pthread.h>
 #include <sys/ioctl.h>
+#include "keyboard_input.h"
 /*******************************************************************/
 char bufSend[255] = {0};
 char bufReceive[255] = {0};
 pthread_t threadSend, threadReceive;
 int sockD;
 /*******************************************************************/
-void *clientSend()
+void *clientSend(void *args)
 {
-    
+    // while (1)
+    // {
+    //     if (keyboard_input_dataAvail())
+    //     {
+    //         write(sockD, bufSend, sizeof(bufSend));
+    //         printf("Client sends: %s\n",bufSend);
+    //     }
+        
+    // }
 }
 
-void *clientReceive()
+void *clientReceive(void *args)
 {
     int check = read(sockD, bufReceive, sizeof(bufReceive));
     while (check > 0)
     {
         check = read(sockD, bufReceive, sizeof(bufReceive));
-        printf("Message: %s\n", bufReceive);
+        printf("Client receives: %s\n",bufReceive);
     }
 }
 /*******************************************************************/
@@ -42,6 +51,7 @@ int main(int argc, char const* argv[])
     {
         printf("Connected\n");
     }
+    keyboard_input_init(bufSend);
     if (pthread_create(&threadSend,NULL,&clientSend,NULL) == 0)
     {
         printf("Client sending thread is created\n");
@@ -53,5 +63,6 @@ int main(int argc, char const* argv[])
     pthread_join(threadReceive,NULL);
     pthread_join(threadSend,NULL);
     printf("Disconnected\n");
+    keyboard_input_deinit();
 	return 0;
 }
