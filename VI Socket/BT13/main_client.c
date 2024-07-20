@@ -5,8 +5,9 @@
 #include <sys/socket.h>     /* for socket APIs */ 
 #include <sys/types.h>
 #include <pthread.h>
-#include <sys/ioctl.h>
 #include "keyboard_input.h"
+/*******************************************************************/
+
 /*******************************************************************/
 char bufSend[255] = {0};
 char bufReceive[255] = {0};
@@ -15,15 +16,14 @@ int sockD;
 /*******************************************************************/
 void *clientSend(void *args)
 {
-    // while (1)
-    // {
-    //     if (keyboard_input_dataAvail())
-    //     {
-    //         write(sockD, bufSend, sizeof(bufSend));
-    //         printf("Client sends: %s\n",bufSend);
-    //     }
-        
-    // }
+    while (1)
+    {
+        if (keyboard_input_dataAvail())
+        {
+            write(sockD, bufSend, sizeof(bufSend));
+            printf("Client sends: %s\n",bufSend);
+        }
+    }
 }
 
 void *clientReceive(void *args)
@@ -46,6 +46,7 @@ int main(int argc, char const* argv[])
 	int connectStatus = connect(sockD, (struct sockaddr*)&servAddr, sizeof(servAddr));
 	if (connectStatus == -1) { 
 		printf("Error...\n");
+        return -1;
 	}
     else
     {

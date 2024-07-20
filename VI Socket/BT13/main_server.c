@@ -24,18 +24,17 @@ void *serverSend(void *args)
             write(clientSocket, serMsg, sizeof(serMsg));
             printf("Host sends: %s\n",serMsg);
         }
-        
     }
 }
 
 void *serverReceive(void *args)
 {
-    // int check = read(servSockD, bufReceive, sizeof(bufReceive));
-    // while (check > 0)
-    // {
-    //     check = read(servSockD, bufReceive, sizeof(bufReceive));
-    //     printf("Host receives: %s\n",bufReceive);
-    // }
+    int check = read(clientSocket, bufReceive, sizeof(bufReceive));
+    while (check > 0)
+    {
+        check = read(clientSocket, bufReceive, sizeof(bufReceive));
+        printf("Host receives: %s\n",bufReceive);
+    }
 }
 /*******************************************************************/
 int main(int argc, char const* argv[]) 
