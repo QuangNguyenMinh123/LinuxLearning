@@ -8,16 +8,20 @@
 #include <pthread.h>
 #include "keyboard_input.h"
 /*******************************************************************/
+#define TRUE            1
+#define FALSE           0
+/*******************************************************************/
 char bufReceive[255] = {0};
 pthread_t threadSend, threadReceive;
 int clientSocket;
 int servSockD;
 /* string store data to send to client */
 char serMsg[255] = "Hello Client, this is host\n";
+volatile int disconnect = TRUE;
 /*******************************************************************/
 void *serverSend(void *args)
 {
-    while (1)
+    while (disconnect == FALSE)
     {
         if (keyboard_input_dataAvail())
         {
@@ -35,6 +39,7 @@ void *serverReceive(void *args)
         check = read(clientSocket, bufReceive, sizeof(bufReceive));
         printf("Host receives: %s\n",bufReceive);
     }
+    disconnect = TRUE;
 }
 /*******************************************************************/
 int main(int argc, char const* argv[]) 
@@ -56,16 +61,20 @@ int main(int argc, char const* argv[])
 	listen(servSockD, 100);
 	clientSocket = accept(servSockD, NULL, NULL);
     write(clientSocket, serMsg, sizeof(serMsg));
+    disconnect = FALSE;
+    printf("Connected\n");
     keyboard_input_init(serMsg);
-    if (pthread_create(&threadSend,NULL,serverSend,NULL))
+    if (pthread_create(&threadSend,NULL,serverSend,NULL) == 0)
     {
         printf("Server sending thread is created\n");
     }
-    if (pthread_create(&threadReceive,NULL,serverReceive,NULL))
+    if (pthread_create(&threadReceive,NULL,serverReceive,NULL) == 0)
     {
         printf("Server receiving thread is created\n");
     }
-    while (1);
+    pthread_join(threadReceive,NULL);
+    pthread_join(threadSend,NULL);
+    printf("Disconnected\n");
     keyboard_input_deinit();
 	return 0;
 }

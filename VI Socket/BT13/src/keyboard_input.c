@@ -16,7 +16,7 @@ void* keyboardHandler()
     char ch = 0;
     while (1)
     {
-        ch = getchar();
+        ch = getchar();     /* scanf() ignores space so it shall not be used */
         if (ch == '\n')
         {
             *bufferPtr = 0;
@@ -40,7 +40,7 @@ void keyboard_input_init(char *str)
     syntax: keyboard_input_init(sendbuff) */
     if (pthread_create(&threadKeyboardInput,NULL, &keyboardHandler,NULL) == 0)
     {
-        printf("Server sending thread is created\n");
+        printf("Keyboard handler thread is created\n");
         bufferStart = str;
         bufferPtr = str;
     }

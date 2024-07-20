@@ -7,16 +7,18 @@
 #include <pthread.h>
 #include "keyboard_input.h"
 /*******************************************************************/
-
+#define TRUE            1
+#define FALSE           0
 /*******************************************************************/
 char bufSend[255] = {0};
 char bufReceive[255] = {0};
 pthread_t threadSend, threadReceive;
 int sockD;
+volatile int disconnect = TRUE;
 /*******************************************************************/
 void *clientSend(void *args)
 {
-    while (1)
+    while (disconnect == FALSE)
     {
         if (keyboard_input_dataAvail())
         {
@@ -34,6 +36,7 @@ void *clientReceive(void *args)
         check = read(sockD, bufReceive, sizeof(bufReceive));
         printf("Client receives: %s\n",bufReceive);
     }
+    disconnect = TRUE;
 }
 /*******************************************************************/
 int main(int argc, char const* argv[]) 
@@ -61,6 +64,7 @@ int main(int argc, char const* argv[])
     {
         printf("Client receiving thread is created\n");
     }
+    disconnect = FALSE;
     pthread_join(threadReceive,NULL);
     pthread_join(threadSend,NULL);
     printf("Disconnected\n");
