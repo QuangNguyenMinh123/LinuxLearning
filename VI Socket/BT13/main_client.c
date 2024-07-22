@@ -6,9 +6,11 @@
 #include <sys/types.h>
 #include <pthread.h>
 #include "keyboard_input.h"
+#include <arpa/inet.h>
 /*******************************************************************/
 #define TRUE            1
 #define FALSE           0
+#define SERVER_IP_ADDR  "192.168.0.106"     /* open cmd, type "hostname -I" to check ip address */
 /*******************************************************************/
 char bufSend[255] = {0};
 char bufReceive[255] = {0};
@@ -45,7 +47,7 @@ int main(int argc, char const* argv[])
 	struct sockaddr_in servAddr;
 	servAddr.sin_family = AF_INET;
 	servAddr.sin_port = htons(9001);        /* port number */ 
-	servAddr.sin_addr.s_addr = INADDR_ANY;
+	servAddr.sin_addr.s_addr = inet_addr(SERVER_IP_ADDR);
 	int connectStatus = connect(sockD, (struct sockaddr*)&servAddr, sizeof(servAddr));
 	if (connectStatus == -1) { 
 		printf("Error...\n");
@@ -53,7 +55,7 @@ int main(int argc, char const* argv[])
 	}
     else
     {
-        printf("Connected\n");
+        printf("Connected to server\n");
     }
     keyboard_input_init(bufSend);
     if (pthread_create(&threadSend,NULL,&clientSend,NULL) == 0)
