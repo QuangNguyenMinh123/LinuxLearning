@@ -10,6 +10,7 @@
 /*******************************************************************/
 #define TRUE            1
 #define FALSE           0
+#define PORT            2000
 /*******************************************************************/
 char bufReceive[255] = {0};
 pthread_t threadSend, threadReceive;
@@ -33,7 +34,7 @@ void *serverSend(void *args)
 
 void *serverReceive(void *args)
 {
-    int check = read(clientSocket, bufReceive, sizeof(bufReceive));
+    int check = 1;
     while (check > 0)
     {
         check = read(clientSocket, bufReceive, sizeof(bufReceive));
@@ -50,7 +51,7 @@ int main(int argc, char const* argv[])
 	/* define server address */
 	struct sockaddr_in servAddr;
 	servAddr.sin_family = AF_INET;
-	servAddr.sin_port = htons(9001);
+	servAddr.sin_port = htons(PORT);
 	servAddr.sin_addr.s_addr = INADDR_ANY;
 
 	/* bind socket to the specified IP and port */
@@ -62,7 +63,7 @@ int main(int argc, char const* argv[])
 	clientSocket = accept(servSockD, NULL, NULL);
     write(clientSocket, serMsg, sizeof(serMsg));
     disconnect = FALSE;
-    printf("Connected\n");
+    printf("Connected to client\n");
     keyboard_input_init(serMsg);
     if (pthread_create(&threadSend,NULL,serverSend,NULL) == 0)
     {
