@@ -1,0 +1,2 @@
+Tạo Pipe, trao đổi dữ liệu giữa các related process.
+ý tưởng: tạo 2 process. Mỗi bên nhập từ bàn phím và gửi sang process còn lại
