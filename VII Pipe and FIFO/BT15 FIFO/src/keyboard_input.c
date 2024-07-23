@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
 /*******************************************************************/
 #define TRUE            1
 #define FALSE           0
@@ -43,6 +44,7 @@ void keyboard_input_init(char *str)
         printf("Keyboard handler thread is created\n");
         bufferStart = str;
         bufferPtr = str;
+        memset(str, 0, sizeof(str));
     }
     else
     {
