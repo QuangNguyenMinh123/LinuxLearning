@@ -1,51 +1,36 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <signal.h>
+#include <fcntl.h>
+#include <string.h>
+// #include "keyboard_input.h"
+#include <sys/stat.h>
+#include <sys/types.h>
+/*******************************************************************/
+#define TRUE            1
+#define FALSE           0
+#define FIFO_FILE_PATH   "./myfifo"
+#define BUFF_SIZE       1024
+/*******************************************************************/
 
-#define MSG_SIZE    20
+/*******************************************************************/
 
-char *msg1 = "hello, world #1";
-char *msg2 = "hello, world #2";
-char *msg3 = "hello, world #3";
-char *msg4 = "hello, world #4";
-
-char pipe_buff[MSG_SIZE];
-int fds[2], i;
-
-void sig_handler1(int num)
+/*******************************************************************/
+int main(int argc, char const* argv[]) 
 {
-	printf("Im signal handler1: %d\n", num);
-	write(fds[1], msg4, MSG_SIZE);
-}
+    char buffReceive[BUFF_SIZE];
+    char buffSend[BUFF_SIZE];
+    int fileDesc;
+    mkfifo(FIFO_FILE_PATH, 0666);
+    //keyboard_input_init(buffSend);
+    while (1)
+    {
+        fileDesc = open(FIFO_FILE_PATH, O_RDWR);
+        read(fileDesc, buffReceive, BUFF_SIZE);
 
-int main(int argc, char const *argv[])
-{
-    /* code */
-
-    if (signal(SIGINT, sig_handler1) == SIG_ERR) {
-   	 	fprintf(stderr, "Cannot handle SIGINT\n");
-   	 	exit(EXIT_FAILURE);
+        printf("producer message: %s\n", buffReceive);
+        close(fileDesc);
     }
-
-    if (pipe(fds) < 0) {
-        printf("pipe() unsuccessfully\n");
-        exit(1);
-    }
-
-    //write(fds[1], msg1, MSG_SIZE);
-    //write(fds[1], msg2, MSG_SIZE);
-    //write(fds[1], msg3, MSG_SIZE); 
-    //printf("sleep 2 seconds\n");
-    //sleep(2);
-
-    read(fds[0], pipe_buff, MSG_SIZE);
-    printf("msg[%d]: %s\n", 1, pipe_buff);
-
-    //for (i = 0; i < 3; i++) {
-    //    read(fds[0], pipe_buff, MSG_SIZE);
-    //    printf("msg[%d]: %s\n", i+1, pipe_buff);
-    //}
-
-    return 0;
+    //keyboard_input_deinit();
+	return 0;
 }

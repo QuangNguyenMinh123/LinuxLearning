@@ -43,6 +43,7 @@ void keyboard_input_init(char *str)
         printf("Keyboard handler thread is created\n");
         bufferStart = str;
         bufferPtr = str;
+        memset(str, 0, sizeof(str));
     }
     else
     {

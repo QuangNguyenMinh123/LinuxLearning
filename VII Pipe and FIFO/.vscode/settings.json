@@ -2,6 +2,12 @@
     "files.associations": {
         "unistd.h": "c",
         "stdio.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "string.h": "c",
+        "fcntl.h": "c",
+        "keyboard_input.h": "c",
+        "types.h": "c",
+        "pthread.h": "c",
+        "stat.h": "c"
     }
 }
