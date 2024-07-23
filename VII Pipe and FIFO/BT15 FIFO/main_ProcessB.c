@@ -8,11 +8,11 @@
 #include <sys/types.h>
 #include <pthread.h>
 /*******************************************************************/
-#define TRUE 1
-#define FALSE 0
+#define TRUE                        1
+#define FALSE                       0
 #define FIFO_WRITE_FILE_PATH        "./BtoA"
 #define FIFO_READ_FILE_PATH         "./AtoB"
-#define BUFF_SIZE 1024
+#define BUFF_SIZE                   1024
 /*******************************************************************/
 pthread_t readThread, writeThread;
 char buffReceive[BUFF_SIZE];
