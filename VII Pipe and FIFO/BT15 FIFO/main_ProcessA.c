@@ -3,16 +3,16 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-// #include "keyboard_input.h"
+#include "keyboard_input.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <pthread.h>
 /*******************************************************************/
-#define TRUE            1
-#define FALSE           0
+#define TRUE                        1
+#define FALSE                       0
 #define FIFO_WRITE_FILE_PATH        "./AtoB"
 #define FIFO_READ_FILE_PATH         "./BtoA"
-#define BUFF_SIZE       1024
+#define BUFF_SIZE                   1024
 /*******************************************************************/
 pthread_t readThread, writeThread;
 char buffReceive[BUFF_SIZE];
@@ -21,11 +21,12 @@ int fileWriteDesc, fileReadDesc;
 /*******************************************************************/
 void *readThreadFunc()
 {
+    int check;
     while (1)
     {
         fileReadDesc = open(FIFO_READ_FILE_PATH, O_RDWR);
-        read(fileReadDesc, buffReceive, BUFF_SIZE);
-        printf("producer message: %s\n", buffReceive);
+        check = read(fileReadDesc, buffReceive, BUFF_SIZE);
+        printf("B message: %s\n", buffReceive);
         close(fileReadDesc);
     }
 }
@@ -36,7 +37,7 @@ void *writeThreadFunc()
     {
         if (keyboard_input_dataAvail())
         {
-            printf("Message to A: %s", buffSend);
+            printf("Message to B: %s\n", buffSend);
             fileWriteDesc = open(FIFO_WRITE_FILE_PATH, O_RDWR);
             write(fileWriteDesc, buffSend, strlen(buffSend) + 1);
             close(fileWriteDesc);
@@ -46,19 +47,17 @@ void *writeThreadFunc()
 /*******************************************************************/
 int main(int argc, char const* argv[]) 
 {
-    char buffReceive[BUFF_SIZE];
-    char buffSend[BUFF_SIZE];
-    int fileDesc;
+    memset(buffReceive, 0, sizeof(buffReceive));
+    memset(buffSend, 0, sizeof(buffSend));
+    keyboard_input_init(buffSend);
     mkfifo(FIFO_READ_FILE_PATH, 0666);
-    //keyboard_input_init(buffSend);
-    while (1)
-    {
-        fileDesc = open(FIFO_READ_FILE_PATH, O_RDWR);
-        read(fileDesc, buffReceive, BUFF_SIZE);
-
-        printf("producer message: %s\n", buffReceive);
-        close(fileDesc);
-    }
-    //keyboard_input_deinit();
+    mkfifo(FIFO_WRITE_FILE_PATH, 0666);
+    if (pthread_create(&writeThread, NULL, writeThreadFunc, NULL) == 0)
+        printf("writeThread is created\n");
+    if (pthread_create(&readThread, NULL, readThreadFunc, NULL) == 0)
+        printf("readThread is created\n");
+    pthread_join(writeThread,NULL);
+    pthread_join(readThread,NULL);
+    keyboard_input_deinit();
 	return 0;
 }

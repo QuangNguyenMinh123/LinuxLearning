@@ -23,7 +23,10 @@ void *readThreadFunc()
 {
     while (1)
     {
-
+        fileReadDesc = open(FIFO_READ_FILE_PATH, O_RDWR);
+        read(fileReadDesc, buffReceive, BUFF_SIZE);
+        printf("A message: %s\n", buffReceive);
+        close(fileReadDesc);
     }
 }
 
