@@ -1,0 +1,18 @@
+Tạo ra một danh sách sinh viên mới message queues. \
+Định dạng dữ liệu lưu trữ trong queues như sau:
+
+struct message {
+long priority <id của sinh viên>;
+struct sinhvien {
+	char hoten[50];
+	int tuoi;
+	char quequan[100];
+	char sdt[100];
+};
+}
+Menu hiển thị chức năng.
+Nhập thông tin sinh viên từ bàn phím và lưu trữ vào trong queue.
+Hiển thị thông tin sinh viên thông qua id.
+Hiển thị toàn bộ danh sách của sinh viên.
+Xóa một sinh viên khỏi danh sách thông qua id.
+Lưu ý: giá trị id của mỗi sinh viên là duy nhất và lớn hơn 0.

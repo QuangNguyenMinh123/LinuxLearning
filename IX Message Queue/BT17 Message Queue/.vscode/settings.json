@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "string.h": "c",
+        "keyboard_input.h": "c",
+        "types.h": "c",
+        "stat.h": "c",
+        "fcntl.h": "c",
+        "unistd.h": "c",
+        "stdlib.h": "c",
+        "stddef.h": "c",
+        "menu.h": "c"
+    }
+}
