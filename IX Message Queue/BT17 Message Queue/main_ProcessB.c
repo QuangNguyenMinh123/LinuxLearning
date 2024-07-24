@@ -1,46 +1,35 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
-#include <sys/stat.h>
-#include "keyboard_input.h"
-#include <sys/types.h>
-#include <pthread.h>
-#include "types.h"
-/* process B: read data from process A*/
-/*******************************************************************/
-#define TRUE                        1
-#define FALSE                       0
-#define FIFO_WRITE_FILE_PATH        "./BtoA"
-#define FIFO_READ_FILE_PATH         "./AtoB"
-#define BUFF_SIZE                   1024
-/*******************************************************************/
-pthread_t readThread, writeThread;
-char buffReceive[BUFF_SIZE];
-char buffSend[BUFF_SIZE];
-int fileWriteDesc, fileReadDesc;
-/*******************************************************************/
-void *checkThreadFunc()
-{
-    while (1)
-    {
-        fileReadDesc = open(FIFO_READ_FILE_PATH, O_RDWR);
-        read(fileReadDesc, buffReceive, BUFF_SIZE);
-        printf("A message: %s\n", buffReceive);
-        close(fileReadDesc);
-    }
-}
-/*******************************************************************/
-int main(int argc, char const *argv[])
-{
-    memset(buffReceive, 0, sizeof(buffReceive));
-    memset(buffSend, 0, sizeof(buffSend));
-    keyboard_input_init(buffSend);
-    if (pthread_create(&readThread, NULL, checkThreadFunc, NULL) == 0)
-        printf("readThread is created\n");
-    pthread_join(writeThread,NULL);
-    pthread_join(readThread,NULL);
-    keyboard_input_deinit();
-    return 0;
-}
+// C Program for Message Queue (Reader Process) 
+#include <stdio.h> 
+#include <sys/ipc.h> 
+#include <sys/msg.h> 
+
+// structure for message queue 
+struct mesg_buffer { 
+	long mesg_type; 
+	char mesg_text[100]; 
+} message; 
+
+int main() 
+{ 
+	key_t key; 
+	int msgid; 
+
+	// ftok to generate unique key 
+	key = ftok("progfile", 65); 
+
+	// msgget creates a message queue 
+	// and returns identifier 
+	msgid = msgget(key, 0666 | IPC_CREAT); 
+
+	// msgrcv to receive message 
+	msgrcv(msgid, &message, sizeof(message), 1, 0); 
+
+	// display the message 
+	printf("Data Received is : %s \n", 
+					message.mesg_text); 
+
+	// to destroy the message queue 
+	msgctl(msgid, IPC_RMID, NULL); 
+
+	return 0; 
+} 

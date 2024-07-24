@@ -8,6 +8,9 @@
         "unistd.h": "c",
         "stdlib.h": "c",
         "stddef.h": "c",
-        "menu.h": "c"
+        "menu.h": "c",
+        "errno.h": "c",
+        "signal.h": "c",
+        "syscall.h": "c"
     }
 }
