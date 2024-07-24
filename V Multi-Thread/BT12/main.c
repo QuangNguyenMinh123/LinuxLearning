@@ -7,11 +7,11 @@
 #include <fcntl.h>
 /*******************************************************************/
 typedef struct Human{
-    char name[100];
+    char name[200];
     int nameLen;
-    char birthday[20];
+    char birthday[200];
     int birthdayLen;
-    char hometown[100];
+    char hometown[200];
     int hometownLen;
 }Human;
 typedef enum STEP{
@@ -19,14 +19,11 @@ typedef enum STEP{
     SAVING,
     CHECKING
 } STEP;
-#define STRING_LEN          100
 /*******************************************************************/
 pthread_t thread1, thread2, thread3;
 STEP ThreadStatus = INPUTTING;
-Human Student, StudentBuff;
+Human Student;
 pthread_mutex_t mutexThreadStatus = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutexThreadStatus1 = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutexThreadStatus2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t condThreadStatus = PTHREAD_COND_INITIALIZER;
 pthread_cond_t condThreadStatus1 = PTHREAD_COND_INITIALIZER;
 pthread_cond_t condThreadStatus2 = PTHREAD_COND_INITIALIZER;
@@ -72,6 +69,7 @@ void *thread_Input(void *args)
     while (1)
     {
         pthread_mutex_lock(&mutexThreadStatus);
+        pthread_cond_wait(&condThreadStatus, &mutexThreadStatus);
         if (ThreadStatus == INPUTTING)
         {
             printf("/********New session********/\n");
@@ -109,7 +107,7 @@ void *thread_Input(void *args)
             printf("Done inputting\n");
         }
         pthread_mutex_unlock(&mutexThreadStatus); 
-        pthread_cond_signal(&condThreadStatus);
+        pthread_cond_signal(&condThreadStatus1);
     }
 }
 
@@ -118,7 +116,7 @@ void *thread_Saving(void *args)
     while(1)
     {
         pthread_mutex_lock(&mutexThreadStatus);
-        pthread_cond_wait(&condThreadStatus, &mutexThreadStatus);
+        pthread_cond_wait(&condThreadStatus1, &mutexThreadStatus);
         if (ThreadStatus == SAVING)
         {
             write(fileDes, Student.name, Student.nameLen);
@@ -134,7 +132,7 @@ void *thread_Saving(void *args)
             pthread_mutex_unlock(&mutexThreadStatus);
             return NULL;
         }
-        pthread_cond_signal(&condThreadStatus);
+        pthread_cond_signal(&condThreadStatus2);
         pthread_mutex_unlock(&mutexThreadStatus);
         
         printf("Done saving\n");
@@ -147,7 +145,7 @@ void *thread_Checking(void *args)
         char buffer[200];
         char *ptr;
         pthread_mutex_lock(&mutexThreadStatus);
-        pthread_cond_wait(&condThreadStatus, &mutexThreadStatus);
+        pthread_cond_wait(&condThreadStatus2, &mutexThreadStatus);
         if (ThreadStatus == CHECKING)
         {
             /* retrieve the last written data */
@@ -213,7 +211,7 @@ int main(int argc, char *argv[])
     {
         printf("Thread3 is created\n");
     }
-    while (1);
+    pthread_cond_signal(&condThreadStatus);
     pthread_join(thread1,NULL);
     pthread_join(thread2,NULL);
     pthread_join(thread3,NULL);
