@@ -1,82 +1,98 @@
-#include <netinet/in.h>     /* structure for storing address information */ 
-#include <stdio.h> 
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/socket.h>     /* for socket APIs */ 
-#include <sys/types.h>
+#include<stdio.h>
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<sys/un.h>
+#include<string.h>
+#include<netdb.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<string.h>
 #include <pthread.h>
-#include "keyboard_input.h"
+#include "log.h"
 /*******************************************************************/
-#define TRUE            1
-#define FALSE           0
-#define PORT            2000
+
 /*******************************************************************/
-char bufReceive[255] = {0};
-pthread_t threadSend, threadReceive;
-int clientSocket;
-int servSockD;
-/* string store data to send to client */
-char serMsg[255] = "Hello Client, this is host\n";
-volatile int disconnect = TRUE;
-float Temp;
+pthread_t thread;
+int server;
+float temp;
+int run = 0;
+int acc = 0;
+int logfile;
+char buffer[1024] = {0};
 /*******************************************************************/
-void *serverSend(void *args)
+void *Receive(void *args)
 {
-    while (disconnect == FALSE)
+    while (acc <= 0);
+    while (1)
     {
-        if (keyboard_input_dataAvail())
+        recv(acc, &temp, sizeof(temp), 0);
+        if (temp > 0);
         {
-            write(clientSocket, serMsg, sizeof(serMsg));
-            printf("Host sends: %s\n",serMsg);
+            printf("Temp = %f\n",temp);
+            sprintf(buffer, "Temp = %f\n",temp);
+            log_write(logfile, buffer);
         }
+        
     }
-}
-
-void *serverReceive(void *args)
-{
-    int check = 1;
-    while (check > 0)
-    {
-        check = recv(clientSocket, &Temp, sizeof(Temp), 0);
-        printf("Host receives: %f\n",Temp);
-    }
-    disconnect = TRUE;
 }
 /*******************************************************************/
-int main(int argc, char const* argv[]) 
+int main()
 {
-    memset(serMsg, 0, sizeof(serMsg));
-    /* create server socket similar to what was done in client program */
-	servSockD = socket(AF_INET, SOCK_STREAM, 0);
-	/* define server address */
-	struct sockaddr_in servAddr;
-	servAddr.sin_family = AF_INET;
-	servAddr.sin_port = htons(PORT);
-	servAddr.sin_addr.s_addr = INADDR_ANY;
+	// Two buffers for message communication
+	char buffer1[256], buffer2[256];
+	server = socket(AF_INET, SOCK_STREAM, 0);
+	if (server < 0)
+		printf("Error in server creating\n");
+	else
+		printf("Server Created\n");
+	logfile = log_open();
+	struct sockaddr_in my_addr, peer_addr;
+	my_addr.sin_family = AF_INET;
+	my_addr.sin_addr.s_addr = INADDR_ANY;
+	
+	// This ip address will change according to the machine
+	my_addr.sin_addr.s_addr = inet_addr("192.168.0.106");
+	
+	my_addr.sin_port = htons(12000);
 
-	/* bind socket to the specified IP and port */
-	bind(servSockD, (struct sockaddr*)&servAddr, sizeof(servAddr));
-    printf("Port is bound\n");
-	/* listen for connections */
-    printf("Waiting for connection...\n");
-	listen(servSockD, 100);
-	clientSocket = accept(servSockD, NULL, NULL);
-    write(clientSocket, serMsg, sizeof(serMsg));
-    disconnect = FALSE;
-    printf("Connected to client\n");
-    keyboard_input_init(serMsg);
-    if (pthread_create(&threadSend,NULL,serverSend,NULL) == 0)
+	if (bind(server, (struct sockaddr*) &my_addr, sizeof(my_addr)) == 0)
+		printf("Binded Correctly\n");
+	else
+		printf("Unable to bind\n");
+		
+	if (listen(server, 3) == 0)
+		printf("Listening ...\n");
+	else
+		printf("Unable to listen\n");
+	
+	socklen_t addr_size;
+	addr_size = sizeof(struct sockaddr_in);
+	
+	// Ip character array will store the ip address of client
+	char *ip;
+	if (pthread_create(&thread,NULL,&Receive,NULL) == 0)
     {
-        printf("Server sending thread is created\n");
+        printf("Receive thread is created\n");
     }
-    if (pthread_create(&threadReceive,NULL,serverReceive,NULL) == 0)
-    {
-        printf("Server receiving thread is created\n");
-    }
-    pthread_join(threadReceive,NULL);
-    pthread_join(threadSend,NULL);
-    printf("Disconnected\n");
-    keyboard_input_deinit();
+	// while loop is iterated infinitely to 
+	// accept infinite connection one by one
+	while (1)
+	{
+		acc = accept(server, (struct sockaddr*) &peer_addr, &addr_size);
+		printf("Connection Established\n");
+		char ip[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
+	
+		// "ntohs(peer_addr.sin_port)" function is 
+		// for finding port number of client
+		printf("connection established with IP : %s and PORT : %d\n", 
+											ip, ntohs(peer_addr.sin_port));
+
+		//recv(acc, &temp, sizeof(temp), 0);
+		//printf("Client : %f\n", temp);
+		strcpy(buffer1, "Hello");
+		send(acc, buffer1, 256, 0);
+        run = 1;
+	} 
 	return 0;
 }
