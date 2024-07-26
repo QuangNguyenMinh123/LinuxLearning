@@ -51,9 +51,9 @@ run_client:
 run_server:
 	@$(BIN_DIR)/server
 
-client: clean build_client run_client
+client: clean build_client clean run_client
 
-server: clean build_server run_server
+server: clean build_server clean run_server
 
 clean:
 	@rm -rf $(OBJ_DIR)/*.o

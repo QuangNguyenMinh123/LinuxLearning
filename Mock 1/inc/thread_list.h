@@ -3,9 +3,9 @@
 #include <pthread.h>
 /*******************************************************************/
 typedef struct ThreadListType{
-    ThreadListType *pre;
+    struct ThreadListType *pre;
     pthread_t thread;
-    ThreadListType *next;
+    struct ThreadListType *next;
 }ThreadListType;
 /*******************************************************************/
 void thread_list_init(void);
