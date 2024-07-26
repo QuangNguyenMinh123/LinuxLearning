@@ -13,6 +13,10 @@ COMPILER := gcc
 MAIN_CLIENT_O_DIR := $(OBJ_DIR)/main_client.o
 MAIN_SERVER_O_DIR := $(OBJ_DIR)/main_server.o
 
+temp := 20
+DEFAULT_TEMP := 20
+DEFAULT_IP := "192.168.0.106"
+
 SRC_FILES := $(foreach SRC_DIR, $(SRC_DIR), $(wildcard $(SRC_DIR)/*.c))
 INC_FILES := $(foreach INC_DIR, $(INC_DIR), $(wildcard $(INC_DIR)/*.h))
 
@@ -42,7 +46,7 @@ main_server.o:
 	@$(COMPILER) -I$(INC_DIR) -c main_server.c -o $(CUR_DIR)/$(OBJ_DIR)/main_server.o
 
 run_client:
-	@$(BIN_DIR)/client 192.168.0.106 20
+	@$(BIN_DIR)/client $(DEFAULT_IP) $(temp)
 
 run_server:
 	@$(BIN_DIR)/server
