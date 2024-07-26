@@ -19,6 +19,7 @@ int servSockD;
 /* string store data to send to client */
 char serMsg[255] = "Hello Client, this is host\n";
 volatile int disconnect = TRUE;
+float Temp;
 /*******************************************************************/
 void *serverSend(void *args)
 {
@@ -37,8 +38,8 @@ void *serverReceive(void *args)
     int check = 1;
     while (check > 0)
     {
-        check = read(clientSocket, bufReceive, sizeof(bufReceive));
-        printf("Host receives: %s\n",bufReceive);
+        check = recv(clientSocket, &Temp, sizeof(Temp), 0);
+        printf("Host receives: %f\n",Temp);
     }
     disconnect = TRUE;
 }
