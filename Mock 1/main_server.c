@@ -11,12 +11,14 @@
 #include <unistd.h>
 #include "log.h"
 /*******************************************************************/
-#define BUFFER_SIZE                 256
+#define BUFF_SIZE                 256
+
+#define READ_PIPE_IDX               0
+#define WRITE_PIPE_IDX              1
 /*******************************************************************/
 pthread_t thread;
 
 float temp;
-int run = 0;
 int acc = 0;
 char buffer[1024] = {0};
 
@@ -24,31 +26,34 @@ int logFileId;
 int serverSock;
 int chToPaPipe[2], paToChPipe[2];
 pthread_t threadConnect, threadData, threadStorage;
+socklen_t addr_size;
+/* For server connection */
+struct sockaddr_in my_addr, peer_addr;
+char buffer1[BUFF_SIZE];
 /*******************************************************************/
 void *Receive(void *args)
 {
     while (acc <= 0);
-    while (1)
+    int check = read(acc, &temp, sizeof(temp));
+    while (check > 0 )
     {
-        recv(acc, &temp, sizeof(temp), 0);
-        if (temp > 0);
-        {
-            printf("Temp = %f\n",temp);
-            sprintf(buffer, "Temp = %f\n",temp);
-            log_write(logFileId, buffer);
-        }
-        
+        check = recv(acc, &temp, sizeof(temp), 0);
+        log_write(logFileId, buffer);
     }
 }
 
 void *threadConnecFunc(void *args)
 {
-
+    
 }
 
 void *threadDataFunc(void *args)
 {
+    /* Handling data manager*/
+    while (1)
+    {
 
+    }
 }
 
 void *threadStorageFunc(void *args)
@@ -59,9 +64,8 @@ void *threadStorageFunc(void *args)
 int main()
 {
     int childPid;
-	char buffer1[256], buffer2[256];
-    /* For server connection */
-    struct sockaddr_in my_addr, peer_addr;
+    memset(buffer1, 0, sizeof(buffer1));
+    
 	my_addr.sin_family = AF_INET;
 	my_addr.sin_addr.s_addr = INADDR_ANY;
 	/* Change this ip address according to your machine */
@@ -103,83 +107,95 @@ int main()
     /* Create child process*/
     log_write(logFileId, "Creating child process\n");
     childPid = fork();
-
-    printf("Child PID = %i",childPid);
     if (childPid < 0)
     {
         /* Failed */
         log_write(logFileId, "fork() failed\n");
         return -1;
     }
-    else if (childPid = 0)
+    else if (childPid == 0)
     {
         /* Child; log process */
+        int i = 0;
         /* Establish pipe to parent process */
-        log_write(logFileId, "Child process\n");
+        if (close(chToPaPipe[0]) == -1)
+            log_write(logFileId,"close(chToPaPipe[0]) failed\n");
+        if (close(paToChPipe[1]) == -1)
+            log_write(logFileId,"close(paToChPipe[1]) failed\n");
+        while (i == 0)
+            read(paToChPipe[READ_PIPE_IDX], &i, sizeof(i));
+        if (i < 4)  /* Failed */
+            return;
+        log_write(logFileId,"Thread handlers is created\n");
         while(1);
     }
     else
     {
-        int i = 65;
-        printf("%s\n","2234234");
         /* Parent: main */
+        int i = 0;
         /* Establish pipe to child process */
         if (close(chToPaPipe[1]) == -1)
             log_write(logFileId, "close(chToPaPipe[1]) failed\n");
         if (close(paToChPipe[0]) == -1)
             log_write(logFileId, "close(paToChPipe[0]) failed\n");
+        /* Bind serverSock to my_addr */
+        if (bind(serverSock, (struct sockaddr*) &my_addr, sizeof(my_addr)) == 0)
+		    printf("Binded Correctly\n");
+	    else
+		    printf("Unable to bind\n");
+		write(paToChPipe[WRITE_PIPE_IDX], &i, sizeof(i));
+	    if (listen(serverSock, 3) == 0)
+		    printf("Listening ...\n");
+	    else
+		    printf("Unable to listen\n");
+        
+	    addr_size = sizeof(struct sockaddr_in);
+	    // Ip character array will store the ip address of client
+	    char *ip;
+	    if (pthread_create(&thread,NULL,&Receive,NULL) == 0)
+        {
+            printf("Receive thread is created\n");
+        }
         /* Create thread */
         if (pthread_create(&threadConnect, NULL, threadConnecFunc, NULL) == 0)
-            log_write(logFileId,"threadConnect is created\n");
+            i++;
         if (pthread_create(&threadData, NULL, threadDataFunc, NULL) == 0)
-            log_write(logFileId,"threadData is created\n");
+            i++;
         if (pthread_create(&threadStorage, NULL, threadStorageFunc, NULL) == 0)
-            log_write(logFileId,"threadStorage is created\n");
-        
+            i++;
+        i++;            /* Redundent check */
+        write(paToChPipe[WRITE_PIPE_IDX], &i, sizeof(i));   /* inform child to continue */
+        if (i < 4)      /* FAIL */
+            return;
+        while (1)
+	    {
+		    acc = accept(serverSock, (struct sockaddr*) &peer_addr, &addr_size);
+		    printf("Connection Established\n");
+		    char ip[INET_ADDRSTRLEN];
+		    inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
+	
+		    // "ntohs(peer_addr.sin_port)" function is 
+		    // for finding port number of client
+		    printf("Connection established with IP : %s and PORT : %d\n", 
+											ip, ntohs(peer_addr.sin_port));
+
+		    //recv(acc, &temp, sizeof(temp), 0);
+		    //printf("Client : %f\n", temp);
+		    strcpy(buffer1, "Hello");
+		    send(acc, buffer1, 256, 0);
+	    } 
+
+
+
+
+
+        printf("%s\n","end of parent");
         pthread_join(threadConnect,NULL);
         /* wait */
         pthread_join(threadData,NULL);
         pthread_join(threadStorage,NULL);
         close(chToPaPipe[0]);
     }
-	if (bind(serverSock, (struct sockaddr*) &my_addr, sizeof(my_addr)) == 0)
-		printf("Binded Correctly\n");
-	else
-		printf("Unable to bind\n");
-		
-	if (listen(serverSock, 3) == 0)
-		printf("Listening ...\n");
-	else
-		printf("Unable to listen\n");
 	
-	socklen_t addr_size;
-	addr_size = sizeof(struct sockaddr_in);
-	
-	// Ip character array will store the ip address of client
-	char *ip;
-	if (pthread_create(&thread,NULL,&Receive,NULL) == 0)
-    {
-        printf("Receive thread is created\n");
-    }
-	// while loop is iterated infinitely to 
-	// accept infinite connection one by one
-	while (1)
-	{
-		acc = accept(serverSock, (struct sockaddr*) &peer_addr, &addr_size);
-		printf("Connection Established\n");
-		char ip[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
-	
-		// "ntohs(peer_addr.sin_port)" function is 
-		// for finding port number of client
-		printf("connection established with IP : %s and PORT : %d\n", 
-											ip, ntohs(peer_addr.sin_port));
-
-		//recv(acc, &temp, sizeof(temp), 0);
-		//printf("Client : %f\n", temp);
-		strcpy(buffer1, "Hello");
-		send(acc, buffer1, 256, 0);
-        run = 1;
-	} 
 	return 0;
 }

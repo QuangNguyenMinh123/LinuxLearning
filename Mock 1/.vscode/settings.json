@@ -2,7 +2,14 @@
     "files.associations": {
         "stdio.h": "c",
         "unistd.h": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "log.h": "c",
+        "pthread.h": "c"
     },
-    "C_Cpp.errorSquiggles": "enabled"
+    "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.default.includePath": [
+        "/home/nguyen-minh-quang/Documents/GitHub/LinuxLearning/Mock 1/inc"
+    ],
+    "breadcrumbs.showVariables": false,
+    "editor.suggest.showVariables": true
 }

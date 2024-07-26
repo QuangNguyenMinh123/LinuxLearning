@@ -9,10 +9,14 @@
                 "-g",
                 "${file}",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "${fileDirname}/${fileBasenameNoExtension}",
+                "-I",
+                "/home/nguyen-minh-quang/Documents/GitHub/LinuxLearning/Mock 1/inc",
+                "${fileDirname}/src/log.c",
+                "${fileDirname}/src/random.c"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
                 "$gcc"

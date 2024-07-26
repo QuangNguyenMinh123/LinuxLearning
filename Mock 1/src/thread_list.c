@@ -4,7 +4,7 @@
 /*******************************************************************/
 
 /*******************************************************************/
-ThreadListType head, tail;
+ProcessListType head, tail;
 /*******************************************************************/
 void thread_list_init(void)
 {
@@ -13,33 +13,33 @@ void thread_list_init(void)
     tail.next = NULL;
     head.pre = NULL;
 }
-void thread_list_add(ThreadListType *thread)
+void thread_list_add(ProcessListType *process)
 {
     if (head.next == &tail)
     {
-        head.next = thread;
-        thread->pre = &head;
-        thread->next = &tail;
-        tail.pre = thread;
+        head.next = process;
+        process->pre = &head;
+        process->next = &tail;
+        tail.pre = process;
     }
     else
     {
-        (tail.pre)->next = thread;
-        thread->pre = tail.pre;
-        thread->next = &tail;
-        tail.pre = thread;
+        (tail.pre)->next = process;
+        process->pre = tail.pre;
+        process->next = &tail;
+        tail.pre = process;
     }
 }
-void thread_list_remove(pthread_t thread)
+void thread_list_remove(int processId)
 {
-    ThreadListType *ptr = head.next;
+    ProcessListType *ptr = head.next;
     /* Linked list is empty*/
     if (ptr == &tail)
         return;
     /* else */
     while (ptr != &tail)
     {
-        if (pthread_equal(ptr->thread, thread))
+        if (ptr->processId, processId)
         {
             ptr->pre->next = ptr ->next;
             ptr->next->pre = ptr->pre;
@@ -49,15 +49,15 @@ void thread_list_remove(pthread_t thread)
             ptr = ptr->next;
     }
 }
-ThreadListType* thread_list_find(pthread_t thread)
+ProcessListType* thread_list_find(int processId)
 {
-    ThreadListType *ptr = head.next;
+    ProcessListType *ptr = head.next;
     /* Linked list is empty*/
     if (ptr == &tail)
         return NULL;
     while (ptr != &tail)
     {
-        if (pthread_equal(ptr->thread, thread))
+        if (ptr->processId, processId)
         {
             return ptr;
         }
