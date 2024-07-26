@@ -42,7 +42,7 @@ main_server.o:
 	@$(COMPILER) -I$(INC_DIR) -c main_server.c -o $(CUR_DIR)/$(OBJ_DIR)/main_server.o
 
 run_client:
-	@$(BIN_DIR)/client 192.168.0.106 2000 20
+	@$(BIN_DIR)/client 192.168.0.106 20
 
 run_server:
 	@$(BIN_DIR)/server

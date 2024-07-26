@@ -5,7 +5,6 @@
 #include <sys/socket.h>     /* for socket APIs */ 
 #include <sys/types.h>
 #include <pthread.h>
-#include "keyboard_input.h"
 #include <arpa/inet.h>
 #include "random.h"
 /*******************************************************************/
@@ -16,7 +15,7 @@
 /*******************************************************************/
 char bufSend[255] = {0};
 char bufReceive[255] = {0};
-pthread_t threadSend;
+pthread_t threadSend, threadReceive;
 int sockD;
 volatile int disconnect = TRUE;
 int temperature;
@@ -29,8 +28,17 @@ void *clientSend(void *args)
         Temp = randomFloat(temperature, temperature +1);
         send(sockD, &Temp, sizeof(Temp), 0);
         printf("Client sends: %f\n",Temp);
-        sleep(2);
+        sleep(1);
     }
+}
+void *clientReceive(void *args)
+{
+    int check = read(sockD, bufReceive, sizeof(bufReceive));
+    while (check > 0)
+    {
+        check = read(sockD, bufReceive, sizeof(bufReceive));
+    }
+    disconnect = TRUE;
 }
 /*******************************************************************/
 int main(int argc, char const* argv[]) 
@@ -40,18 +48,17 @@ int main(int argc, char const* argv[])
     /********************/
     if (argc <= 1)
     {
-        printf("argument: ./client <IP> <port> <temperature>\n");
+        printf("argument: ./client <IP> <temperature>\n");
         return -1;
     }
     else
     {
         printf("IP: %s\n", argv[1]);
-        printf("Port: %s\n", argv[2]);
-        printf("Temperature: %s\n", argv[3]);
+        printf("Temperature: %s\n", argv[2]);
     }
-    temperature = atoi(argv[3]);
+    temperature = atoi(argv[2]);
 	servAddr.sin_family = AF_INET;
-	servAddr.sin_port = htons(atoi(argv[2]));        /* port number */
+	servAddr.sin_port = htons(12000);        /* port number */
 	servAddr.sin_addr.s_addr = inet_addr(argv[1]);
 	int connectStatus = connect(sockD, (struct sockaddr*)&servAddr, sizeof(servAddr));
 	if (connectStatus == -1) { 
@@ -62,14 +69,17 @@ int main(int argc, char const* argv[])
     {
         printf("Connected to server\n");
     }
-    keyboard_input_init(bufSend);
     disconnect = FALSE;
     if (pthread_create(&threadSend,NULL,&clientSend,NULL) == 0)
     {
         printf("Client sending thread is created\n");
     }
+	if (pthread_create(&threadReceive,NULL,&clientReceive,NULL) == 0)
+    {
+        printf("Client receiving thread is created\n");
+    }
+    pthread_join(threadReceive,NULL);
     pthread_join(threadSend,NULL);
     printf("Disconnected\n");
-    keyboard_input_deinit();
 	return 0;
 }
