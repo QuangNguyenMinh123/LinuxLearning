@@ -10,19 +10,17 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/socket.h>
 #include "log.h"
 #include "process_list.h"
 /*******************************************************************/
+#define SO_REUSEPORT                    15
 #define BUFF_SIZE                       256
-
+#define PORT                            10000
 #define READ_PIPE_IDX                   0
 #define WRITE_PIPE_IDX                  1
 /*******************************************************************/
 pthread_t thread;
-#define BUFF_SIZE                       256
-
-#define READ_PIPE_IDX                   0
-#define WRITE_PIPE_IDX                  1
 /*******************************************************************/
 float temp;
 int acc = 0;
@@ -129,7 +127,7 @@ int main()
         my_addr.sin_family = AF_INET;
         /* Change this ip address according to your machine */
         my_addr.sin_addr.s_addr = INADDR_ANY; /* inet_addr("192.168.0.104")   , INADDR_ANY */
-        my_addr.sin_port = htons(12000);
+        my_addr.sin_port = htons(PORT);
         /* Initialize socket */
         serverSock = socket(AF_INET, SOCK_STREAM, 0);
         if (serverSock < 0)
@@ -148,11 +146,11 @@ int main()
             return -1;
         }
 
-        // if (setsockopt(serverSock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0)
-        // {
-        //     printf("Failed to set SO_REUSEPORT option\n");
-        //     return -1;
-        // }
+        if (setsockopt(serverSock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0)
+        {
+            printf("Failed to set SO_REUSEPORT option\n");
+            return -1;
+        }
 
         /* Establish pipe to child process */
         if (close(chToPaPipe[1]) == -1)
@@ -189,12 +187,8 @@ int main()
         while (1)
         {
             acc = accept(serverSock, (struct sockaddr *)&peer_addr, &addr_size);
-            // childPid = fork();
+            //childPid = fork();
             // if (childPid == 0)
-            // {
-                
-            // }
-            // else
             // {
                 char ip[16];
                 /* New child */
@@ -217,7 +211,6 @@ int main()
                 send(acc, buffer1, 256, 0);
                 printf("Connection count = %d\n",process_list_connectionCount());
             // }
-            
         }
 
         printf("%s\n", "end of parent");

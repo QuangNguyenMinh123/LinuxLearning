@@ -54,7 +54,7 @@ void process_list_init(void)
     int mem_id = shmget(*key,sizeof(ProcessListType),IPC_CREAT|0666);
     if (mem_id<0) {
         perror("head error shmget");
-        return NULL;
+        return;
     }
     *key ++;
     head = (ProcessListType*)shmat(mem_id,(void*)0,0);
