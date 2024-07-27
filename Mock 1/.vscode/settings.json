@@ -4,7 +4,10 @@
         "unistd.h": "c",
         "stat.h": "c",
         "log.h": "c",
-        "pthread.h": "c"
+        "pthread.h": "c",
+        "stdlib.h": "c",
+        "libc-header-start.h": "c",
+        "in.h": "c"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.default.includePath": [

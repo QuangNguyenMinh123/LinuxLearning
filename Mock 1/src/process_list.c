@@ -1,19 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "thread_list.h"
+#include "process_list.h"
 /*******************************************************************/
 
 /*******************************************************************/
 ProcessListType head, tail;
 /*******************************************************************/
-void thread_list_init(void)
+void process_list_init(void)
 {
     head.next = &tail;
     tail.pre = &head;
     tail.next = NULL;
     head.pre = NULL;
 }
-void thread_list_add(ProcessListType *process)
+void process_list_add(ProcessListType *process)
 {
     if (head.next == &tail)
     {
@@ -30,7 +30,7 @@ void thread_list_add(ProcessListType *process)
         tail.pre = process;
     }
 }
-void thread_list_remove(int processId)
+void process_list_remove(int processId)
 {
     ProcessListType *ptr = head.next;
     /* Linked list is empty*/
@@ -49,7 +49,7 @@ void thread_list_remove(int processId)
             ptr = ptr->next;
     }
 }
-ProcessListType* thread_list_find(int processId)
+ProcessListType* process_list_find(int processId)
 {
     ProcessListType *ptr = head.next;
     /* Linked list is empty*/

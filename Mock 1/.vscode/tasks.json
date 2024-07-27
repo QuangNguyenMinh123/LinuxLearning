@@ -13,7 +13,8 @@
                 "-I",
                 "/home/nguyen-minh-quang/Documents/GitHub/LinuxLearning/Mock 1/inc",
                 "${fileDirname}/src/log.c",
-                "${fileDirname}/src/random.c"
+                "${fileDirname}/src/random.c",
+                "${fileDirname}/src/process_list.c",
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
