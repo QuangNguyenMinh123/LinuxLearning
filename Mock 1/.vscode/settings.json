@@ -10,7 +10,11 @@
         "in.h": "c",
         "process_list.h": "c",
         "fcntl.h": "c",
-        "socket.h": "c"
+        "socket.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "cerrno": "c"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.default.includePath": [

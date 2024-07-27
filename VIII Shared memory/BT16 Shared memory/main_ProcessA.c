@@ -99,6 +99,9 @@ int main()
     for (i=0;i<=99;i++)
         printf("%s: Read data[%d]: %s\n", __FILE__,i, data[i].Ip);
 
+    data[10].socketId = 100;
+    
+
     /**
      * int munmap(void *addr, size_t length);
      * @brief Unmap shared memory object khỏi calling process.

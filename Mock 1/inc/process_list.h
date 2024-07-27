@@ -16,8 +16,9 @@ typedef struct ProcessListType{
 }ProcessListType;
 /*******************************************************************/
 void process_list_init(void);
-void process_list_add(ProcessListType *process);
+void process_list_new(int processId, char Ip[], int port, int socketId);
 void process_list_remove(int processId);
 ProcessListType* process_list_find(int processId);
+int process_list_connectionCount(void);
 /*******************************************************************/
 #endif

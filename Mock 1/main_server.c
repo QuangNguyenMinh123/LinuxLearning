@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "log.h"
+#include "process_list.h"
 /*******************************************************************/
 #define BUFF_SIZE                       256
 
@@ -124,9 +125,10 @@ int main()
     {
         /* Parent: main */
         int i = 0;
+        process_list_init();
         my_addr.sin_family = AF_INET;
         /* Change this ip address according to your machine */
-        my_addr.sin_addr.s_addr = INADDR_ANY; /* inet_addr("192.168.0.104") */
+        my_addr.sin_addr.s_addr = INADDR_ANY; /* inet_addr("192.168.0.104")   , INADDR_ANY */
         my_addr.sin_port = htons(12000);
         /* Initialize socket */
         serverSock = socket(AF_INET, SOCK_STREAM, 0);
@@ -139,6 +141,19 @@ int main()
         {
             log_write(logFileId, "Server is created\n");
         }
+        int opt = 1;
+        if (setsockopt(serverSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+        {
+            printf("Failed to set SO_REUSEADDR option\n");
+            return -1;
+        }
+
+        // if (setsockopt(serverSock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0)
+        // {
+        //     printf("Failed to set SO_REUSEPORT option\n");
+        //     return -1;
+        // }
+
         /* Establish pipe to child process */
         if (close(chToPaPipe[1]) == -1)
             log_write(logFileId, "close(chToPaPipe[1]) failed\n");
@@ -174,19 +189,25 @@ int main()
         while (1)
         {
             acc = accept(serverSock, (struct sockaddr *)&peer_addr, &addr_size);
-            childPid = fork();
-            char ip[16];
-            if (childPid == 0)
-            {
+            // childPid = fork();
+            // if (childPid == 0)
+            // {
+                
+            // }
+            // else
+            // {
+                char ip[16];
                 /* New child */
                 printf("New Connection Established\n");
                 /* New process */
+
                 inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
                 //process_list_add(newProcess);
                 // "ntohs(peer_addr.sin_port)" function is
                 // for finding port number of client
                 printf("Connection established with IP : %s and PORT : %d\n",
                    ip, ntohs(peer_addr.sin_port));
+                process_list_new(getpid(), ip, ntohs(peer_addr.sin_port), acc);
                 // recv(acc, &temp, sizeof(temp), 0);
                 // printf("Client : %f\n", temp);
                 strcpy(buffer1, "Hello");
@@ -194,11 +215,8 @@ int main()
                 // printf("Client : %f\n", temp);
                 strcpy(buffer1, "Hello");
                 send(acc, buffer1, 256, 0);
-            }
-            else
-            {
-
-            }
+                printf("Connection count = %d\n",process_list_connectionCount());
+            // }
             
         }
 
