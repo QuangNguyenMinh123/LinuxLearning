@@ -7,8 +7,17 @@
 #include <string.h>
 #include <sys/shm.h>
 
-#define SHARED_MEM_SIZE     100             /* the size (in bytes) of shared memory object */
-#define FILE_NAME           "phong_mmap"     /* name of the shared memory object */
+typedef struct ProcessListType{
+    struct ProcessListType *pre;
+    int processId;
+    char Ip[16];        /* 16 = INET_ADDRSTRLEN */
+    int port;
+    int socketId;
+    struct ProcessListType *next;
+}ProcessListType;
+
+#define SHARED_MEM_SIZE     (100 * sizeof(ProcessListType))             /* the size (in bytes) of shared memory object */
+#define FILE_NAME           "SHARED_MEM"     /* name of the shared memory object */
 
 /**
  * 1. Tạo fd
@@ -82,10 +91,13 @@ int main()
      *          On error, the value MAP_FAILED (that is, (void *) -1) is returned,  
      *          and errno is set to indicate the cause of the error.
      */
-    char *data = (char *)mmap(0, SHARED_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-
-    strcpy(data, "MMAP Hello world !");
-    printf("%s: Write data: %s\n", __FILE__, data);
+    ProcessListType *data = (ProcessListType *)mmap(0, SHARED_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    strcpy(data[99].Ip, "122.232.224.324");
+    strcpy(data[0].Ip, "122.232.224.324");
+    strcpy(data[50].Ip, "122.232.224.324");
+    int i = 0;
+    for (i=0;i<=99;i++)
+        printf("%s: Read data[%d]: %s\n", __FILE__,i, data[i].Ip);
 
     /**
      * int munmap(void *addr, size_t length);

@@ -8,7 +8,9 @@
         "stdlib.h": "c",
         "libc-header-start.h": "c",
         "in.h": "c",
-        "process_list.h": "c"
+        "process_list.h": "c",
+        "fcntl.h": "c",
+        "socket.h": "c"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.default.includePath": [

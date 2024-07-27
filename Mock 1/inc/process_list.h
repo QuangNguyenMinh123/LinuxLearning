@@ -2,6 +2,10 @@
 #define _PROCESS_LIST_H
 #include <pthread.h>
 /*******************************************************************/
+#define CLIENT_MAX              100
+#define SHARED_MEM_SIZE         (CLIENT_MAX * sizeof(ProcessListType))
+#define SERVER_PROCESS_FILE     "SERVER_PROCESS"
+/*******************************************************************/
 typedef struct ProcessListType{
     struct ProcessListType *pre;
     int processId;

@@ -11,7 +11,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "log.h"
-#include "process_list.h"
 /*******************************************************************/
 #define BUFF_SIZE                       256
 
@@ -69,25 +68,8 @@ int main()
 {
     int childPid;
     memset(buffer1, 0, sizeof(buffer1));
-
-    my_addr.sin_family = AF_INET;
-    my_addr.sin_addr.s_addr = INADDR_ANY;
-    /* Change this ip address according to your machine */
-    my_addr.sin_addr.s_addr = inet_addr("192.168.0.104");
-    my_addr.sin_port = htons(12000);
     /* Create log file */
     logFileId = log_open();
-    /* Initialize socket */
-    serverSock = socket(AF_INET, SOCK_STREAM, 0);
-    if (serverSock < 0)
-    {
-        log_write(logFileId, "Error in creating server socket\n");
-        return -1;
-    }
-    else
-    {
-        log_write(logFileId, "Server is created\n");
-    }
     /* Create pipe */
     if (pipe(chToPaPipe) < 0)
     {
@@ -117,7 +99,8 @@ int main()
         log_write(logFileId, "fork() failed\n");
         return -1;
     }
-    else if (childPid == 0)
+    else 
+    if (childPid == 0)
     {
         /* Child; log process */
         int i = 0;
@@ -129,15 +112,33 @@ int main()
         while (i == 0)
             read(paToChPipe[READ_PIPE_IDX], &i, sizeof(i));
         if (i < 4) /* Failed */
+        {
+            printf("FAILED\n");
             return -1;
+        }
+            
         log_write(logFileId, "Thread handlers is created\n");
-        while (1)
-            ;
+        while (1);
     }
-    else
+    else if (childPid > 0)
     {
         /* Parent: main */
         int i = 0;
+        my_addr.sin_family = AF_INET;
+        /* Change this ip address according to your machine */
+        my_addr.sin_addr.s_addr = INADDR_ANY; /* inet_addr("192.168.0.104") */
+        my_addr.sin_port = htons(12000);
+        /* Initialize socket */
+        serverSock = socket(AF_INET, SOCK_STREAM, 0);
+        if (serverSock < 0)
+        {
+            log_write(logFileId, "Error in creating server socket\n");
+            return -1;
+        }
+        else
+        {
+            log_write(logFileId, "Server is created\n");
+        }
         /* Establish pipe to child process */
         if (close(chToPaPipe[1]) == -1)
             log_write(logFileId, "close(chToPaPipe[1]) failed\n");
@@ -174,20 +175,18 @@ int main()
         {
             acc = accept(serverSock, (struct sockaddr *)&peer_addr, &addr_size);
             childPid = fork();
+            char ip[16];
             if (childPid == 0)
             {
                 /* New child */
                 printf("New Connection Established\n");
                 /* New process */
-                ProcessListType* newProcess = (ProcessListType *) malloc (sizeof(ProcessListType));
-                inet_ntop(AF_INET, &(peer_addr.sin_addr), newProcess->Ip, INET_ADDRSTRLEN);
-                newProcess->port = ntohs(peer_addr.sin_port);
-                newProcess->socketId = acc;
-                process_list_add(newProcess);
+                inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
+                //process_list_add(newProcess);
                 // "ntohs(peer_addr.sin_port)" function is
                 // for finding port number of client
                 printf("Connection established with IP : %s and PORT : %d\n",
-                   newProcess->Ip, newProcess->port);
+                   ip, ntohs(peer_addr.sin_port));
                 // recv(acc, &temp, sizeof(temp), 0);
                 // printf("Client : %f\n", temp);
                 strcpy(buffer1, "Hello");
@@ -213,3 +212,4 @@ int main()
 
     return 0;
 }
+    

@@ -5,9 +5,17 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <string.h>
+typedef struct ProcessListType{
+    struct ProcessListType *pre;
+    int processId;
+    char Ip[16];        /* 16 = INET_ADDRSTRLEN */
+    int port;
+    int socketId;
+    struct ProcessListType *next;
+}ProcessListType;
 
-#define SHARED_MEM_SIZE     100             /* the size (in bytes) of shared memory object */
-#define FILE_NAME           "phong_mmap"     /* name of the shared memory object */
+#define SHARED_MEM_SIZE     (200 *sizeof(ProcessListType))             /* the size (in bytes) of shared memory object */
+#define FILE_NAME           "SHARED_MEM"     /* name of the shared memory object */
 
 /**
  * 1. Tạo fd
@@ -33,7 +41,7 @@ int main()
      *                  
      *  @return Sau khi tạo thành công thì có thể thấy file liên kết với shared memory trong đường dẫn, -1 nếu lỗi.
      */
-    int fd = shm_open(FILE_NAME, O_RDWR, 0);
+    int fd = shm_open(FILE_NAME, O_RDWR, 0666);
     if (fd < 0) {
         printf("shm_open() is failed, %s.\n", strerror(errno));
         return -1;
@@ -80,9 +88,10 @@ int main()
      *          On error, the value MAP_FAILED (that is, (void *) -1) is returned, 
      *          and errno is set to indicate the cause of the error.
      */
-    char *data = (char *)mmap(0, SHARED_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
-    printf("%s: Read data: %s\n", __FILE__, data);
+    ProcessListType *data = (ProcessListType *)mmap(0, SHARED_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    int i=0;
+    for (i=0;i<=199;i++)
+        printf("%s: Read data[%d]: %s\n", __FILE__,i, data[i].Ip);
 
     /**
      * int munmap(void *addr, size_t length);
