@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -10,7 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "log.h"
-
+#include "process_list.h"
 /*******************************************************************/
 #define BUFF_SIZE                       256
 
@@ -38,13 +39,14 @@ char buffer1[BUFF_SIZE];
 /*******************************************************************/
 void *Receive(void *args)
 {
-    while (acc <= 0);
-    int check = read(acc, &temp, sizeof(temp));
-    while (check > 0)
-    {
-        check = recv(acc, &temp, sizeof(temp), 0);
-        log_write(logFileId, buffer);
-    }
+    // while (acc <= 0);
+    // int check = read(acc, &temp, sizeof(temp));
+    // while (check > 0)
+    // {
+    //     check = recv(acc, &temp, sizeof(temp), 0);
+    //     log_write(logFileId, buffer);
+    // }
+    while (1);
 }
 
 void *threadConnecFunc(void *args)
@@ -71,7 +73,7 @@ int main()
     my_addr.sin_family = AF_INET;
     my_addr.sin_addr.s_addr = INADDR_ANY;
     /* Change this ip address according to your machine */
-    my_addr.sin_addr.s_addr = inet_addr("192.168.0.106");
+    my_addr.sin_addr.s_addr = inet_addr("192.168.0.104");
     my_addr.sin_port = htons(12000);
     /* Create log file */
     logFileId = log_open();
@@ -171,19 +173,34 @@ int main()
         while (1)
         {
             acc = accept(serverSock, (struct sockaddr *)&peer_addr, &addr_size);
-            printf("New Connection Established\n");
-            char ip[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
+            childPid = fork();
+            if (childPid == 0)
+            {
+                /* New child */
+                printf("New Connection Established\n");
+                /* New process */
+                ProcessListType* newProcess = (ProcessListType *) malloc (sizeof(ProcessListType));
+                inet_ntop(AF_INET, &(peer_addr.sin_addr), newProcess->Ip, INET_ADDRSTRLEN);
+                newProcess->port = ntohs(peer_addr.sin_port);
+                newProcess->socketId = acc;
+                process_list_add(newProcess);
+                // "ntohs(peer_addr.sin_port)" function is
+                // for finding port number of client
+                printf("Connection established with IP : %s and PORT : %d\n",
+                   newProcess->Ip, newProcess->port);
+                // recv(acc, &temp, sizeof(temp), 0);
+                // printf("Client : %f\n", temp);
+                strcpy(buffer1, "Hello");
+                send(acc, buffer1, 256, 0);    // recv(acc, &temp, sizeof(temp), 0);
+                // printf("Client : %f\n", temp);
+                strcpy(buffer1, "Hello");
+                send(acc, buffer1, 256, 0);
+            }
+            else
+            {
 
-            // "ntohs(peer_addr.sin_port)" function is
-            // for finding port number of client
-            printf("Connection established with IP : %s and PORT : %d\n",
-                   ip, ntohs(peer_addr.sin_port));
-
-            // recv(acc, &temp, sizeof(temp), 0);
-            // printf("Client : %f\n", temp);
-            strcpy(buffer1, "Hello");
-            send(acc, buffer1, 256, 0);
+            }
+            
         }
 
         printf("%s\n", "end of parent");

@@ -5,7 +5,7 @@
 typedef struct ProcessListType{
     struct ProcessListType *pre;
     int processId;
-    char Ip[20];
+    char Ip[16];        /* 16 = INET_ADDRSTRLEN */
     int port;
     int socketId;
     struct ProcessListType *next;

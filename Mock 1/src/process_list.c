@@ -5,6 +5,7 @@
 
 /*******************************************************************/
 ProcessListType head, tail;
+int connectionCount = 0;
 /*******************************************************************/
 void process_list_init(void)
 {
@@ -12,7 +13,9 @@ void process_list_init(void)
     tail.pre = &head;
     tail.next = NULL;
     head.pre = NULL;
+    connectionCount = 0;
 }
+
 void process_list_add(ProcessListType *process)
 {
     if (head.next == &tail)
@@ -29,6 +32,7 @@ void process_list_add(ProcessListType *process)
         process->next = &tail;
         tail.pre = process;
     }
+    printf("Connection count = %d\n",connectionCount);
 }
 void process_list_remove(int processId)
 {
@@ -39,10 +43,11 @@ void process_list_remove(int processId)
     /* else */
     while (ptr != &tail)
     {
-        if (ptr->processId, processId)
+        if (ptr->processId == processId)
         {
             ptr->pre->next = ptr ->next;
             ptr->next->pre = ptr->pre;
+            free(ptr);
             return;
         }
         else
@@ -57,7 +62,7 @@ ProcessListType* process_list_find(int processId)
         return NULL;
     while (ptr != &tail)
     {
-        if (ptr->processId, processId)
+        if (ptr->processId == processId)
         {
             return ptr;
         }
