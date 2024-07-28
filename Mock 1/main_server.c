@@ -12,25 +12,31 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <signal.h>
+#include <sys/wait.h>
 #include "log.h"
 #include "process_list.h"
 /*******************************************************************/
+#define bool                            char
+#define TRUE                            1
+#define FALSE                           0
 #define SO_REUSEPORT                    15
 #define BUFF_SIZE                       256
 #define PORT                            10000
 #define READ_PIPE_IDX                   0
 #define WRITE_PIPE_IDX                  1
 /*******************************************************************/
-pthread_t thread;
+
 /*******************************************************************/
 float temp;
 int acc = 0;
 char buffer[1024] = {0};
 
+bool connectionAvail = FALSE;
 int logFileId;
 int serverSock;
 int chToPaPipe[2], paToChPipe[2];
-pthread_t threadConnect, threadData, threadStorage;
+pthread_t threadParent_Data, threadParent_Storage;
+pthread_t threadChild_Receive;
 socklen_t addr_size;
 /* For server connection */
 struct sockaddr_in my_addr, peer_addr;
@@ -39,38 +45,29 @@ int childPid;
 /*******************************************************************/
 void signalHandler_INT()
 {
-    printf("This is Ctrl + C\n");
+    printf("This is Ctrl + C, pid = %d\n", getpid());
     /* close all socket */
-    process_list_closeAll();
-    kill(childPid, 9);
+    process_list_closeSharedMemX(process_list_findSharedmemByPid(getpid()));
+    kill(getpid(), 9);
 }
 
 void signalHandler_CHLD()
 {
-    printf("Child is finish\n");
+    printf("Child is finish, child pid = %d\n",getpid());
     wait(NULL);
 }
 
-void *Receive(void *args)
+void *threadChild_ReceiveFunc(ProcessListType* arg)
 {
-    // while (acc <= 0);
-    // int check = read(acc, &temp, sizeof(temp));
-    // while (check > 0)
-    // {
-    //     check = recv(acc, &temp, sizeof(temp), 0);
-    //     log_write(logFileId, buffer);
-    // }
-    while (1);
+    int check = 1;
+    while (check > 0)
+    {
+        check = read( arg->socketId, &temp, sizeof(buffer));
+        printf("Host receives from IP %s, port %d: temp = %f\n", arg->Ip, arg->port, temp);
+    }
 }
 
-void *threadConnecFunc(void *args)
-{
-    // while (1)
-    // {
-    // }
-}
-
-void *threadDataFunc(void *args)
+void *threadParent_DataFunc(void *args)
 {
     /* Handling data manager*/
     // while (1)
@@ -78,7 +75,7 @@ void *threadDataFunc(void *args)
     // }
 }
 
-void *threadStorageFunc(void *args)
+void *threadParent_StorageFunc(void *args)
 {
     // while (1)
     // {
@@ -90,6 +87,7 @@ int main()
     memset(buffer1, 0, sizeof(buffer1));
     logFileId = log_open();
     /* Create pipe */
+    signal(SIGCHLD, signalHandler_CHLD);
     if (pipe(chToPaPipe) < 0)
     {
         log_write(logFileId, "chToPaPipe pipe is created unsuccessfully\n");
@@ -123,6 +121,9 @@ int main()
     {
         /* Child; log process */
         int i = 0;
+        
+        childPid = getpid();
+        printf("log pid: %d\n",getpid());
         /* Establish pipe to parent process */
         if (close(chToPaPipe[0]) == -1)
             log_write(logFileId, "close(chToPaPipe[0]) failed\n");
@@ -130,7 +131,7 @@ int main()
             log_write(logFileId, "close(paToChPipe[1]) failed\n");
         while (i == 0)
             read(paToChPipe[READ_PIPE_IDX], &i, sizeof(i));
-        if (i < 4) /* Failed */
+        if (i < 3) /* Failed */
         {
             printf("FAILED\n");
             return -1;
@@ -142,8 +143,8 @@ int main()
     {
         /* Parent: main */
         int i = 0;
-        signal(SIGINT, signalHandler_INT);
-        signal(SIGCHLD, signalHandler_CHLD);
+        childPid = getpid();
+        printf("parent pid: %d\n",getpid());
         /* Variable for socket */
         my_addr.sin_family = AF_INET;
         /* Change this ip address according to your machine */
@@ -191,55 +192,57 @@ int main()
             printf("Unable to listen\n");
 
         addr_size = sizeof(struct sockaddr_in);
-        if (pthread_create(&thread, NULL, &Receive, NULL) == 0)
-        {
-            printf("Receive thread is created\n");
-        }
         /* Create thread */
-        if (pthread_create(&threadConnect, NULL, threadConnecFunc, NULL) == 0)
+        if (pthread_create(&threadParent_Data, NULL, threadParent_DataFunc, NULL) == 0)
             i++;
-        if (pthread_create(&threadData, NULL, threadDataFunc, NULL) == 0)
-            i++;
-        if (pthread_create(&threadStorage, NULL, threadStorageFunc, NULL) == 0)
+        if (pthread_create(&threadParent_Storage, NULL, threadParent_StorageFunc, NULL) == 0)
             i++;
         i++;                                              /* Redundent check */
         write(paToChPipe[WRITE_PIPE_IDX], &i, sizeof(i)); /* inform child to continue */
-        if (i < 4)                                        /* FAIL */
+        if (i < 3)                                        /* FAIL */
             return -1;
         while (1)
         {
+            /* Thread connection */
             acc = accept(serverSock, (struct sockaddr *)&peer_addr, &addr_size);
             if (acc >= 0)
             {
-                printf("acc =%d\n",acc);
-                // childPid = fork();
-                // if (childPid == 0)
-                // {
+                int newChildPid;
+                newChildPid = fork();
+                if (newChildPid == 0)
+                {
+                    signal(SIGINT, signalHandler_INT);
                     char ip[16];
+                    ProcessListType newProcess;
+                    /* Cancle parent's thread */
+                    pthread_cancel(threadParent_Data);
+                    pthread_cancel(threadParent_Storage);
                     /* New child */
                     printf("New Connection Established\n");
                     /* New process */
-
                     inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
-                    //process_list_add(newProcess);
-                    // "ntohs(peer_addr.sin_port)" function is
-                    // for finding port number of client
-                    printf("Connection established with IP : %s and PORT : %d\n",
-                    ip, ntohs(peer_addr.sin_port));
-                    process_list_new(getpid(), ip, ntohs(peer_addr.sin_port), acc);
+                    printf("Connection established with IP : %s and PORT: %d, processId = %d\n",
+                                ip, ntohs(peer_addr.sin_port), getpid());
+                    newProcess = process_list_new(getpid(), ip, ntohs(peer_addr.sin_port), acc);
                     printf("Connection count = %d\n",process_list_connectionCount());
                     fflush(stdout);
-                // }
+                    /* Create new thread */
+                    if (pthread_create(&threadChild_Receive, NULL, 
+                                        threadChild_ReceiveFunc, &newProcess) == 0)
+                        printf("Create receive successfully\n");
+                    pthread_join(threadChild_Receive, NULL);
+                }
             }
             else
+            {
                 break;
+            }
         }
         printf("%s\n", "end of parent");
         
         /* wait */
-        pthread_join(threadConnect, NULL);
-        pthread_join(threadData, NULL);
-        pthread_join(threadStorage, NULL);
+        pthread_join(threadParent_Data, NULL);
+        pthread_join(threadParent_Storage, NULL);
         close(chToPaPipe[0]);
     }
     return 0;
