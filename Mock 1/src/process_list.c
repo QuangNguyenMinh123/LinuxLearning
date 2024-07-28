@@ -38,7 +38,7 @@ static inline intSharedMem* open_shared_memInt (char *File, int option)
 {
     int shm_fd = shm_open(File, option, 0666);
     if (shm_fd < 0) {
-        printf("shm_open() is failed\n");
+        printf("shm_open() %s is failed\n",File);
         return NULL;
     }
     ftruncate(shm_fd, sizeof(intSharedMem));
@@ -51,7 +51,7 @@ static inline ProcessListType* open_shared_memProcess (char *File, int option)
 { 
     int shm_fd = shm_open(File, option, 0666);
     if (shm_fd < 0) {
-        printf("shm_open() is failed\n");
+        printf("shm_open() %s is failed\n",File);
         return NULL;
     }
     ftruncate(shm_fd, sizeof(int));
@@ -123,35 +123,50 @@ ProcessListType* process_list_find(int processId)
     return NULL;
 }
 
+void process_list_closeSharedMemX(int x)
+{
+    char fileBuff[15];
+    sprintf(fileBuff,"shared_mem_%d",x);
+    munmap(open_shared_memProcess(fileBuff, O_RDWR)->self,
+                 sizeof(ProcessListType));
+    shm_unlink(fileBuff); 
+}
+
 void process_list_closeAll(void)
 {
-    int i= 0;
-    int a = 0;
-    ProcessListType *buffPt;
-    /* unmap shared mem */
+    char fileBuff[15];
+    /* shared_mem_x */
+    int i;
+    /* close server */
+    close(serverSockSave);
+    for (i = 1; i <= open_shared_memInt("shared_count", O_RDWR)->value; i ++)
+    {
+        sprintf(fileBuff,"shared_mem_%d",i);
+        munmap(open_shared_memProcess(fileBuff, O_RDWR)->self,
+                 sizeof(ProcessListType));
+        close(open_shared_memProcess(fileBuff, O_RDWR)->fileId);
+        close(open_shared_memProcess(fileBuff, O_RDWR)->socketId);
+        shm_unlink(fileBuff); 
+    }
+    // printf("Cleared all shared_mem\n");
+    /* shared_head */
+    munmap(open_shared_memProcess("shared_head", O_RDWR)->self,
+                 sizeof(ProcessListType));
+    shm_unlink("shared_head");
+    // printf("Cleared shared_head\n");
+    /* shared_tail */
+    munmap(open_shared_memProcess("shared_tail", O_RDWR)->self,
+                 sizeof(ProcessListType));
+    shm_unlink("shared_tail");
+    // printf("Cleared shared_tail\n");
+     /* unmap shared mem */
     munmap(open_shared_memInt("shared_count", O_RDWR)->fileId
                 , sizeof(int));
     munmap(open_shared_memInt("shared_key", O_RDWR)->fileId
                 , sizeof(int));
     shm_unlink("shared_count");
     shm_unlink("shared_key");
-    /* close server */
-    close(serverSockSave);
-    /*  */
-    ProcessListType * ptr = head->next;
-    printf("%d\n",i++);
-    printf("ptr->filename = %s\n",ptr->fileName);
-    printf("ptr->next->fileName = %s\n",ptr->next->fileName);
-    printf("ptr->fileId = %d\n",ptr->fileId);
-    while (strcmp(ptr->fileName, "shared_mem_7") != 0)
-    {
-        munmap(ptr->self, sizeof(ProcessListType));
-        printf("%d\n",100);
-        //shm_unlink(ptr->fileName);
-        buffPt = ptr->next;
-        printf("%d\n",101);
-        ptr = buffPt;
-        printf("%d\n",104);
-    }
+    // printf("Cleared count, key\n");
+    printf("Server is closed\n");
 }
 /*******************************************************************/

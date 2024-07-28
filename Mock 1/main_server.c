@@ -45,6 +45,12 @@ void signalHandler_INT()
     kill(childPid, 9);
 }
 
+void signalHandler_CHLD()
+{
+    printf("Child is finish\n");
+    wait(NULL);
+}
+
 void *Receive(void *args)
 {
     // while (acc <= 0);
@@ -59,24 +65,24 @@ void *Receive(void *args)
 
 void *threadConnecFunc(void *args)
 {
-    while (1)
-    {
-    }
+    // while (1)
+    // {
+    // }
 }
 
 void *threadDataFunc(void *args)
 {
     /* Handling data manager*/
-    while (1)
-    {
-    }
+    // while (1)
+    // {
+    // }
 }
 
 void *threadStorageFunc(void *args)
 {
-    while (1)
-    {
-    }
+    // while (1)
+    // {
+    // }
 }
 /*******************************************************************/
 int main()
@@ -137,6 +143,7 @@ int main()
         /* Parent: main */
         int i = 0;
         signal(SIGINT, signalHandler_INT);
+        signal(SIGCHLD, signalHandler_CHLD);
         /* Variable for socket */
         my_addr.sin_family = AF_INET;
         /* Change this ip address according to your machine */
@@ -202,29 +209,35 @@ int main()
         while (1)
         {
             acc = accept(serverSock, (struct sockaddr *)&peer_addr, &addr_size);
-            // childPid = fork();
-            // if (childPid == 0)
-            // {
-                char ip[16];
-                /* New child */
-                printf("New Connection Established\n");
-                /* New process */
+            if (acc >= 0)
+            {
+                printf("acc =%d\n",acc);
+                // childPid = fork();
+                // if (childPid == 0)
+                // {
+                    char ip[16];
+                    /* New child */
+                    printf("New Connection Established\n");
+                    /* New process */
 
-                inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
-                //process_list_add(newProcess);
-                // "ntohs(peer_addr.sin_port)" function is
-                // for finding port number of client
-                printf("Connection established with IP : %s and PORT : %d\n",
-                   ip, ntohs(peer_addr.sin_port));
-                process_list_new(getpid(), ip, ntohs(peer_addr.sin_port), acc);
-                printf("Connection count = %d\n",process_list_connectionCount());
-                fflush(stdout);
-            // }
+                    inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
+                    //process_list_add(newProcess);
+                    // "ntohs(peer_addr.sin_port)" function is
+                    // for finding port number of client
+                    printf("Connection established with IP : %s and PORT : %d\n",
+                    ip, ntohs(peer_addr.sin_port));
+                    process_list_new(getpid(), ip, ntohs(peer_addr.sin_port), acc);
+                    printf("Connection count = %d\n",process_list_connectionCount());
+                    fflush(stdout);
+                // }
+            }
+            else
+                break;
         }
-
         printf("%s\n", "end of parent");
-        pthread_join(threadConnect, NULL);
+        
         /* wait */
+        pthread_join(threadConnect, NULL);
         pthread_join(threadData, NULL);
         pthread_join(threadStorage, NULL);
         close(chToPaPipe[0]);
