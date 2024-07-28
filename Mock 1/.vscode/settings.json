@@ -16,7 +16,8 @@
         "string_view": "c",
         "cerrno": "c",
         "buffer": "c",
-        "socket": "c"
+        "socket": "c",
+        "time.h": "c"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.default.includePath": [

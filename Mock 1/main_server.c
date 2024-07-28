@@ -13,6 +13,8 @@
 #include <sys/socket.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+#include <time.h>
 #include "log.h"
 #include "process_list.h"
 /*******************************************************************/
@@ -31,12 +33,13 @@ float temp;
 int acc = 0;
 char buffer[1024] = {0};
 
-bool connectionAvail = FALSE;
+pthread_mutex_t mutexCheckConnect = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t condCheckConnect = PTHREAD_COND_INITIALIZER;
 int logFileId;
 int serverSock;
 int chToPaPipe[2], paToChPipe[2];
 pthread_t threadParent_Data, threadParent_Storage;
-pthread_t threadChild_Receive;
+pthread_t threadChild_Receive, threadChild_CheckConnect;
 socklen_t addr_size;
 /* For server connection */
 struct sockaddr_in my_addr, peer_addr;
@@ -57,6 +60,7 @@ void signalHandler_CHLD()
     wait(NULL);
 }
 
+
 void *threadChild_ReceiveFunc(ProcessListType* arg)
 {
     int check = 1;
@@ -65,6 +69,7 @@ void *threadChild_ReceiveFunc(ProcessListType* arg)
         check = read( arg->socketId, &temp, sizeof(buffer));
         printf("Host receives from IP %s, port %d: temp = %f\n", arg->Ip, arg->port, temp);
     }
+    printf("Disconnected from IP %s, port %d\n", arg->Ip, arg->port);
 }
 
 void *threadParent_DataFunc(void *args)
@@ -174,8 +179,6 @@ int main()
             printf("Failed to set SO_REUSEPORT option\n");
             return -1;
         }
-
-        /* Establish pipe to child process */
         if (close(chToPaPipe[1]) == -1)
             log_write(logFileId, "close(chToPaPipe[1]) failed\n");
         if (close(paToChPipe[0]) == -1)
@@ -227,8 +230,7 @@ int main()
                     printf("Connection count = %d\n",process_list_connectionCount());
                     fflush(stdout);
                     /* Create new thread */
-                    if (pthread_create(&threadChild_Receive, NULL, 
-                                        threadChild_ReceiveFunc, &newProcess) == 0)
+                    if (pthread_create(&threadChild_Receive, NULL, threadChild_ReceiveFunc, &newProcess) == 0)
                         printf("Create receive successfully\n");
                     pthread_join(threadChild_Receive, NULL);
                 }
