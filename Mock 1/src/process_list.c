@@ -7,46 +7,42 @@
 #include <string.h>
 #include "process_list.h"
 /*******************************************************************/
-typedef struct intSharedMem{
-    int value;
-    int fileId;
-    struct intSharedMem *self;
-} intSharedMem;
+
 /*******************************************************************/
 /* ls -l /dev/shm to check shared mem*/
-
+#define SHARED_MEM_COUNT        "shared_idx"
 #define SHARED_MEM_COUNT        "shared_count"
 #define START_COUNT_VALUE       5000
 /*******************************************************************/
 intSharedMem *count = 0;
-static inline intSharedMem* open_shared_memInt (char *File, int option);
+intSharedMem *Idx = 0;
 int serverSockSave = 0;
 /*******************************************************************/
 
 /*******************************************************************/
-static inline intSharedMem* open_shared_memInt (char *File, int option)
+intSharedMem* open_shared_memInt (char *File, int option)
 {
     int shm_fd = shm_open(File, option, 0666);
     if (shm_fd < 0) {
-        printf("shm_open() %s is failed\n",File);
         return NULL;
     }
     ftruncate(shm_fd, sizeof(intSharedMem));
-    intSharedMem *data = (intSharedMem *)mmap(0, sizeof(int), option, MAP_SHARED, shm_fd, 0);
+    intSharedMem *data = (intSharedMem *)mmap(0, sizeof(intSharedMem), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     data->fileId = shm_fd;
+    close(shm_fd);
     return data;
 }
 
-static inline ProcessListType* open_shared_memProcess (char *File, int option)
+ProcessListType* open_shared_memProcess (char *File, int option)
 { 
     int shm_fd = shm_open(File, option, 0666);
     if (shm_fd < 0) {
-        printf("shm_open() %s is failed\n",File);
         return NULL;
     }
-    ftruncate(shm_fd, sizeof(int));
-    ProcessListType *data = (ProcessListType *)mmap(0, sizeof(int), option, MAP_SHARED, shm_fd, 0);
+    ftruncate(shm_fd, sizeof(ProcessListType));
+    ProcessListType *data = (ProcessListType *)mmap(0, sizeof(ProcessListType), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     data->fileId = shm_fd;
+    close(shm_fd);
     return data;       
 }
 
@@ -55,24 +51,34 @@ int process_list_connectionCount(void)
     return (open_shared_memInt("shared_count", O_RDWR))->value;
 }
 
+int process_list_connectionIdx(void)
+{
+    return (open_shared_memInt("shared_idx", O_RDWR))->value;
+}
+
 void process_list_init(int serverSock)
 {
     serverSockSave = serverSock;
     /* FOR COUNT */
     count = open_shared_memInt("shared_count", O_CREAT | O_RDWR);
     count->value = 0;
+    /* FOR IDX */
+    Idx = open_shared_memInt("shared_idx", O_CREAT | O_RDWR);
+    Idx->value = 0;
 }
 
 ProcessListType process_list_new(int processId, char Ip[], int port, int socketId)
 {
     char *newSharedMemory = (char *) malloc (15 * sizeof(char));
     ProcessListType* newProcess;
-    int* save =  &open_shared_memInt("shared_count", O_RDWR)->value;
-    *save = *save + 1;
-    sprintf(newSharedMemory,"shared_mem_%d",process_list_connectionCount());
+    int* saveCount =  &open_shared_memInt("shared_count", O_RDWR)->value;
+    *saveCount = *saveCount + 1;
+    int* saveIdx =  &open_shared_memInt("shared_idx", O_RDWR)->value;
+    *saveIdx = *saveIdx + 1;
+    sprintf(newSharedMemory,"shared_mem_%d",process_list_connectionIdx());
     newProcess = open_shared_memProcess(newSharedMemory, O_CREAT | O_RDWR);
-    newProcess->shared_mem_count = *save;
-    printf("shared mem count = %d\n",newProcess->shared_mem_count);
+    newProcess->shared_mem_idx = *saveIdx;
+    sprintf(newProcess->fileName,newSharedMemory);
     strcpy(newProcess->Ip, Ip);
     newProcess->processId = processId;
     newProcess->port = port;
@@ -82,62 +88,75 @@ ProcessListType process_list_new(int processId, char Ip[], int port, int socketI
     return *newProcess;
 }
 
-void process_list_remove(int processId)
+void process_list_Disconnect(int x)
 {
-    
+    char fileName[15];
+    sprintf(fileName,"shared_mem_%d",x);
+    if (x <= 0)
+        return 0;
+    int shm_fd = shm_open(fileName, O_RDWR, 0666);
+    if (shm_fd < 0) {
+        return ;
+    }
+    ftruncate(shm_fd, sizeof(ProcessListType));
+    ProcessListType *data = (ProcessListType *)mmap(0, sizeof(ProcessListType), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    data->processId = -1;
+    int* saveCount =  &open_shared_memInt("shared_count", O_RDWR)->value;
+    *saveCount = *saveCount - 1;
+    close(shm_fd);
 }
 
 void process_list_closeSharedMemX(int x)
 {
-    char fileBuff[15];
-    int* save;
-    sprintf(fileBuff,"shared_mem_%d",x);
-    munmap(open_shared_memProcess(fileBuff, O_RDWR)->self, sizeof(ProcessListType));
-    close(open_shared_memProcess(fileBuff, O_RDWR)->fileId);
-    close(open_shared_memProcess(fileBuff, O_RDWR)->socketId);
-    shm_unlink(fileBuff);
-    save = &open_shared_memInt("shared_count", O_RDWR)->value;
-    //*save = *save - 1;
+    char fileName[15];
+    int* saveCount;
+    sprintf(fileName,"shared_mem_%d",x);
+    if (x <= 0)
+        return;
+    /* open shared mem */
+    int shm_fd = shm_open(fileName, O_RDWR, 0666);
+    if (shm_fd < 0) {
+        return ;
+    }
+    ftruncate(shm_fd, sizeof(ProcessListType));
+    ProcessListType *data = (ProcessListType *)mmap(0, sizeof(ProcessListType), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    munmap(data->fileId, sizeof(ProcessListType));
+    close(data->fileId);
+    close(data->socketId);
+    close(shm_fd);
+    shm_unlink(fileName);
+    saveCount = &open_shared_memInt("shared_count", O_RDWR)->value;
+    *saveCount = *saveCount - 1;
 }
 
 int process_list_findSharedmemByPid(int pid)
 {
     int i;
-    int countSave = open_shared_memInt("shared_count", O_RDWR)->value;
+    int maxIdx = process_list_connectionIdx();
     char fileBuff[15];
-    printf("Finding PID: %d\n",pid);
-    printf("countSave = %d\n",countSave);
-    for (i = 1; i <= countSave; i ++)
+    for (i = 1; i <= maxIdx; i ++)
     {
         sprintf(fileBuff,"shared_mem_%d",i);
-        printf("File opening: %s\n",fileBuff);
-        printf("PID found: %d\n",open_shared_memProcess(fileBuff, O_RDWR)->processId);
-        printf("memcount: %d\n",open_shared_memProcess(fileBuff, O_RDWR)->shared_mem_count);
-        if (open_shared_memProcess(fileBuff, O_RDWR)->processId == pid)
-        {
-            printf("found 123:%d", open_shared_memProcess(fileBuff, O_RDWR)->shared_mem_count);
-            return open_shared_memProcess(fileBuff, O_RDWR)->shared_mem_count;
-        }
+        if (open_shared_memProcess(fileBuff, O_RDWR) != NULL)
+            if (open_shared_memProcess(fileBuff, O_RDWR)->processId == pid)
+            {
+                return open_shared_memProcess(fileBuff, O_RDWR)->shared_mem_idx;
+            }
     }
     return -1;
 }
 
 void process_list_closeAll(void)
 {
-    char fileBuff[15];
-    /* shared_mem_x */
-    int i;
     /* close server */
     close(serverSockSave);
-    for (i = 1; i <= open_shared_memInt("shared_count", O_RDWR)->value; i ++)
-    {
-        process_list_closeSharedMemX(i);
-    }
-    // printf("Cleared all shared_mem\n");
-     /* unmap shared mem */
-    munmap(open_shared_memInt("shared_count", O_RDWR)->fileId, sizeof(int));
+    /* unmap shared mem */
+    munmap(open_shared_memInt("shared_count", O_RDWR)->fileId, sizeof(intSharedMem));
     shm_unlink("shared_count");
+    /* unmap shared mem */
+    munmap(open_shared_memInt("shared_idx", O_RDWR)->fileId, sizeof(intSharedMem));
+    shm_unlink("shared_idx");
     // printf("Cleared count\n");
-    printf("Server is closed\n");
+    printf("\nServer is manually shutdown\n");
 }
 /*******************************************************************/

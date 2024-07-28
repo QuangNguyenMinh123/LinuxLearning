@@ -17,7 +17,8 @@
         "cerrno": "c",
         "buffer": "c",
         "socket": "c",
-        "time.h": "c"
+        "time.h": "c",
+        "io_context": "c"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.default.includePath": [

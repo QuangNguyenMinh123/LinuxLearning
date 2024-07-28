@@ -44,14 +44,19 @@ socklen_t addr_size;
 /* For server connection */
 struct sockaddr_in my_addr, peer_addr;
 char buffer1[BUFF_SIZE];
-int childPid;
+int logPid, parentPid;
 /*******************************************************************/
 void signalHandler_INT()
 {
-    printf("This is Ctrl + C, pid = %d\n", getpid());
-    /* close all socket */
-    process_list_closeSharedMemX(process_list_findSharedmemByPid(getpid()));
-    kill(getpid(), 9);
+    if (parentPid != getpid())
+    {
+        /* close all socket */
+        process_list_closeSharedMemX(process_list_findSharedmemByPid(getpid()));
+        pthread_cancel(threadChild_Receive);
+        kill(getpid(), 9);
+    }
+    else
+        process_list_closeAll();
 }
 
 void signalHandler_CHLD()
@@ -66,10 +71,12 @@ void *threadChild_ReceiveFunc(ProcessListType* arg)
     int check = 1;
     while (check > 0)
     {
-        check = read( arg->socketId, &temp, sizeof(buffer));
+        check = read( arg->socketId, &temp, sizeof(temp));
         printf("Host receives from IP %s, port %d: temp = %f\n", arg->Ip, arg->port, temp);
     }
     printf("Disconnected from IP %s, port %d\n", arg->Ip, arg->port);
+    process_list_closeSharedMemX(process_list_findSharedmemByPid(getpid()));
+    printf("Remaining connection = %d\n",process_list_connectionCount());
 }
 
 void *threadParent_DataFunc(void *args)
@@ -89,10 +96,11 @@ void *threadParent_StorageFunc(void *args)
 /*******************************************************************/
 int main()
 {
+    int childPid;
     memset(buffer1, 0, sizeof(buffer1));
     logFileId = log_open();
     /* Create pipe */
-    signal(SIGCHLD, signalHandler_CHLD);
+    parentPid = getpid();
     if (pipe(chToPaPipe) < 0)
     {
         log_write(logFileId, "chToPaPipe pipe is created unsuccessfully\n");
@@ -126,9 +134,8 @@ int main()
     {
         /* Child; log process */
         int i = 0;
-        
-        childPid = getpid();
-        printf("log pid: %d\n",getpid());
+        printf("log pid = %d\n", getpid());
+        signal(SIGCHLD, signalHandler_CHLD);
         /* Establish pipe to parent process */
         if (close(chToPaPipe[0]) == -1)
             log_write(logFileId, "close(chToPaPipe[0]) failed\n");
@@ -142,14 +149,14 @@ int main()
             return -1;
         }
         log_write(logFileId, "Thread handlers is created\n");
-        while (1);
     }
     else if (childPid > 0)
     {
         /* Parent: main */
+        signal(SIGINT, signalHandler_INT);
         int i = 0;
+        printf("parent pid = %d\n", getpid());
         childPid = getpid();
-        printf("parent pid: %d\n",getpid());
         /* Variable for socket */
         my_addr.sin_family = AF_INET;
         /* Change this ip address according to your machine */
@@ -214,7 +221,8 @@ int main()
                 newChildPid = fork();
                 if (newChildPid == 0)
                 {
-                    signal(SIGINT, signalHandler_INT);
+                    printf("child pid = %d\n", getpid());
+                    
                     char ip[16];
                     ProcessListType newProcess;
                     /* Cancle parent's thread */
@@ -246,6 +254,7 @@ int main()
         pthread_join(threadParent_Data, NULL);
         pthread_join(threadParent_Storage, NULL);
         close(chToPaPipe[0]);
+        
     }
     return 0;
 }
