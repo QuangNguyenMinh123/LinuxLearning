@@ -14,7 +14,9 @@
         "array": "c",
         "string": "c",
         "string_view": "c",
-        "cerrno": "c"
+        "cerrno": "c",
+        "buffer": "c",
+        "socket": "c"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.default.includePath": [

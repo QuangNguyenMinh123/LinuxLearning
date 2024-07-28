@@ -60,18 +60,21 @@ int main(int argc, char const* argv[])
 	/* listen for connections */
     printf("Waiting for connection...\n");
 	listen(servSockD, 100);
-	clientSocket = accept(servSockD, NULL, NULL);
-    write(clientSocket, serMsg, sizeof(serMsg));
-    disconnect = FALSE;
-    printf("Connected to client\n");
-    keyboard_input_init(serMsg);
-    if (pthread_create(&threadSend,NULL,serverSend,NULL) == 0)
+    while (1)
     {
-        printf("Server sending thread is created\n");
-    }
-    if (pthread_create(&threadReceive,NULL,serverReceive,NULL) == 0)
-    {
-        printf("Server receiving thread is created\n");
+        clientSocket = accept(servSockD, NULL, NULL);
+        write(clientSocket, serMsg, sizeof(serMsg));
+        disconnect = FALSE;
+        printf("Connected to client\n");
+        keyboard_input_init(serMsg);
+        if (pthread_create(&threadSend,NULL,serverSend,NULL) == 0)
+        {
+            printf("Server sending thread is created\n");
+        }
+        if (pthread_create(&threadReceive,NULL,serverReceive,NULL) == 0)
+        {
+            printf("Server receiving thread is created\n");
+        }
     }
     pthread_join(threadReceive,NULL);
     pthread_join(threadSend,NULL);

@@ -2,9 +2,7 @@
 #define _PROCESS_LIST_H
 #include <pthread.h>
 /*******************************************************************/
-#define CLIENT_MAX              100
-#define SHARED_MEM_SIZE         (CLIENT_MAX * sizeof(ProcessListType))
-#define SERVER_PROCESS_FILE     "SERVER_PROCESS"
+
 /*******************************************************************/
 typedef struct ProcessListType{
     struct ProcessListType *pre;
@@ -12,13 +10,18 @@ typedef struct ProcessListType{
     char Ip[16];        /* 16 = INET_ADDRSTRLEN */
     int port;
     int socketId;
+    int fileId;
+    char fileName[15];
+    struct ProcessListType *self;
     struct ProcessListType *next;
+
 }ProcessListType;
 /*******************************************************************/
-void process_list_init(void);
+void process_list_init(int serverSock);
 void process_list_new(int processId, char Ip[], int port, int socketId);
 void process_list_remove(int processId);
 ProcessListType* process_list_find(int processId);
 int process_list_connectionCount(void);
+void process_list_closeAll(void);
 /*******************************************************************/
 #endif
