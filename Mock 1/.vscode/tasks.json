@@ -15,6 +15,7 @@
                 "${fileDirname}/src/log.c",
                 "${fileDirname}/src/random.c",
                 "${fileDirname}/src/process_list.c",
+                "${fileDirname}/src/sql.c",
                 "-pthread"
             ],
             "options": {

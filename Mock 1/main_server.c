@@ -15,12 +15,10 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <time.h>
+#include <sys/select.h>
 #include "log.h"
 #include "process_list.h"
 /*******************************************************************/
-#define bool                            char
-#define TRUE                            1
-#define FALSE                           0
 #define SO_REUSEPORT                    15
 #define BUFF_SIZE                       256
 #define PORT                            10000
@@ -51,7 +49,6 @@ void signalHandler_INT()
     if (parentPid != getpid())
     {
         /* close all socket */
-        process_list_closeSharedMemX(process_list_findSharedmemByPid(getpid()));
         pthread_cancel(threadChild_Receive);
         kill(getpid(), 9);
     }
@@ -65,17 +62,16 @@ void signalHandler_CHLD()
     wait(NULL);
 }
 
-
 void *threadChild_ReceiveFunc(ProcessListType* arg)
 {
-    int check = 1;
-    while (check > 0)
+    float check = process_list_readDataFromNode(arg->Idx);
+    sleep(1);
+    while (check >= 0.0)
     {
-        check = read( arg->socketId, &temp, sizeof(temp));
-        printf("Host receives from IP %s, port %d: temp = %f\n", arg->Ip, arg->port, temp);
+        check = process_list_readDataFromNode(arg->Idx);
     }
     printf("Disconnected from IP %s, port %d\n", arg->Ip, arg->port);
-    process_list_closeSharedMemX(process_list_findSharedmemByPid(getpid()));
+    process_list_Disconnect(process_list_findIdxByPid(getpid()));
     printf("Remaining connection = %d\n",process_list_connectionCount());
 }
 
@@ -218,33 +214,25 @@ int main()
             acc = accept(serverSock, (struct sockaddr *)&peer_addr, &addr_size);
             if (acc >= 0)
             {
-                int newChildPid;
-                newChildPid = fork();
-                if (newChildPid == 0)
-                {
-                    printf("child pid = %d\n", getpid());
-                    
-                    char ip[16];
-                    ProcessListType newProcess;
-                    /* Cancle parent's thread */
-                    pthread_cancel(threadParent_Data);
-                    pthread_cancel(threadParent_Storage);
-                    /* New child */
-                    printf("New Connection Established\n");
-                    /* New process */
-                    inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
-                    printf("Connection established with IP : %s and PORT: %d, processId = %d\n",
-                                ip, ntohs(peer_addr.sin_port), getpid());
-                    newProcess = process_list_new(getpid(), ip, ntohs(peer_addr.sin_port), acc);
-                    printf("Connection count = %d\n",process_list_connectionCount());
-                    fflush(stdout);
-                    /* Create new thread */
-                    if (pthread_create(&threadChild_Receive, NULL, threadChild_ReceiveFunc, &newProcess) == 0)
-                        printf("Create receive successfully\n");
-                    pthread_join(threadChild_Receive, NULL);
-                    printf("process %d is finished \n",getpid());
-                    break;
-                }
+                char ip[16];
+                ProcessListType newProcess;
+                /* Cancle parent's thread */
+                pthread_cancel(threadParent_Data);
+                pthread_cancel(threadParent_Storage);
+                /* New child */
+                printf("New Connection Established\n");
+                /* New process */
+                inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
+                printf("Connection established with IP : %s and PORT: %d, processId = %d\n",
+                            ip, ntohs(peer_addr.sin_port), getpid());
+                newProcess = process_list_new(getpid(), ip, ntohs(peer_addr.sin_port), acc);
+                printf("Connection count = %d\n",process_list_connectionCount());
+                fflush(stdout);
+                /* Create new thread */
+                if (pthread_create(&threadChild_Receive, NULL, threadChild_ReceiveFunc, &newProcess) == 0)
+                     printf("Create receive successfully\n");
+                pthread_join(threadChild_Receive, NULL);
+                printf("process %d is finished \n",getpid());
             }
             else
             {
