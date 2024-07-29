@@ -99,6 +99,7 @@ int main()
     int childPid;
     memset(buffer1, 0, sizeof(buffer1));
     logFileId = log_open();
+    signal(SIGCHLD, signalHandler_CHLD);
     /* Create pipe */
     parentPid = getpid();
     if (pipe(chToPaPipe) < 0)
@@ -241,6 +242,8 @@ int main()
                     if (pthread_create(&threadChild_Receive, NULL, threadChild_ReceiveFunc, &newProcess) == 0)
                         printf("Create receive successfully\n");
                     pthread_join(threadChild_Receive, NULL);
+                    printf("process %d is finished \n",getpid());
+                    break;
                 }
             }
             else
