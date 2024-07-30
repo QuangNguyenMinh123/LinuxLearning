@@ -18,7 +18,11 @@
         "buffer": "c",
         "socket": "c",
         "time.h": "c",
-        "io_context": "c"
+        "io_context": "c",
+        "signal.h": "c",
+        "string.h": "c",
+        "executor": "c",
+        "mutex": "c"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.default.includePath": [

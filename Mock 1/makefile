@@ -34,7 +34,7 @@ build_client: $(OBJ_FILES) main_client.o
 	@$(COMPILER) $(PATH_CLIENT_OBJS) -o $(BIN_DIR)/client
 
 build_server: $(OBJ_FILES) main_server.o
-	@$(COMPILER) $(PATH_SERVER_OBJS) -o $(BIN_DIR)/server -pthread
+	@$(COMPILER) $(PATH_SERVER_OBJS) -o $(BIN_DIR)/server -pthread -fno-stack-protector
 
 %.o: %.c $(INC_FILES)
 	@$(COMPILER) -I$(INC_DIR) -c $< -o $(OBJ_DIR)/$@

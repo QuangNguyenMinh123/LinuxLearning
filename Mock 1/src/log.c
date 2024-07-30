@@ -19,6 +19,7 @@ int log_open(void)
     pthread_mutex_init(&mutexFileLog, NULL);
     return open(LOG_FILE_PATH, O_CREAT | O_RDWR | O_APPEND, 0777);
 }
+
 void log_write(int fileIndex, char* str)
 {
     pthread_mutex_lock(&mutexFileLog);

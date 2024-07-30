@@ -14,8 +14,9 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include <time.h>
+#include <pthread.h>
 #include <sys/select.h>
+#include <poll.h>
 #include "log.h"
 #include "process_list.h"
 /*******************************************************************/
@@ -28,32 +29,38 @@
 
 /*******************************************************************/
 float temp;
-int acc = 0;
+int socketId = 0;
 char buffer[1024] = {0};
 
-pthread_mutex_t mutexCheckConnect = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutexPass = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t conPass = PTHREAD_COND_INITIALIZER;
 pthread_cond_t condCheckConnect = PTHREAD_COND_INITIALIZER;
 int logFileId;
 int serverSock;
 int chToPaPipe[2], paToChPipe[2];
 pthread_t threadParent_Data, threadParent_Storage;
-pthread_t threadChild_Receive, threadChild_CheckConnect;
 socklen_t addr_size;
 /* For server connection */
 struct sockaddr_in my_addr, peer_addr;
 char buffer1[BUFF_SIZE];
+bool terminate = FALSE;
 int logPid, parentPid;
+int nodeIdxPassing;
+ConnectionType* threadStorage;
+float avgTemp = 0, avgSum = 0;
 /*******************************************************************/
 void signalHandler_INT()
 {
     if (parentPid != getpid())
     {
-        /* close all socket */
-        pthread_cancel(threadChild_Receive);
+        printf("this pid:%d\n",getpid());
         kill(getpid(), 9);
     }
     else
-        process_list_closeAll();
+    {
+        terminate = TRUE;
+    }
+        
 }
 
 void signalHandler_CHLD()
@@ -62,25 +69,26 @@ void signalHandler_CHLD()
     wait(NULL);
 }
 
-void *threadChild_ReceiveFunc(ProcessListType* arg)
-{
-    float check = process_list_readDataFromNode(arg->Idx);
-    sleep(1);
-    while (check >= 0.0)
-    {
-        check = process_list_readDataFromNode(arg->Idx);
-    }
-    printf("Disconnected from IP %s, port %d\n", arg->Ip, arg->port);
-    process_list_Disconnect(process_list_findIdxByPid(getpid()));
-    printf("Remaining connection = %d\n",process_list_connectionCount());
-}
-
-void *threadParent_DataFunc(void *args)
+void *threadParent_DataFunc(int * nodeIdx)
 {
     /* Handling data manager*/
-    // while (1)
-    // {
-    // }
+    int cnt = 0;
+    float data = 0;
+    int checkCnt;
+    while (terminate == FALSE)
+    {
+        pthread_mutex_lock(&mutexPass);
+        pthread_cond_wait(&conPass, &mutexPass);
+        checkCnt = process_list_ReadData(*nodeIdx, &data);
+        pthread_mutex_unlock(&mutexPass);
+        if (checkCnt == 1)
+        {
+            avgSum += data;
+            cnt++;
+            avgTemp = avgSum / cnt;
+            printf("temp read: %f\tavg temp: %f\n", data, avgTemp);
+        }
+    }
 }
 
 void *threadParent_StorageFunc(void *args)
@@ -96,6 +104,7 @@ int main()
     memset(buffer1, 0, sizeof(buffer1));
     logFileId = log_open();
     signal(SIGCHLD, signalHandler_CHLD);
+    signal(SIGINT, signalHandler_INT);
     /* Create pipe */
     parentPid = getpid();
     if (pipe(chToPaPipe) < 0)
@@ -132,7 +141,6 @@ int main()
         /* Child; log process */
         int i = 0;
         printf("log pid = %d\n", getpid());
-        signal(SIGCHLD, signalHandler_CHLD);
         /* Establish pipe to parent process */
         if (close(chToPaPipe[0]) == -1)
             log_write(logFileId, "close(chToPaPipe[0]) failed\n");
@@ -146,14 +154,18 @@ int main()
             return -1;
         }
         log_write(logFileId, "Thread handlers is created\n");
+        // while (1)
+        // {
+        //     /* wait for command */
+        // }
     }
     else if (childPid > 0)
     {
         /* Parent: main */
-        signal(SIGINT, signalHandler_INT);
         int i = 0;
         printf("parent pid = %d\n", getpid());
         childPid = getpid();
+        pthread_mutex_init(&mutexPass, NULL);
         /* Variable for socket */
         my_addr.sin_family = AF_INET;
         /* Change this ip address according to your machine */
@@ -200,51 +212,69 @@ int main()
 
         addr_size = sizeof(struct sockaddr_in);
         /* Create thread */
-        if (pthread_create(&threadParent_Data, NULL, threadParent_DataFunc, NULL) == 0)
+        if (pthread_create(&threadParent_Data, NULL, threadParent_DataFunc, &nodeIdxPassing) == 0)
             i++;
-        if (pthread_create(&threadParent_Storage, NULL, threadParent_StorageFunc, NULL) == 0)
+        if (pthread_create(&threadParent_Storage, NULL, threadParent_StorageFunc, threadStorage) == 0)
             i++;
         i++;                                              /* Redundent check */
         write(paToChPipe[WRITE_PIPE_IDX], &i, sizeof(i)); /* inform child to continue */
         if (i < 3)                                        /* FAIL */
             return -1;
-        while (1)
+        struct pollfd pollfds;
+        pollfds.fd = serverSock;
+        pollfds.events = POLLIN | POLLPRI;
+        int useClient = 0;
+        while (terminate == FALSE)
         {
             /* Thread connection */
-            acc = accept(serverSock, (struct sockaddr *)&peer_addr, &addr_size);
-            if (acc >= 0)
+            int pollResult = poll(&pollfds, useClient + 1, 1);
+            if (pollResult > 0)
             {
-                char ip[16];
-                ProcessListType newProcess;
-                /* Cancle parent's thread */
-                pthread_cancel(threadParent_Data);
-                pthread_cancel(threadParent_Storage);
-                /* New child */
-                printf("New Connection Established\n");
-                /* New process */
-                inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
-                printf("Connection established with IP : %s and PORT: %d, processId = %d\n",
-                            ip, ntohs(peer_addr.sin_port), getpid());
-                newProcess = process_list_new(getpid(), ip, ntohs(peer_addr.sin_port), acc);
-                printf("Connection count = %d\n",process_list_connectionCount());
-                fflush(stdout);
-                /* Create new thread */
-                if (pthread_create(&threadChild_Receive, NULL, threadChild_ReceiveFunc, &newProcess) == 0)
-                     printf("Create receive successfully\n");
-                pthread_join(threadChild_Receive, NULL);
-                printf("process %d is finished \n",getpid());
-            }
-            else
-            {
-                break;
+                if (pollfds.revents & POLLIN)
+                {
+                    char ip[16];
+                    socketId = accept(serverSock, (struct sockaddr *)&peer_addr, &addr_size);
+                    printf("New Connection Established\n");
+                    inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
+                    printf("Connection established with IP : %s and PORT: %d\n",
+                                ip, ntohs(peer_addr.sin_port));
+                    process_list_new(ip, ntohs(peer_addr.sin_port), socketId);
+                    printf("Connection count = %d\n",process_list_connectionCount());
+                    fflush(stdout);
+                    useClient++;
+                }
+                else
+                {
+                    for (int i = 1; i < process_list_connectionIdx(); i ++)
+                    {
+                        float data;
+                        if (process_list_checkConnect(i) == TRUE)
+                        {
+                            int buffCnt = process_list_readDataFromNode(i, &data);
+                            if (buffCnt  <= 0)
+                            {
+                                pollfds.revents = 0;
+                                useClient--;
+                                process_list_Disconnect(i);
+                            }
+                            {
+                                process_list_WriteData(i, data);
+                                pthread_mutex_lock(&mutexPass);
+                                nodeIdxPassing = i;
+                                pthread_cond_signal(&conPass);
+                                pthread_mutex_unlock(&mutexPass);
+                            }
+                        }
+                    }
+                }
             }
         }
-        printf("%s\n", "end of parent");
-        
         /* wait */
         pthread_join(threadParent_Data, NULL);
         pthread_join(threadParent_Storage, NULL);
         close(chToPaPipe[0]);
+        printf("%s\n", "end of parent");
+        process_list_closeAll();
         
     }
     return 0;

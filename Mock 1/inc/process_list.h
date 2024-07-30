@@ -6,34 +6,29 @@
 #define TRUE                            1
 #define FALSE                           0
 /*******************************************************************/
-typedef struct intSharedMem{
-    int value;
-    int fileId;
-    struct intSharedMem *self;
-} intSharedMem;
-
-typedef struct ProcessListType{
+typedef struct ConnectionType{
     int pre;
-    int processId;
     char Ip[16];        /* 16 = INET_ADDRSTRLEN */
     int port;
     int socketId;
-    int fileId;
+    struct ConnectionType* self;
     int Idx;
+    bool Connected;
     bool newData;
     float temp;
     int next;
-}ProcessListType;
+}ConnectionType;
 /*******************************************************************/
 void process_list_init(int serverSock);
-ProcessListType process_list_new(int processId, char* Ip, int port, int socketId);
-ProcessListType* process_list_find(int processId);
+ConnectionType process_list_new(char* Ip, int port, int socketId);
 int process_list_connectionCount(void);
 void process_list_closeAll(void);
-int process_list_findIdxByPid(int pid);
-ProcessListType* open_shared_memProcess(void);
-intSharedMem* open_shared_memInt (char *File, int option);
+ConnectionType* open_shared_memProcess(void);
 void process_list_Disconnect(int x);
-float process_list_readDataFromNode(int nodex);
+int process_list_readDataFromNode(int nodex, float *buff);
+int process_list_connectionIdx(void);
+bool process_list_checkConnect(int nodex);
+void process_list_WriteData(int nodex, float data);
+int process_list_ReadData(int nodex, float *data);
 /*******************************************************************/
 #endif
