@@ -257,6 +257,7 @@ int main()
                                 useClient--;
                                 process_list_Disconnect(i);
                             }
+                            else
                             {
                                 process_list_WriteData(i, data);
                                 pthread_mutex_lock(&mutexPass);
