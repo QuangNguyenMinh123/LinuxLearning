@@ -10,7 +10,7 @@
 /*******************************************************************/
 #define TRUE            1
 #define FALSE           0
-#define PORT            2000
+#define PORT            10000
 /*******************************************************************/
 char bufReceive[255] = {0};
 pthread_t threadSend, threadReceive;
