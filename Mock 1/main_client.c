@@ -69,9 +69,7 @@ int main(int argc, char const* argv[])
     while (disconnect == FALSE)
     {
         sum = temperature * 100 + increase;
-        printf("1\n");
         write(sockD, &sum, sizeof(sum));
-        printf("2\n");
         printf("Client sends: %f\n",sum);
         increase ++;
         sleep(1);
