@@ -23,7 +23,6 @@ void process_list_init(int serverSock);
 ConnectionType process_list_new(char* Ip, int port, int socketId);
 int process_list_connectionCount(void);
 void process_list_closeAll(void);
-ConnectionType* open_shared_memProcess(void);
 void process_list_Disconnect(int x);
 int process_list_readDataFromNode(int nodex, float *buff);
 int process_list_connectionIdx(void);

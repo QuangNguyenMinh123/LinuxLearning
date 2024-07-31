@@ -34,7 +34,6 @@ char buffer[1024] = {0};
 
 pthread_mutex_t mutexPass = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t conPass = PTHREAD_COND_INITIALIZER;
-pthread_cond_t condCheckConnect = PTHREAD_COND_INITIALIZER;
 int logFileId;
 int serverSock;
 int chToPaPipe[2], paToChPipe[2];
@@ -44,28 +43,24 @@ socklen_t addr_size;
 struct sockaddr_in my_addr, peer_addr;
 char buffer1[BUFF_SIZE];
 bool terminate = FALSE;
-int logPid, parentPid;
+int parentPid = 0;
 int nodeIdxPassing;
 ConnectionType* threadStorage;
 float avgTemp = 0, avgSum = 0;
 /*******************************************************************/
 void signalHandler_INT()
 {
-    if (parentPid != getpid())
+    if (parentPid != getgid())
     {
         printf("this pid:%d\n",getpid());
-        kill(getpid(), 9);
-    }
-    else
-    {
         terminate = TRUE;
+        pthread_cond_signal(&conPass);
+        pthread_mutex_unlock(&mutexPass);
     }
-        
 }
 
 void signalHandler_CHLD()
 {
-    printf("Child is finish, child pid = %d\n",getpid());
     wait(NULL);
 }
 
@@ -89,6 +84,7 @@ void *threadParent_DataFunc(int * nodeIdx)
             printf("temp read: %f\tavg temp: %f\n", data, avgTemp);
         }
     }
+    printf("end of thread\n");
 }
 
 void *threadParent_StorageFunc(void *args)
@@ -103,8 +99,8 @@ int main()
     int childPid;
     memset(buffer1, 0, sizeof(buffer1));
     logFileId = log_open();
-    signal(SIGCHLD, signalHandler_CHLD);
     signal(SIGINT, signalHandler_INT);
+    
     /* Create pipe */
     parentPid = getpid();
     if (pipe(chToPaPipe) < 0)
@@ -140,6 +136,7 @@ int main()
     {
         /* Child; log process */
         int i = 0;
+        
         printf("log pid = %d\n", getpid());
         /* Establish pipe to parent process */
         if (close(chToPaPipe[0]) == -1)
@@ -154,18 +151,23 @@ int main()
             return -1;
         }
         log_write(logFileId, "Thread handlers is created\n");
-        // while (1)
-        // {
-        //     /* wait for command */
-        // }
+        while (terminate == FALSE)
+        {
+            /* wait for command */
+        }
+        printf("end of log\n");
     }
     else if (childPid > 0)
     {
         /* Parent: main */
         int i = 0;
+        signal(SIGCHLD, signalHandler_CHLD);
         printf("parent pid = %d\n", getpid());
-        childPid = getpid();
+        parentPid = getpid();
         pthread_mutex_init(&mutexPass, NULL);
+        pthread_cond_init(&conPass, NULL);
+        if (pthread_cond_init(&conPass, NULL) != 0)
+            printf("Error while creating cond variable\n");
         /* Variable for socket */
         my_addr.sin_family = AF_INET;
         /* Change this ip address according to your machine */
@@ -205,7 +207,7 @@ int main()
         else
             printf("Unable to bind\n");
         write(paToChPipe[WRITE_PIPE_IDX], &i, sizeof(i));
-        if (listen(serverSock, 3) == 0)
+        if (listen(serverSock, 1) == 0)
             printf("Listening ...\n");
         else
             printf("Unable to listen\n");
@@ -219,7 +221,10 @@ int main()
         i++;                                              /* Redundent check */
         write(paToChPipe[WRITE_PIPE_IDX], &i, sizeof(i)); /* inform child to continue */
         if (i < 3)                                        /* FAIL */
+        {
+            printf("FAILED\n");
             return -1;
+        }
         struct pollfd pollfds;
         pollfds.fd = serverSock;
         pollfds.events = POLLIN | POLLPRI;
@@ -251,32 +256,42 @@ int main()
                         if (process_list_checkConnect(i) == TRUE)
                         {
                             int buffCnt = process_list_readDataFromNode(i, &data);
-                            if (buffCnt  <= 0)
+                            if (data > -500 || buffCnt == 0)
                             {
-                                pollfds.revents = 0;
-                                useClient--;
-                                process_list_Disconnect(i);
-                            }
-                            else
-                            {
-                                process_list_WriteData(i, data);
-                                pthread_mutex_lock(&mutexPass);
-                                nodeIdxPassing = i;
-                                pthread_cond_signal(&conPass);
-                                pthread_mutex_unlock(&mutexPass);
+                                if (buffCnt < -1)       /* Nodata*/
+                                {
+                                    buffCnt = 1;
+                                }
+                                else if (buffCnt == 0)  /* Disconnected */
+                                {
+                                    pollfds.revents = 0;
+                                    useClient--;
+                                    process_list_Disconnect(i);
+                                }
+                                else
+                                {
+                                    process_list_WriteData(i, data);
+                                    pthread_mutex_lock(&mutexPass);
+                                    nodeIdxPassing = i;
+                                    pthread_cond_signal(&conPass);
+                                    pthread_mutex_unlock(&mutexPass);
+                                }
                             }
                         }
                     }
                 }
+                pollResult = 0;
             }
         }
+        printf("parent end\n");
         /* wait */
+        pthread_mutex_destroy(&mutexPass);
+        pthread_cond_destroy(&conPass);
         pthread_join(threadParent_Data, NULL);
         pthread_join(threadParent_Storage, NULL);
         close(chToPaPipe[0]);
         printf("%s\n", "end of parent");
         process_list_closeAll();
-        
     }
     return 0;
 }

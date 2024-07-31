@@ -7,12 +7,11 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <signal.h>
-#include "random.h"
 /*******************************************************************/
 #define TRUE            1
 #define FALSE           0
 #define SERVER_IP_ADDR  "192.168.0.106"     /* open cmd, type "hostname -I" to check ip address */
-#define PORT             2000
+#define PORT             10000
 /*******************************************************************/
 char bufSend[255] = {0};
 char bufReceive[255] = {0};
@@ -30,27 +29,19 @@ void signalHandler_INT()
 
 void *clientSend(void *args)
 {
+    float increase = 1;
     float Temp = 0;
+    float sum;
     while (disconnect == FALSE)
     {
-        Temp = randomFloat(temperature, temperature +1);
-        send(sockD, &Temp, sizeof(Temp), 0);
-        printf("Client sends: %f\n",Temp);
+        sum = Temp * 100 + increase;
+        send(sockD, &sum, sizeof(sum), 0);
+        printf("Client sends: %f\n",sum);
+        increase ++;
         sleep(1);
     }
     printf("OUT1\n");
 }
-// void *clientReceive(void *args)
-// {
-//     int check = read(sockD, bufReceive, sizeof(bufReceive));
-//     printf("OUT2\n");
-//     while (check >= 0 && disconnect == FALSE)
-//     {
-//         check = read(sockD, bufReceive, sizeof(bufReceive));
-//     }
-//     printf("OUT3\n");
-//     disconnect = TRUE;
-// }
 /*******************************************************************/
 int main(int argc, char const* argv[]) 
 { 
@@ -60,7 +51,7 @@ int main(int argc, char const* argv[])
     if (argc <= 1)
     {
         printf("argument: ./client <IP> <temperature>\n");
-        return -1;
+        //return -1;
     }
     else
     {
@@ -87,12 +78,7 @@ int main(int argc, char const* argv[])
     {
         printf("Client sending thread is created\n");
     }
-	// if (pthread_create(&threadReceive,NULL,&clientReceive,NULL) == 0)
-    // {
-    //     printf("Client receiving thread is created\n");
-    // }
     pthread_join(threadSend,NULL);
-    // pthread_join(threadReceive,NULL);
     printf("Disconnected\n");
 	return 0;
 }

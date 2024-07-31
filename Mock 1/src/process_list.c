@@ -9,9 +9,7 @@
 #include "process_list.h"
 
 /*******************************************************************/
-#define node(x)                 open_shared_memProcess()[x]
-#define nodeCount               node(0).port
-#define nodeIdx                 node(0).Idx
+#define node(x)                 buffPtr[x]
 
 /*******************************************************************/
 /* ls -l /dev/shm to check shared mem*/
@@ -22,31 +20,20 @@
 #define TAIL                    MAX_NODE
 /*******************************************************************/
 int serverSockSave = 0;
-ConnectionType* dummy;
-pthread_mutex_t mutexData = PTHREAD_MUTEX_INITIALIZER;
+ConnectionType* buffPtr;
+int nodeCount = 0;
+int nodeIdx = 0;
+int checkInit = FALSE;
 /*******************************************************************/
 
 /*******************************************************************/
-ConnectionType* open_shared_memProcess(void)
-{
-    //pthread_mutex_lock(&mutexData);
-    int shm_fd = shm_open(FILE_SHARED_MEM_NAME, O_RDWR, 0666);
-    if (shm_fd < 0) {
-        return NULL;
-    }
-    ftruncate(shm_fd, MEM_SIZE);
-    ftruncate(shm_fd, MEM_SIZE);
-    ConnectionType *data = (ConnectionType *)mmap(0, MEM_SIZE,
-                     PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    close(shm_fd);
-    //pthread_mutex_unlock(&mutexData);
-    return data;
-}
-
 void connect(int nodex, int nodey)
 {
-    node(nodex).next = nodey;
-    node(nodey).pre = nodex;
+    if (checkInit == TRUE)
+    {
+        node(nodex).next = nodey;
+        node(nodey).pre = nodex;
+    }
 }
 
 int process_list_connectionCount(void)
@@ -61,7 +48,6 @@ int process_list_connectionIdx(void)
 
 void process_list_init(int serverSock)
 {
-    //pthread_mutex_init(&mutexData, NULL);
     serverSockSave = serverSock;
     int shm_fd = shm_open(FILE_SHARED_MEM_NAME, O_CREAT | O_RDWR, 0666);
     if (shm_fd < 0) {
@@ -71,14 +57,15 @@ void process_list_init(int serverSock)
     ConnectionType *data = (ConnectionType *)mmap(0, MEM_SIZE,
                      PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     data->self = data;
+    buffPtr = data;
     close(shm_fd);
     nodeCount = 0;
     node(HEAD).pre = -1;
     node(MAX_NODE).next = -1;
     nodeIdx = 1;
     nodeCount = 0;
-    dummy = data;
     connect(HEAD, TAIL);
+    checkInit = TRUE;
 }
 
 ConnectionType process_list_new(char* Ip, int port, int socketId)
@@ -95,6 +82,8 @@ ConnectionType process_list_new(char* Ip, int port, int socketId)
     if (nodeIdx > MAX_NODE - 1)
         printf("Out of mem\n");
     nodeCount++;
+    int flags = fcntl(socketId, F_GETFL, 0);
+    fcntl(socketId, F_SETFL, flags | O_NONBLOCK);
     return node(nodeIdx-1);
 }
 
@@ -145,13 +134,13 @@ void process_list_closeAll(void)
     /* unmap shared mem */
     for (int i = 1; i < process_list_connectionIdx(); i ++)
     {
+        printf("closing i = %d\n",i);
         process_list_Disconnect(i);
     }
     munmap(node(HEAD).self, MEM_SIZE);
     shm_unlink(FILE_SHARED_MEM_NAME);
     /* close server */
     close(serverSockSave);
-    //pthread_mutex_destroy(&mutexData);
     // printf("Cleared count\n");
     printf("\nServer is manually shutdown\n");
 }
