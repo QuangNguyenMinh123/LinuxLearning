@@ -30,8 +30,8 @@ PATH_SERVER_OBJS += $(MAIN_SERVER_O_DIR)
 vpath %.c $(SRC_DIR)
 vpath %.h $(INC_DIR)
 
-build_client: $(OBJ_FILES) main_client.o
-	@$(COMPILER) $(PATH_CLIENT_OBJS) -o $(BIN_DIR)/client
+build_client:
+	$(COMPILER) main_client.c -o $(BIN_DIR)/client
 
 build_server: $(OBJ_FILES) main_server.o
 	@$(COMPILER) $(PATH_SERVER_OBJS) -o $(BIN_DIR)/server -pthread -fno-stack-protector
