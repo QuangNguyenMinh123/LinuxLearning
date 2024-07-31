@@ -30,8 +30,6 @@
 /*******************************************************************/
 float temp;
 int socketId = 0;
-char buffer[1024] = {0};
-
 pthread_mutex_t mutexPass = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t conPass = PTHREAD_COND_INITIALIZER;
 int logFileId;
@@ -41,7 +39,6 @@ pthread_t threadParent_Data, threadParent_Storage;
 socklen_t addr_size;
 /* For server connection */
 struct sockaddr_in my_addr, peer_addr;
-char buffer1[BUFF_SIZE];
 bool terminate = FALSE;
 int parentPid = 0;
 int nodeIdxPassing;
@@ -97,7 +94,6 @@ void *threadParent_StorageFunc(void *args)
 int main()
 {
     int childPid;
-    memset(buffer1, 0, sizeof(buffer1));
     logFileId = log_open();
     signal(SIGINT, signalHandler_INT);
     
