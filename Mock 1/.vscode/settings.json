@@ -22,7 +22,8 @@
         "signal.h": "c",
         "string.h": "c",
         "executor": "c",
-        "mutex": "c"
+        "mutex": "c",
+        "type_traits": "c"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.default.includePath": [

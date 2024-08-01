@@ -80,7 +80,7 @@ int main(int argc, char const* argv[])
     }
     printf("Port: %d\n",ntohs(servAddr.sin_port));
     disconnect = FALSE;
-    float increase = 1;
+    float increase = 0;
     float sum;
     while (disconnect == FALSE)
     {
@@ -88,7 +88,7 @@ int main(int argc, char const* argv[])
         write(sockD, &sum, sizeof(sum));
         printf("Client sends: %f\n",sum);
         increase ++;
-        if (increase == 101)
+        if (increase == 100)
             break;
         sleep(1);
     }

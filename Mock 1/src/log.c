@@ -26,7 +26,7 @@ void log_write(int fileIndex, char* str)
     time_t now;
     time(&now);
     char buff[20];
-    printf("%s",str);
+    //printf("%s",str);
     strftime(buff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
     write(fileIndex, buff, strlen(buff));
     write(fileIndex, ": ", strlen(": "));

@@ -17,6 +17,8 @@
 #include <sys/select.h>
 #include <poll.h>
 #include <math.h>
+#include <semaphore.h>
+#include <sys/mman.h>
 #include "log.h"
 #include "process_list.h"
 /*******************************************************************/
@@ -47,6 +49,8 @@ int parentPid = 0;
 int nodeIdxPassing;
 ConnectionType* threadStorage;
 float avgTemp = 0, avgSum = 0;
+sem_t* sem_PaToCh;
+sem_t* sem_ChToPa;
 /*******************************************************************/
 void signalHandler_INT()
 {
@@ -82,7 +86,7 @@ void *threadParent_DataFunc(int * args)
         pthread_mutex_lock(&mutexData);
         pthread_cond_wait(&conData, &mutexData);
         checkCnt = process_list_ReadData(*args, &data);
-        printf("args = %d\tdata = %f\n",*args,data);
+        // printf("args = %d\tdata = %f\n",*args,data);
         pthread_mutex_unlock(&mutexData);
         if (checkCnt == 1)
         {
@@ -126,7 +130,12 @@ int main()
     {
         log_write(logFileId, "paToChPipe pipe is created successfully\n");
     }
+    /* Create semaphore */
+    sem_PaToCh = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    sem_ChToPa = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
+    sem_init(sem_PaToCh, 1, 0);
+    sem_init(sem_ChToPa, 1, 0);
     /* Create child process*/
     log_write(logFileId, "Creating child process\n");
     childPid = fork();
@@ -148,7 +157,7 @@ int main()
         if (close(paToChPipe[1]) == -1)
             log_write(logFileId, "close(paToChPipe[1]) failed\n");
         while (i == 0)
-            read(paToChPipe[READ_PIPE_IDX], &i, sizeof(i));
+            read(paToChPipe[READ_PIPE_IDX], &i, sizeof(int));
         if (i < 3) /* Failed */
         {
             printf("FAILED\n");
@@ -170,17 +179,14 @@ int main()
             checkCnt = read(paToChPipe[READ_PIPE_IDX], &nodeIdx, sizeof(int));       /* wait for parent send node*/
             if (checkCnt > 0)
             {
-                read(paToChPipe[READ_PIPE_IDX], Ip, INET_ADDRSTRLEN * sizeof(char)); 
+                read(paToChPipe[READ_PIPE_IDX], Ip, INET_ADDRSTRLEN * sizeof(char));
                 read(paToChPipe[READ_PIPE_IDX], &port, sizeof(int));
                 read(paToChPipe[READ_PIPE_IDX], &temp, sizeof(float));
-                printf("IP: %s, port: %d\n, temp: %f\n",Ip, port, temp);
                 int int1 = temp;
                 float tempFrac = temp - int1;
                 int int2 = trunc(tempFrac * 10000);
-
-                // sprintf(buffer,"IP: %s, port: %d\n", ,
-                //                         process_list_node(i)->port);
-                // log_write(logFileId, buffer);
+                sprintf(buffer, "IP: %s, port: %d, temp: %d.%04d\n",Ip, port, int1, int2);
+                log_write(logFileId,buffer);
             }
         }
         printf("end of log\n");
@@ -299,19 +305,18 @@ int main()
                                     pollfds.revents = 0;
                                     useClient--;
                                     process_list_Disconnect(cnt);
-                                    
                                 }
                                 else
                                 {
                                     pthread_mutex_lock(&mutexData);
                                     process_list_WriteData(cnt, data);
                                     nodeIdxPassing = cnt;
+                                    write(paToChPipe[WRITE_PIPE_IDX], &cnt, sizeof(int));
                                     write(paToChPipe[WRITE_PIPE_IDX], &process_list_node(cnt)->Ip, INET_ADDRSTRLEN * sizeof(char));
                                     write(paToChPipe[WRITE_PIPE_IDX], &process_list_node(cnt)->port, sizeof(int));
                                     write(paToChPipe[WRITE_PIPE_IDX], &process_list_node(cnt)->temp, sizeof(float));
                                     pthread_cond_signal(&conData);
                                     pthread_mutex_unlock(&mutexData);
-                                    
                                 }
                             }
                         }
