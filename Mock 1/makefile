@@ -31,10 +31,10 @@ vpath %.c $(SRC_DIR)
 vpath %.h $(INC_DIR)
 
 build_client:
-	$(COMPILER) main_client.c -o $(BIN_DIR)/client
+	@$(COMPILER) main_client.c -o $(BIN_DIR)/client
 
 build_server: $(OBJ_FILES) main_server.o
-	@$(COMPILER) $(PATH_SERVER_OBJS) -o $(BIN_DIR)/server -pthread -fno-stack-protector
+	@$(COMPILER) $(PATH_SERVER_OBJS) -o $(BIN_DIR)/server -pthread -fno-stack-protector -lm
 
 %.o: %.c $(INC_FILES)
 	@$(COMPILER) -I$(INC_DIR) -c $< -o $(OBJ_DIR)/$@

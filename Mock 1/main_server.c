@@ -13,10 +13,10 @@
 #include <sys/socket.h>
 #include <signal.h>
 #include <sys/wait.h>
-#include <fcntl.h>
 #include <pthread.h>
 #include <sys/select.h>
 #include <poll.h>
+#include <math.h>
 #include "log.h"
 #include "process_list.h"
 /*******************************************************************/
@@ -25,13 +25,16 @@
 #define PORT                            10000
 #define READ_PIPE_IDX                   0
 #define WRITE_PIPE_IDX                  1
+#define FIFO_FILE                       "./ParentToCh"
 /*******************************************************************/
 
 /*******************************************************************/
 float temp;
 int socketId = 0;
-pthread_mutex_t mutexPass = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t conPass = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutexData = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t conData = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutexLog = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t conLog = PTHREAD_COND_INITIALIZER;
 int logFileId;
 int serverSock;
 int chToPaPipe[2], paToChPipe[2];
@@ -51,8 +54,8 @@ void signalHandler_INT()
     {
         printf("this pid:%d\n",getpid());
         terminate = TRUE;
-        pthread_cond_signal(&conPass);
-        pthread_mutex_unlock(&mutexPass);
+        pthread_cond_signal(&conData);
+        pthread_mutex_unlock(&mutexData);
     }
 }
 
@@ -61,27 +64,33 @@ void signalHandler_CHLD()
     wait(NULL);
 }
 
-void *threadParent_DataFunc(int * nodeIdx)
+// void signalHandler_PIPE()
+// {
+//     printf("Broken pipe\n");
+// }
+
+
+void *threadParent_DataFunc(int * args)
 {
     /* Handling data manager*/
     int cnt = 0;
     float data = 0;
     int checkCnt;
+    int value;
     while (terminate == FALSE)
     {
-        pthread_mutex_lock(&mutexPass);
-        pthread_cond_wait(&conPass, &mutexPass);
-        checkCnt = process_list_ReadData(*nodeIdx, &data);
-        pthread_mutex_unlock(&mutexPass);
+        pthread_mutex_lock(&mutexData);
+        pthread_cond_wait(&conData, &mutexData);
+        checkCnt = process_list_ReadData(*args, &data);
+        printf("args = %d\tdata = %f\n",*args,data);
+        pthread_mutex_unlock(&mutexData);
         if (checkCnt == 1)
         {
             avgSum += data;
             cnt++;
             avgTemp = avgSum / cnt;
-            printf("temp read: %f\tavg temp: %f\n", data, avgTemp);
         }
     }
-    printf("end of thread\n");
 }
 
 void *threadParent_StorageFunc(void *args)
@@ -96,7 +105,7 @@ int main()
     int childPid;
     logFileId = log_open();
     signal(SIGINT, signalHandler_INT);
-    
+    //sigaction(SIGPIPE, &(struct sigaction){signalHandler_PIPE}, NULL);
     /* Create pipe */
     parentPid = getpid();
     if (pipe(chToPaPipe) < 0)
@@ -132,7 +141,6 @@ int main()
     {
         /* Child; log process */
         int i = 0;
-        
         printf("log pid = %d\n", getpid());
         /* Establish pipe to parent process */
         if (close(chToPaPipe[0]) == -1)
@@ -147,79 +155,107 @@ int main()
             return -1;
         }
         log_write(logFileId, "Thread handlers is created\n");
+
+        char buffer[200] = {0};
+        char Ip[16] = {0};
+        int port;
+        float temp;
+        int checkCnt = 0;
+        float data;
+        int nodeIdx;
+        int fileWriteDesc;
         while (terminate == FALSE)
         {
             /* wait for command */
+            checkCnt = read(paToChPipe[READ_PIPE_IDX], &nodeIdx, sizeof(int));       /* wait for parent send node*/
+            if (checkCnt > 0)
+            {
+                read(paToChPipe[READ_PIPE_IDX], Ip, INET_ADDRSTRLEN * sizeof(char)); 
+                read(paToChPipe[READ_PIPE_IDX], &port, sizeof(int));
+                read(paToChPipe[READ_PIPE_IDX], &temp, sizeof(float));
+                printf("IP: %s, port: %d\n, temp: %f\n",Ip, port, temp);
+                int int1 = temp;
+                float tempFrac = temp - int1;
+                int int2 = trunc(tempFrac * 10000);
+
+                // sprintf(buffer,"IP: %s, port: %d\n", ,
+                //                         process_list_node(i)->port);
+                // log_write(logFileId, buffer);
+            }
         }
         printf("end of log\n");
     }
     else if (childPid > 0)
     {
         /* Parent: main */
-        int i = 0;
-        signal(SIGCHLD, signalHandler_CHLD);
-        printf("parent pid = %d\n", getpid());
-        parentPid = getpid();
-        pthread_mutex_init(&mutexPass, NULL);
-        pthread_cond_init(&conPass, NULL);
-        if (pthread_cond_init(&conPass, NULL) != 0)
-            printf("Error while creating cond variable\n");
-        /* Variable for socket */
-        my_addr.sin_family = AF_INET;
-        /* Change this ip address according to your machine */
-        my_addr.sin_addr.s_addr = INADDR_ANY; /* inet_addr("192.168.0.104")   , INADDR_ANY */
-        my_addr.sin_port = htons(PORT);
-        /* Initialize socket */
-        serverSock = socket(AF_INET, SOCK_STREAM, 0);
-        process_list_init(serverSock);
-        if (serverSock < 0)
+        if (1)
         {
-            log_write(logFileId, "Error in creating server socket\n");
-            return -1;
-        }
-        else
-        {
-            log_write(logFileId, "Server is created\n");
-        }
-        int opt = 1;
-        if (setsockopt(serverSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-        {
-            printf("Failed to set SO_REUSEADDR option\n");
-            return -1;
-        }
+            int i = 0;
+            mkfifo(FIFO_FILE, 0666);
+            signal(SIGCHLD, signalHandler_CHLD);
+            printf("parent pid = %d\n", getpid());
+            parentPid = getpid();
+            pthread_mutex_init(&mutexData, NULL);
+            pthread_cond_init(&conData, NULL);
+            if (pthread_cond_init(&conData, NULL) != 0)
+                printf("Error while creating cond variable\n");
+            /* Variable for socket */
+            my_addr.sin_family = AF_INET;
+            /* Change this ip address according to your machine */
+            my_addr.sin_addr.s_addr = INADDR_ANY; /* inet_addr("192.168.0.104")   , INADDR_ANY */
+            my_addr.sin_port = htons(PORT);
+            /* Initialize socket */
+            serverSock = socket(AF_INET, SOCK_STREAM, 0);
+            process_list_init(serverSock);
+            if (serverSock < 0)
+            {
+                log_write(logFileId, "Error in creating server socket\n");
+                return -1;
+            }
+            else
+            {
+                log_write(logFileId, "Server is created\n");
+            }
+            int opt = 1;
+            if (setsockopt(serverSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+            {
+                printf("Failed to set SO_REUSEADDR option\n");
+                return -1;
+            }
 
-        if (setsockopt(serverSock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0)
-        {
-            printf("Failed to set SO_REUSEPORT option\n");
-            return -1;
-        }
-        if (close(chToPaPipe[1]) == -1)
-            log_write(logFileId, "close(chToPaPipe[1]) failed\n");
-        if (close(paToChPipe[0]) == -1)
-            log_write(logFileId, "close(paToChPipe[0]) failed\n");
-        /* Bind serverSock to my_addr */
-        if (bind(serverSock, (struct sockaddr *)&my_addr, sizeof(my_addr)) == 0)
-            printf("Binded Correctly\n");
-        else
-            printf("Unable to bind\n");
-        write(paToChPipe[WRITE_PIPE_IDX], &i, sizeof(i));
-        if (listen(serverSock, 1) == 0)
-            printf("Listening ...\n");
-        else
-            printf("Unable to listen\n");
+            if (setsockopt(serverSock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0)
+            {
+                printf("Failed to set SO_REUSEPORT option\n");
+                return -1;
+            }
+            if (close(chToPaPipe[1]) == -1)
+                log_write(logFileId, "close(chToPaPipe[1]) failed\n");
+            if (close(paToChPipe[0]) == -1)
+                log_write(logFileId, "close(paToChPipe[0]) failed\n");
+            /* Bind serverSock to my_addr */
+            if (bind(serverSock, (struct sockaddr *)&my_addr, sizeof(my_addr)) == 0)
+                printf("Binded Correctly\n");
+            else
+                printf("Unable to bind\n");
+            write(paToChPipe[WRITE_PIPE_IDX], &i, sizeof(i));
+            if (listen(serverSock, 1) == 0)
+                printf("Listening ...\n");
+            else
+                printf("Unable to listen\n");
 
-        addr_size = sizeof(struct sockaddr_in);
-        /* Create thread */
-        if (pthread_create(&threadParent_Data, NULL, threadParent_DataFunc, &nodeIdxPassing) == 0)
-            i++;
-        if (pthread_create(&threadParent_Storage, NULL, threadParent_StorageFunc, threadStorage) == 0)
-            i++;
-        i++;                                              /* Redundent check */
-        write(paToChPipe[WRITE_PIPE_IDX], &i, sizeof(i)); /* inform child to continue */
-        if (i < 3)                                        /* FAIL */
-        {
-            printf("FAILED\n");
-            return -1;
+            addr_size = sizeof(struct sockaddr_in);
+            /* Create thread */
+            if (pthread_create(&threadParent_Data, NULL, &threadParent_DataFunc, &nodeIdxPassing) == 0)
+                i++;
+            if (pthread_create(&threadParent_Storage, NULL, &threadParent_StorageFunc, threadStorage) == 0)
+                i++;
+            i++;                                              /* Redundent check */
+            write(paToChPipe[WRITE_PIPE_IDX], &i, sizeof(i)); /* inform child to continue */
+            if (i < 3)                                        /* FAIL */
+            {
+                printf("FAILED\n");
+                return -1;
+            }
         }
         struct pollfd pollfds;
         pollfds.fd = serverSock;
@@ -246,12 +282,12 @@ int main()
                 }
                 else
                 {
-                    for (int i = 1; i < process_list_connectionIdx(); i ++)
+                    for (int cnt = 1; cnt < process_list_connectionIdx(); cnt ++)
                     {
                         float data;
-                        if (process_list_checkConnect(i) == TRUE)
+                        if (process_list_checkConnect(cnt) == TRUE)
                         {
-                            int buffCnt = process_list_readDataFromNode(i, &data);
+                            int buffCnt = process_list_readDataFromNode(cnt, &data);
                             if (data > -500 || buffCnt == 0)
                             {
                                 if (buffCnt < -1)       /* Nodata*/
@@ -262,15 +298,20 @@ int main()
                                 {
                                     pollfds.revents = 0;
                                     useClient--;
-                                    process_list_Disconnect(i);
+                                    process_list_Disconnect(cnt);
+                                    
                                 }
                                 else
                                 {
-                                    process_list_WriteData(i, data);
-                                    pthread_mutex_lock(&mutexPass);
-                                    nodeIdxPassing = i;
-                                    pthread_cond_signal(&conPass);
-                                    pthread_mutex_unlock(&mutexPass);
+                                    pthread_mutex_lock(&mutexData);
+                                    process_list_WriteData(cnt, data);
+                                    nodeIdxPassing = cnt;
+                                    write(paToChPipe[WRITE_PIPE_IDX], &process_list_node(cnt)->Ip, INET_ADDRSTRLEN * sizeof(char));
+                                    write(paToChPipe[WRITE_PIPE_IDX], &process_list_node(cnt)->port, sizeof(int));
+                                    write(paToChPipe[WRITE_PIPE_IDX], &process_list_node(cnt)->temp, sizeof(float));
+                                    pthread_cond_signal(&conData);
+                                    pthread_mutex_unlock(&mutexData);
+                                    
                                 }
                             }
                         }
@@ -279,10 +320,11 @@ int main()
                 pollResult = 0;
             }
         }
+        
         printf("parent end\n");
         /* wait */
-        pthread_mutex_destroy(&mutexPass);
-        pthread_cond_destroy(&conPass);
+        pthread_mutex_destroy(&mutexData);
+        pthread_cond_destroy(&conData);
         pthread_join(threadParent_Data, NULL);
         pthread_join(threadParent_Storage, NULL);
         close(chToPaPipe[0]);

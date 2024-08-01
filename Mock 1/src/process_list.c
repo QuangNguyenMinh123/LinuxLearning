@@ -10,7 +10,6 @@
 
 /*******************************************************************/
 #define node(x)                 buffPtr[x]
-
 /*******************************************************************/
 /* ls -l /dev/shm to check shared mem*/
 #define MAX_NODE                100
@@ -24,16 +23,21 @@ ConnectionType* buffPtr;
 int nodeCount = 0;
 int nodeIdx = 0;
 int checkInit = FALSE;
+//pthread_mutex_t mutexProcess = PTHREAD_MUTEX_INITIALIZER;
 /*******************************************************************/
 
 /*******************************************************************/
 void connect(int nodex, int nodey)
 {
-    if (checkInit == TRUE)
-    {
-        node(nodex).next = nodey;
-        node(nodey).pre = nodex;
-    }
+    //pthread_mutex_lock(&mutexProcess);
+    node(nodex).next = nodey;
+    node(nodey).pre = nodex;
+    //pthread_mutex_unlock(&mutexProcess);
+}
+
+ConnectionType* process_list_node(int index)
+{
+    return &node(index);
 }
 
 int process_list_connectionCount(void)
@@ -48,6 +52,7 @@ int process_list_connectionIdx(void)
 
 void process_list_init(int serverSock)
 {
+    //pthread_mutex_init(&mutexProcess, NULL);
     serverSockSave = serverSock;
     int shm_fd = shm_open(FILE_SHARED_MEM_NAME, O_CREAT | O_RDWR, 0666);
     if (shm_fd < 0) {
@@ -70,6 +75,7 @@ void process_list_init(int serverSock)
 
 ConnectionType process_list_new(char* Ip, int port, int socketId)
 {
+    //pthread_mutex_lock(&mutexProcess);
     sprintf(node(nodeIdx).Ip, "%s",Ip);
     node(nodeIdx).port = port;
     node(nodeIdx).socketId = socketId;
@@ -84,6 +90,7 @@ ConnectionType process_list_new(char* Ip, int port, int socketId)
     nodeCount++;
     int flags = fcntl(socketId, F_GETFL, 0);
     fcntl(socketId, F_SETFL, flags | O_NONBLOCK);
+    //pthread_mutex_unlock(&mutexProcess);
     return node(nodeIdx-1);
 }
 
@@ -94,6 +101,7 @@ bool process_list_checkConnect(int nodex)
 
 void process_list_Disconnect(int nodex)
 {
+    //pthread_mutex_lock(&mutexProcess);
     if (node(nodex).Connected == TRUE)
     {
         connect(node(nodex).pre, node(nodex).next);
@@ -102,30 +110,37 @@ void process_list_Disconnect(int nodex)
         nodeCount --;
         printf("Remaining connection: %d\n", nodeCount);
     }
+    //pthread_mutex_unlock(&mutexProcess);
 }
 
 int process_list_readDataFromNode(int nodex, float *buff)
 {
+    //pthread_mutex_lock(&mutexProcess);
     float save = -999.99;
     int cnt = read( node(nodex).socketId, &save, sizeof(float));
     *buff = save;
+    //pthread_mutex_unlock(&mutexProcess);
     return cnt;
 }
 
 void process_list_WriteData(int nodex, float data)
 {
+    //pthread_mutex_lock(&mutexProcess);
     node(nodex).temp = data;
     node(nodex).newData = TRUE;
+    //pthread_mutex_unlock(&mutexProcess);
 }
 
 int process_list_ReadData(int nodex, float *data)
 {
+    //pthread_mutex_lock(&mutexProcess);
     if (node(nodex).newData == TRUE)
     {
         node(nodex).newData = FALSE;
         *data = node(nodex).temp;
         return 1;
     }
+    //pthread_mutex_unlock(&mutexProcess);
     return  0;
 }
 
@@ -134,9 +149,9 @@ void process_list_closeAll(void)
     /* unmap shared mem */
     for (int i = 1; i < process_list_connectionIdx(); i ++)
     {
-        printf("closing i = %d\n",i);
         process_list_Disconnect(i);
     }
+    //pthread_mutex_destroy(&mutexProcess);
     munmap(node(HEAD).self, MEM_SIZE);
     shm_unlink(FILE_SHARED_MEM_NAME);
     /* close server */

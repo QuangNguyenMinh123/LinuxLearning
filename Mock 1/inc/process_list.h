@@ -5,10 +5,11 @@
 #define bool                            char
 #define TRUE                            1
 #define FALSE                           0
+#define INET_ADDRSTRLEN                 16
 /*******************************************************************/
 typedef struct ConnectionType{
     int pre;
-    char Ip[16];        /* 16 = INET_ADDRSTRLEN */
+    char Ip[INET_ADDRSTRLEN];        /* 16 = INET_ADDRSTRLEN */
     int port;
     int socketId;
     struct ConnectionType* self;
@@ -29,5 +30,6 @@ int process_list_connectionIdx(void);
 bool process_list_checkConnect(int nodex);
 void process_list_WriteData(int nodex, float data);
 int process_list_ReadData(int nodex, float *data);
+ConnectionType* process_list_node(int index);
 /*******************************************************************/
 #endif

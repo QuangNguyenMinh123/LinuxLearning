@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <sys/time.h>
 /*******************************************************************/
 #define TRUE                1
 #define FALSE               0
@@ -22,19 +23,34 @@ void signalHandler_INT()
     disconnect = TRUE;
 }
 
+void signalHandler_PIPE()
+{
+    printf("Broken pipe\n");
+    disconnect = TRUE;
+}
+
 /*******************************************************************/
 int main(int argc, char const* argv[]) 
-{ 
+{
+    struct sockaddr_in servAddr;
 	sockD = socket(AF_INET, SOCK_STREAM, 0);
+    struct timeval timeout;
+    timeout.tv_sec = 3;
+    timeout.tv_usec = 0;
+
     if (sockD <= 0)
     {
         printf("Error in creating server socket\n");
         return -1;
     }
-    // int flags = fcntl(sockD, F_GETFL, 0);
-    // fcntl(sockD, F_SETFL, flags | O_NONBLOCK);
-	struct sockaddr_in servAddr;
+
+    // if (setsockopt (sockD, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
+    //     printf("setsockopt failed\n");
+    // if (setsockopt (sockD, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) < 0)
+    //     printf("setsockopt failed\n");
+	
     signal(SIGINT, signalHandler_INT);
+    sigaction(SIGPIPE, &(struct sigaction){signalHandler_PIPE}, NULL);
     printf("Mock 1\n");
     /********************/
     if (argc <= 1)
@@ -72,6 +88,8 @@ int main(int argc, char const* argv[])
         write(sockD, &sum, sizeof(sum));
         printf("Client sends: %f\n",sum);
         increase ++;
+        if (increase == 101)
+            break;
         sleep(1);
     }
     close(sockD);
