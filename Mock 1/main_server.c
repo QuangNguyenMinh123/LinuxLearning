@@ -131,11 +131,7 @@ int main()
         log_write(logFileId, "paToChPipe pipe is created successfully\n");
     }
     /* Create semaphore */
-    sem_PaToCh = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    sem_ChToPa = (sem_t*)mmap(NULL, sizeof(sem_t*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-
-    sem_init(sem_PaToCh, 1, 0);
-    sem_init(sem_ChToPa, 1, 0);
+    
     /* Create child process*/
     log_write(logFileId, "Creating child process\n");
     childPid = fork();
