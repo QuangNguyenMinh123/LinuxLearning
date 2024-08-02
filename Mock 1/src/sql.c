@@ -40,11 +40,15 @@ void sql_init(void)
     if (exit != SQLITE_OK) {
         for (int tryCount = 1; tryCount <= 3; tryCount ++)
         {
-            printf("Open SQL Database after %d try\n",tryCount);
+            exit = sqlite3_open(DATABASE_FILE, &DB);
+            if (exit != SQLITE_OK)
+                printf("Open SQL Database after %d try\n",tryCount);
+            else
+                break;
         }
+        printf("Failed to create Database\n");
     }
-    else
-        printf("Open SQL Database Successfully\n");
+    printf("Open SQL Database Successfully\n");
     exit = sqlite3_exec(DB, sql_ConnectionTable, NULL, 0, &messaggeError);
     if (exit != SQLITE_OK) {
         printf("Error Create Status Table\n");
