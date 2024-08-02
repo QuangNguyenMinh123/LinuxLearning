@@ -21,13 +21,13 @@
 #include <sys/mman.h>
 #include "log.h"
 #include "process_list.h"
+#include "sql.h"
 /*******************************************************************/
 #define SO_REUSEPORT                    15
 #define BUFF_SIZE                       256
 #define PORT                            10000
 #define READ_PIPE_IDX                   0
 #define WRITE_PIPE_IDX                  1
-#define FIFO_FILE                       "./ParentToCh"
 /*******************************************************************/
 
 /*******************************************************************/
@@ -35,8 +35,8 @@ float temp;
 int socketId = 0;
 pthread_mutex_t mutexData = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t conData = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t mutexLog = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t conLog = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutexStorage = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t conStorage = PTHREAD_COND_INITIALIZER;
 int logFileId;
 int serverSock;
 int chToPaPipe[2], paToChPipe[2];
@@ -88,20 +88,33 @@ void *threadParent_DataFunc(int * args)
         checkCnt = process_list_ReadData(*args, &data);
         // printf("args = %d\tdata = %f\n",*args,data);
         pthread_mutex_unlock(&mutexData);
+        /* Signaling Datamanager thread to continue */
+        pthread_mutex_lock(&mutexStorage);
+        pthread_cond_signal(&conStorage);
+        pthread_mutex_unlock(&mutexStorage);
         if (checkCnt == 1)
         {
             avgSum += data;
             cnt++;
             avgTemp = avgSum / cnt;
         }
+
     }
 }
 
-void *threadParent_StorageFunc(void *args)
+void *threadParent_StorageFunc(int *args)
 {
-    // while (1)
-    // {
-    // }
+    sql_init();
+    int save;
+    while (terminate == FALSE)
+    {
+        pthread_mutex_lock(&mutexStorage);
+        pthread_cond_wait(&conStorage, &mutexStorage);
+        save = *args;
+        if (save > 0)
+            sql_insert(process_list_node(save));
+        pthread_mutex_unlock(&mutexStorage);
+    }
 }
 /*******************************************************************/
 int main()
@@ -193,12 +206,13 @@ int main()
         if (1)
         {
             int i = 0;
-            mkfifo(FIFO_FILE, 0666);
             signal(SIGCHLD, signalHandler_CHLD);
             printf("parent pid = %d\n", getpid());
             parentPid = getpid();
             pthread_mutex_init(&mutexData, NULL);
             pthread_cond_init(&conData, NULL);
+            pthread_mutex_init(&mutexStorage, NULL);
+            pthread_cond_init(&conStorage, NULL);
             if (pthread_cond_init(&conData, NULL) != 0)
                 printf("Error while creating cond variable\n");
             /* Variable for socket */
@@ -249,7 +263,7 @@ int main()
             /* Create thread */
             if (pthread_create(&threadParent_Data, NULL, &threadParent_DataFunc, &nodeIdxPassing) == 0)
                 i++;
-            if (pthread_create(&threadParent_Storage, NULL, &threadParent_StorageFunc, threadStorage) == 0)
+            if (pthread_create(&threadParent_Storage, NULL, &threadParent_StorageFunc, &nodeIdxPassing) == 0)
                 i++;
             i++;                                              /* Redundent check */
             write(paToChPipe[WRITE_PIPE_IDX], &i, sizeof(i)); /* inform child to continue */
@@ -272,15 +286,17 @@ int main()
                 if (pollfds.revents & POLLIN)
                 {
                     char ip[16];
+                    ConnectionType Dum;
                     socketId = accept(serverSock, (struct sockaddr *)&peer_addr, &addr_size);
                     printf("New Connection Established\n");
                     inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
                     printf("Connection established with IP : %s and PORT: %d\n",
                                 ip, ntohs(peer_addr.sin_port));
-                    process_list_new(ip, ntohs(peer_addr.sin_port), socketId);
+                    Dum = process_list_new(ip, ntohs(peer_addr.sin_port), socketId);
                     printf("Connection count = %d\n",process_list_connectionCount());
                     fflush(stdout);
                     useClient++;
+                    sql_newnode(&Dum);
                 }
                 else
                 {
@@ -301,6 +317,7 @@ int main()
                                     pollfds.revents = 0;
                                     useClient--;
                                     process_list_Disconnect(cnt);
+                                    sql_disconnect(process_list_node(cnt));
                                 }
                                 else
                                 {
@@ -326,9 +343,12 @@ int main()
         /* wait */
         pthread_mutex_destroy(&mutexData);
         pthread_cond_destroy(&conData);
+        pthread_mutex_destroy(&mutexStorage);
+        pthread_cond_destroy(&conStorage);
         pthread_join(threadParent_Data, NULL);
         pthread_join(threadParent_Storage, NULL);
         close(chToPaPipe[0]);
+        sql_deinit();
         printf("%s\n", "end of parent");
         process_list_closeAll();
     }

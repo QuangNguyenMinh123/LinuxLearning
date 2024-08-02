@@ -1,6 +1,5 @@
 #ifndef _PROCESS_LIST_H
 #define _PROCESS_LIST_H
-#include <pthread.h>
 /*******************************************************************/
 #define bool                            char
 #define TRUE                            1

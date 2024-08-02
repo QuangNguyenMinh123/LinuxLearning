@@ -1,14 +1,17 @@
-#ifndef _SQL_H
-#define _SQL_H
-
+#pragma once
+#ifndef SQL_H
+#define SQL_H
+#include "process_list.h"
 /*******************************************************************/
-/* sudo apt install default-libmysqlclient-dev 
-sudo apt install mysql-client
-sudo apt install libmysql++-dev
-sudo apt-get install libmysqlclient-dev
-sudo apt-get install libmysqld-dev
-sudo apt install libmysqlclient-dev
+typedef enum{
+    NEW_CONNECTION,
+    UPDATE
+} SQL_COMMAND;
 /*******************************************************************/
-
+void sql_init(void);
+void sql_newnode(ConnectionType* node);
+void sql_insert(ConnectionType* node);
+void sql_disconnect(ConnectionType* node);
+void sql_deinit(void);
 /*******************************************************************/
 #endif
