@@ -52,7 +52,6 @@ void sql_init(int LogFile)
             else
                 break;
         }
-        printf("Failed to create Database\n");
     }
     printf("Open SQL Database Successfully\n");
     logFileID = LogFile;
