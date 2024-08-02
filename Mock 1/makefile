@@ -34,7 +34,7 @@ build_client:
 	@$(COMPILER) main_client.c -o $(BIN_DIR)/client
 
 build_server: $(OBJ_FILES) main_server.o
-	@$(COMPILER) $(PATH_SERVER_OBJS) -o $(BIN_DIR)/server -pthread -fno-stack-protector -lm
+	@$(COMPILER) $(PATH_SERVER_OBJS) -o $(BIN_DIR)/server -pthread -fno-stack-protector -lm -lsqlite3
 
 %.o: %.c $(INC_FILES)
 	@$(COMPILER) -I$(INC_DIR) -c $< -o $(OBJ_DIR)/$@
@@ -51,9 +51,9 @@ run_client:
 run_server:
 	@$(BIN_DIR)/server
 
-client: clean build_client clean run_client
+client: clean build_client run_client
 
-server: clean build_server clean run_server
+server: clean build_server run_server
 
 clean:
 	@rm -rf $(OBJ_DIR)/*.o

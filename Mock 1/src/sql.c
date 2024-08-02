@@ -3,14 +3,17 @@
 #include <sqlite3.h>
 #include <time.h>
 #include <math.h>
+#include <unistd.h>
 #include "sql.h"
 #include "process_list.h"
+#include "log.h"
 /*******************************************************************/
 #define DATABASE_FILE           "database.db"
 /*******************************************************************/
 int nodeIndex;
 int tableIdx;
 sqlite3* DB;
+int logFileID;
 char sql_ConnectionTable[300] = 
 "CREATE TABLE Connection("
 "Time   CHAR(50), "
@@ -26,7 +29,7 @@ char sql_NodeTable2[200] =
 "Time   CHAR(50), "
 "Temp   CHAR(20));";
 /*******************************************************************/
-void sql_init(void)
+void sql_init(int LogFile)
 {
     int exit = 0;
     /* Init, create new table*/
@@ -42,13 +45,18 @@ void sql_init(void)
         {
             exit = sqlite3_open(DATABASE_FILE, &DB);
             if (exit != SQLITE_OK)
+            {
                 printf("Open SQL Database after %d try\n",tryCount);
+                sleep(1);
+            }
             else
                 break;
         }
         printf("Failed to create Database\n");
     }
     printf("Open SQL Database Successfully\n");
+    logFileID = LogFile;
+    log_write(logFileID, "Open SQL Database Successfully\n");
     exit = sqlite3_exec(DB, sql_ConnectionTable, NULL, 0, &messaggeError);
     if (exit != SQLITE_OK) {
         printf("Error Create Status Table\n");
@@ -89,6 +97,7 @@ void sql_newnode(ConnectionType* node)
     exit = sqlite3_exec(DB, sql_NodeTable, NULL, 0, &messaggeError);
     if (exit != SQLITE_OK) {
         printf("Error Create Table for node %d\n",tableIdx);
+        log_write(logFileID, "Unable to connect to SQL server\n");
         sqlite3_free(messaggeError);
     }
     else
@@ -108,8 +117,11 @@ void sql_newnode(ConnectionType* node)
     }
     else
         printf("Insert for node %d Successfully\n", tableIdx);
+    sprintf(buffer, "Create new table for node%d\n",nodeIndex);
+    log_write(logFileID, buffer);
     tableIdx++;
     nodeIndex++;
+
 }
 
 void sql_disconnect(ConnectionType* node)
