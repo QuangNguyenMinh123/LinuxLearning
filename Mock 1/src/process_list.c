@@ -106,7 +106,7 @@ void process_list_Disconnect(int nodex)
     {
         connect(node(nodex).pre, node(nodex).next);
         node(nodex).Connected = FALSE;
-        printf("Disconnect from IP %s, port %d\n", node(nodex).Ip, node(nodex).port);
+        printf("Disconnect to IP %s, port %d\n", node(nodex).Ip, node(nodex).port);
         nodeCount --;
         printf("Remaining connection: %d\n", nodeCount);
     }

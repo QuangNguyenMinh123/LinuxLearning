@@ -28,6 +28,7 @@ char sql_NodeTable2[200] =
 "("
 "Time   CHAR(50), "
 "Temp   CHAR(20));";
+bool ConnectionToSQL = FALSE;
 /*******************************************************************/
 void sql_init(int LogFile)
 {
@@ -52,6 +53,8 @@ void sql_init(int LogFile)
             else
                 break;
         }
+        printf("Failed to create Database\n");
+        log_write(logFileID, "Failed to create Database\n");
     }
     printf("Open SQL Database Successfully\n");
     logFileID = LogFile;
@@ -63,81 +66,108 @@ void sql_init(int LogFile)
     }
     else
         printf("Table created Successfully\n");
+    ConnectionToSQL = TRUE;
 }
 
 void sql_insert(ConnectionType* node)
 {
-    int exit = 0;
-    char buffer[200];
-    char timeBuff[20];
-    time_t now;
-    time(&now);
-    int int1 = node->temp;
-    float tempFrac = node->temp - int1;
-    int int2 = trunc(tempFrac * 10000);
-    strftime(timeBuff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
-    /*                                          time  temp*/
-    sprintf(buffer, "INSERT INTO Node%d VALUES('%s', '%d.%d');",
-                            node->Idx,timeBuff, int1, int2);
-    if (sqlite3_exec(DB, buffer, NULL, 0, 0) != 0)
-        printf("Failed insert data to SQL in node%d\n", node->Idx);
+    if (ConnectionToSQL == TRUE)
+    {
+        int exit = 0;
+        char buffer[200];
+        char timeBuff[20];
+        time_t now;
+        time(&now);
+        int int1 = node->temp;
+        float tempFrac = node->temp - int1;
+        int int2 = trunc(tempFrac * 10000);
+        strftime(timeBuff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
+        /*                                          time  temp*/
+        sprintf(buffer, "INSERT INTO Node%d VALUES('%s', '%d.%d');",
+                                node->Idx,timeBuff, int1, int2);
+        if (sqlite3_exec(DB, buffer, NULL, 0, 0) != 0)
+        {
+            sprintf(buffer, "Failed insert data to SQL in node%d\n", node->Idx);
+            printf("Failed insert data to SQL in node%d\n", node->Idx);
+            log_write(logFileID,buffer);
+            sprintf(buffer, "CONNECTION to SQL FAILED\n");
+            printf("%s", buffer);
+            log_write(logFileID,buffer);
+            ConnectionToSQL = FALSE;
+        }
+    }
 }
 
 void sql_newnode(ConnectionType* node)
 {
-    int exit = 0;
-    char buffer[200];
-    char* messaggeError;
-    char timeBuff[20];
-    /* Creating new table */
-    /* Table name */
-    /* Format: Timestamp    Ip  Port    Temp */
-    sprintf(sql_NodeTable, "%s%d%s", sql_NodeTable1,tableIdx,sql_NodeTable2);
-    exit = sqlite3_exec(DB, sql_NodeTable, NULL, 0, &messaggeError);
-    if (exit != SQLITE_OK) {
-        printf("Error Create Table for node %d\n",tableIdx);
-        log_write(logFileID, "Unable to connect to SQL server\n");
-        sqlite3_free(messaggeError);
+    if (ConnectionToSQL == TRUE)
+    {
+        int exit = 0;
+        char buffer[200];
+        char* messaggeError;
+        char timeBuff[20];
+        /* Creating new table */
+        /* Table name */
+        /* Format: Timestamp    Ip  Port    Temp */
+        sprintf(sql_NodeTable, "%s%d%s", sql_NodeTable1,tableIdx,sql_NodeTable2);
+        exit = sqlite3_exec(DB, sql_NodeTable, NULL, 0, &messaggeError);
+        if (exit != SQLITE_OK) {
+            printf("Error Create Table for node %d\n",tableIdx);
+            log_write(logFileID, "Unable to connect to SQL server\n");
+            sqlite3_free(messaggeError);
+        }
+        else
+        {
+            printf("Create Table for node %d successfully\n", tableIdx);
+            sprintf(buffer, "Create Table for node %d successfully\n", tableIdx);
+            log_write(logFileID, buffer);
+        }
+            
+        /* New Connection*/
+        time_t now;
+        time(&now);
+        strftime(timeBuff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
+        /*                                              time id   ip   port status  */
+        sprintf(buffer, "INSERT INTO Connection VALUES('%s', %d, '%s', %d, 'Connected');",
+                            timeBuff, nodeIndex, node->Ip, node->port);
+        sqlite3_exec(DB, buffer, NULL, 0, &messaggeError);
+        
+        if (exit != SQLITE_OK) {
+            printf("Error insert for node %d\n",tableIdx);
+            sqlite3_free(messaggeError);
+        }
+        else
+        {
+            printf("Insert for node %d Successfully\n", tableIdx);
+        }
+        sprintf(buffer, "Create new table for node%d\n",nodeIndex);
+        log_write(logFileID, buffer);
+        tableIdx++;
+        nodeIndex++;
+        fflush(stdout);
     }
-    else
-        printf("Create Table for node %d Successfully\n", tableIdx);
-    /* New Connection*/
-    time_t now;
-    time(&now);
-    strftime(timeBuff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
-    /*                                              time id   ip   port status  */
-    sprintf(buffer, "INSERT INTO Connection VALUES('%s', %d, '%s', %d, 'Connected');",
-                        timeBuff, nodeIndex, node->Ip, node->port);
-    sqlite3_exec(DB, buffer, NULL, 0, &messaggeError);
-    
-    if (exit != SQLITE_OK) {
-        printf("Error insert for node %d\n",tableIdx);
-        sqlite3_free(messaggeError);
-    }
-    else
-        printf("Insert for node %d Successfully\n", tableIdx);
-    sprintf(buffer, "Create new table for node%d\n",nodeIndex);
-    log_write(logFileID, buffer);
-    tableIdx++;
-    nodeIndex++;
-
 }
 
 void sql_disconnect(ConnectionType* node)
 {
-    char buffer[200];
-    char timeBuff[20];
-    time_t now;
-    time(&now);
-    strftime(timeBuff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
-    /*                                              time id   ip   port status  */
-    sprintf(buffer, "INSERT INTO Connection VALUES('%s', %d, '%s', %d, 'Disconnected');",
-                        timeBuff, node->Idx, node->Ip, node->port);
-    sqlite3_exec(DB, buffer, NULL, 0, 0);
+    if (ConnectionToSQL == TRUE)
+    {
+        char buffer[200];
+        char timeBuff[20];
+        time_t now;
+        time(&now);
+        strftime(timeBuff, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
+        /*                                              time id   ip   port status  */
+        sprintf(buffer, "INSERT INTO Connection VALUES('%s', %d, '%s', %d, 'Disconnected');",
+                            timeBuff, node->Idx, node->Ip, node->port);
+        sqlite3_exec(DB, buffer, NULL, 0, 0);
+        fflush(stdout);
+    }
 }
 
 void sql_deinit(void)
 {
+    ConnectionToSQL = FALSE;
     sqlite3_close(DB);
 }
 /*******************************************************************/

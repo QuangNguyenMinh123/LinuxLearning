@@ -28,21 +28,12 @@
 #define PORT                            10000
 #define READ_PIPE_IDX                   0
 #define WRITE_PIPE_IDX                  1
-#define p(x)    printf("x = %d\n",x)
+#define NOTHING                         1000
+#define NEW_CONNECTION                  10005
+#define NEW_DATA                        1100
+#define DISCONNECT                      1122
 /*******************************************************************/
-typedef enum DataType{
-    NOTHING,
-    NEW_CONNECTION,
-    NEW_DATA,
-    DISCONNECT
-}DataType;
-typedef struct LogDataType{
-    int nodeIdx;
-    DataType Command;
-    char Ip[INET_ADDRSTRLEN];
-    int port;
-    float temp;
-}LogDataType;
+
 /*******************************************************************/
 float temp;
 int socketId = 0;
@@ -69,6 +60,7 @@ void signalHandler_INT()
 {
     if (parentPid != getgid())
     {
+        printf("this pid:%d\n",getpid());
         terminate = TRUE;
         pthread_cond_signal(&conData);
         pthread_mutex_unlock(&mutexData);
@@ -186,41 +178,43 @@ int main()
         log_write(logFileId, "Thread handlers is created\n");
 
         char buffer[200] = {0};
-        char Ip[16] = {0};
+        char Ip[INET_ADDRSTRLEN] = {0};
         int port;
+        float temp;
         int checkCnt = 0;
-        float data;
-        int nodeIdx;
-        int fileWriteDesc;
-        LogDataType LogData;
+        int Command = NOTHING;
         while (terminate == FALSE)
         {
-            /* wait for command */
-            checkCnt = read(paToChPipe[READ_PIPE_IDX], &LogData, sizeof(LogDataType));       /* wait for parent send node*/
+            Command = NOTHING;
+            checkCnt = read(paToChPipe[READ_PIPE_IDX], &Command, sizeof(int));       /* wait for parent send node*/
             if (checkCnt > 0)
             {
-                if (LogData.Command == NEW_CONNECTION)
+                if (Command == NEW_CONNECTION)
                 {
-                    sprintf(buffer,"Connection established with IP : %s and PORT: %d\n",
-                                LogData.Ip, LogData.port);
+                    read(paToChPipe[READ_PIPE_IDX], Ip, INET_ADDRSTRLEN * sizeof(char));
+                    read(paToChPipe[READ_PIPE_IDX], &port, sizeof(int));
+                    sprintf(buffer,"Connection established with IP %s and PORT: %d\n",Ip,port);
+                    log_write(logFileId,buffer);
+                    fflush(stdout);
+                }
+                else if (Command == DISCONNECT)
+                {
+                    read(paToChPipe[READ_PIPE_IDX], Ip, INET_ADDRSTRLEN * sizeof(char));
+                    read(paToChPipe[READ_PIPE_IDX], &port, sizeof(int));
+                    sprintf(buffer, "Disconnect from IP %s, port %d\n", Ip, port);
                     log_write(logFileId,buffer);
                 }
-                else if (LogData.Command == DISCONNECT)
+                else if (Command == NEW_DATA)
                 {
-                    sprintf(buffer, "Disconnect from IP %s, port %d\n", LogData.Ip, LogData.port);
-                    log_write(logFileId,buffer);
-                }
-                else if (LogData.Command == NEW_DATA)
-                {
-
-                    int int1 = LogData.temp;
-                    float tempFrac = LogData.temp - int1;
+                    read(paToChPipe[READ_PIPE_IDX], Ip, INET_ADDRSTRLEN * sizeof(char));
+                    read(paToChPipe[READ_PIPE_IDX], &port, sizeof(int));
+                    read(paToChPipe[READ_PIPE_IDX], &temp, sizeof(float));
+                    int int1 = temp;
+                    float tempFrac = temp - int1;
                     int int2 = trunc(tempFrac * 10000);
-                    sprintf(buffer, "IP: %s, port: %d, temp: %d.%04d\n",LogData.Ip,
-                                         LogData.port, int1, int2);
+                    sprintf(buffer, "IP: %s, port: %d, temp: %d.%04d\n", Ip, port, int1, int2);
                     log_write(logFileId,buffer);
                 }
-                
             }
         }
         printf("end of log\n");
@@ -241,7 +235,7 @@ int main()
                 printf("Error while creating cond variable\n");
             /* Variable for socket */
             my_addr.sin_family = AF_INET;
-            /* Change this ip address according to your machine */
+            /* Change this IP address according to your machine */
             my_addr.sin_addr.s_addr = INADDR_ANY; /* inet_addr("192.168.0.104")   , INADDR_ANY */
             my_addr.sin_port = htons(PORT);
             /* Initialize socket */
@@ -301,48 +295,42 @@ int main()
         pollfds.fd = serverSock;
         pollfds.events = POLLIN | POLLPRI;
         int useClient = 0;
-        LogDataType LogData;
+        int Command = NOTHING;
         while (terminate == FALSE)
         {
             /* Thread connection */
             int pollResult = poll(&pollfds, useClient + 1, 1);
-            LogData.Command = NOTHING;
             if (pollResult > 0)
             {
                 if (pollfds.revents & POLLIN)
                 {
-                    char ip[16];
+                    char Ip[INET_ADDRSTRLEN];
                     ConnectionType Dum;
                     socketId = accept(serverSock, (struct sockaddr *)&peer_addr, &addr_size);
                     printf("New Connection Established\n");
-                    inet_ntop(AF_INET, &(peer_addr.sin_addr), ip, INET_ADDRSTRLEN);
-                    printf("Connection established with IP : %s and PORT: %d\n",
-                                ip, ntohs(peer_addr.sin_port));
-                    Dum = process_list_new(ip, ntohs(peer_addr.sin_port), socketId);
+                    inet_ntop(AF_INET, &(peer_addr.sin_addr), Ip, INET_ADDRSTRLEN);
+                    printf("Connection established with IP: %s and PORT: %d\n", Ip, ntohs(peer_addr.sin_port));
+                    Dum = process_list_new(Ip, ntohs(peer_addr.sin_port), socketId);
                     printf("Connection count = %d\n",process_list_connectionCount());
-                    fflush(stdout);
                     useClient++;
-                    // sql_newnode(&Dum);
-                    // LogData.Command = NEW_CONNECTION;
-                    // sprintf(LogData.Ip, "%s",Dum.Ip);
-                    // LogData.port = Dum.port;
-                    // LogData.temp = 0;
-                    // write(paToChPipe[WRITE_PIPE_IDX], &LogData, sizeof(LogDataType));
-                    printf("new node\n");
+                    sql_newnode(&Dum);
+                    /* Prepare for data */
+                    Command = NEW_CONNECTION;
+                    /* Write to child process */
+                    pthread_mutex_lock(&mutexData);
+                    write(paToChPipe[WRITE_PIPE_IDX], &Command, sizeof(int));
+                    write(paToChPipe[WRITE_PIPE_IDX], Dum.Ip, INET_ADDRSTRLEN * sizeof(char));
+                    write(paToChPipe[WRITE_PIPE_IDX], &Dum.port, sizeof(int));
+                    pthread_mutex_unlock(&mutexData);
                 }
                 else
                 {
-                    int connection = process_list_connectionIdx();
-                    printf("connection = %d\n",connection);
-                    for (int cnt = 1; cnt < connection; cnt ++)
+                    for (int cnt = 1; cnt < process_list_connectionIdx(); cnt ++)
                     {
                         float data;
-                        printf("cnt=%d\n",cnt);
                         if (process_list_checkConnect(cnt) == TRUE)
                         {
-                            printf("connected = TRUE\n");
                             int buffCnt = process_list_readDataFromNode(cnt, &data);
-                            p(12345);
                             if (data > -500 || buffCnt == 0)
                             {
                                 if (buffCnt < -1)       /* Nodata*/
@@ -351,30 +339,35 @@ int main()
                                 }
                                 else if (buffCnt == 0)  /* Disconnected */
                                 {
-                                    printf("12345\n");
                                     pollfds.revents = 0;
                                     useClient--;
                                     process_list_Disconnect(cnt);
-                                    // sql_disconnect(process_list_node(cnt));
-                                    // LogData.Command = DISCONNECT;
-                                    // sprintf(LogData.Ip, "%s",process_list_node(cnt)->Ip);
-                                    // LogData.port = process_list_node(cnt)->port;
-                                    // write(paToChPipe[WRITE_PIPE_IDX], &LogData, sizeof(LogDataType));
+                                    sql_disconnect(process_list_node(cnt));
+                                    /* Prepare data */
+                                    Command = DISCONNECT;
+                                    /* Send to child process */
+                                    pthread_mutex_lock(&mutexData);
+                                    write(paToChPipe[WRITE_PIPE_IDX], &Command, sizeof(int));
+                                    write(paToChPipe[WRITE_PIPE_IDX], process_list_node(cnt)->Ip, 
+                                                            INET_ADDRSTRLEN * sizeof(char));
+                                    write(paToChPipe[WRITE_PIPE_IDX], &process_list_node(cnt)->port, 
+                                                            sizeof(int));
+                                    pthread_mutex_unlock(&mutexData);
                                 }
                                 else
                                 {
-                                    printf("sdfbvsdf\n");
-                                    // pthread_mutex_lock(&mutexData);
-                                    // process_list_WriteData(cnt, data);
-                                    // nodeIdxPassing = cnt;
-                                    // LogData.Command = NEW_DATA;
-                                    // sprintf(LogData.Ip, "%s",process_list_node(cnt)->Ip);
-                                    // LogData.port = process_list_node(cnt)->port;
-                                    // LogData.temp = process_list_node(cnt)->temp;
-                                    // write(paToChPipe[WRITE_PIPE_IDX], &LogData, sizeof(LogDataType));
-                                    // pthread_cond_signal(&conData);
-                                    // pthread_mutex_unlock(&mutexData);
-                                    // printf("LogData.temp = %f\n",LogData.temp);
+                                    pthread_mutex_lock(&mutexData);
+                                    process_list_WriteData(cnt, data);
+                                    nodeIdxPassing = cnt;
+                                    /* Prepare data */
+                                    Command = NEW_DATA;
+                                    /* Send to child process */
+                                    write(paToChPipe[WRITE_PIPE_IDX], &Command, sizeof(int));
+                                    write(paToChPipe[WRITE_PIPE_IDX], &process_list_node(cnt)->Ip, INET_ADDRSTRLEN * sizeof(char));
+                                    write(paToChPipe[WRITE_PIPE_IDX], &process_list_node(cnt)->port, sizeof(int));
+                                    write(paToChPipe[WRITE_PIPE_IDX], &process_list_node(cnt)->temp, sizeof(float));
+                                    pthread_cond_signal(&conData);
+                                    pthread_mutex_unlock(&mutexData);
                                 }
                             }
                         }
