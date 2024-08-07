@@ -24,6 +24,8 @@ struct m_foo_dev {
     struct cdev m_cdev;
 } mdev;
 
+static char buffer[255];
+static int buffer_size = 0;
 /*  Function Prototypes */
 static int      __init hello_world_init(void);
 static void     __exit hello_world_exit(void);
@@ -58,43 +60,36 @@ static int m_release(struct inode *inode, struct file *file)
 /* This function will be called when we read the Device file */
 static ssize_t m_read(struct file *filp, char __user *user_buffer, size_t size, loff_t *offset)
 {
-    size_t to_read;
+    int to_copy, not_copied, delta;
 
-    pr_info("System call read() called...!!!\n");
+	/* Get amount of data to copy */
+	to_copy = min(size, buffer_size);
 
-    /* Check size doesn't exceed our mapped area size */
-    to_read = (size > mdev.size - *offset) ? (mdev.size - *offset) : size;
+	/* Copy data to user */
+	not_copied = copy_to_user(user_buffer, buffer, to_copy);
 
-	/* Copy from mapped area to user buffer */
-	if (copy_to_user(user_buffer, mdev.kmalloc_ptr + *offset, to_read))
-		return -EFAULT;
+	/* Calculate data */
+	delta = to_copy - not_copied;
 
-    *offset += to_read;
-
-	return to_read;
+	return delta;
 }
 
 /* This function will be called when we write the Device file */
 static ssize_t m_write(struct file *filp, const char __user *user_buffer, size_t size, loff_t *offset)
 {
-    size_t to_write;
+    int to_copy, not_copied, delta;
 
-    pr_info("System call write() called...!!!\n");
+	/* Get amount of data to copy */
+	to_copy = min(size, sizeof(buffer));
 
-    /* Check size doesn't exceed our mapped area size */
-	to_write = (size + *offset > NPAGES * PAGE_SIZE) ? (NPAGES * PAGE_SIZE - *offset) : size;
+	/* Copy data to user */
+	not_copied = copy_from_user(buffer, user_buffer, to_copy);
+	buffer_size = to_copy;
 
-	/* Copy from user buffer to mapped area */
-	memset(mdev.kmalloc_ptr, 0, NPAGES * PAGE_SIZE);
-	if (copy_from_user(mdev.kmalloc_ptr + *offset, user_buffer, to_write) != 0)
-		return -EFAULT;
+	/* Calculate data */
+	delta = to_copy - not_copied;
 
-    pr_info("Data from usr: %s", mdev.kmalloc_ptr);
-
-    *offset += to_write;
-    mdev.size = *offset;
-
-	return to_write;
+	return delta;
 }
 
 static int 
