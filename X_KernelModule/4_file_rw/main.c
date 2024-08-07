@@ -77,7 +77,7 @@ static ssize_t m_read(struct file *filp, char __user *user_buffer, size_t size, 
 /* This function will be called when we write the Device file */
 static ssize_t m_write(struct file *filp, const char __user *user_buffer, size_t size, loff_t *offset)
 {
-    size_t to_write = 0;
+    size_t to_write;
 
     pr_info("System call write() called...!!!\n");
 
@@ -94,7 +94,7 @@ static ssize_t m_write(struct file *filp, const char __user *user_buffer, size_t
     *offset += to_write;
     mdev.size = *offset;
 
-	return size;
+	return to_write;
 }
 
 static int 
