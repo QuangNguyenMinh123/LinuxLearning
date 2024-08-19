@@ -1,2 +1,10 @@
 GPIO with cross-compile, using subsystem
 Input a number and output according number.
+
+Open BeagleBone black
+Build driver using command: make allo
+Copy generated gpio.ko to beaglebone black
+Install driver using command: sudo insmod gpio.ko
+sudo chmod 0777 /dev/UserGPIO
+sudo echo X > /dev/UserGPIO
+X from 0 to 5

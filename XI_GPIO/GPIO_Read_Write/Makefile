@@ -9,3 +9,5 @@ all:
 	
 clean:
 	make -C $(BBB_KERNEL) M=$(shell pwd) clean
+
+again: clean all
