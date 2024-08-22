@@ -1,15 +1,17 @@
 /dts-v1/;
 /plugin/;
 /{
-    compatible = "brcm, bcm2835";
+    compatible = "ti,am335x";
     fragment@0 {
         target-path = "/";
         __overlay__ {
-            my_device {
-                compatible = "brightlight, mydev";
+            MyDeviceTreeOverlay {
+                compatible = "BRIGHTLIGHT";
                 status = "okay";
                 label = "test";
-                my_value = <12>;
+                my_value = <10000>;
+                my_abc = <999>;
+                author = "QuangNM13";
             };
         };
     };

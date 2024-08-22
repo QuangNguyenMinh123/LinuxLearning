@@ -17,7 +17,7 @@ static int dt_remove(struct platform_device *pdev);
 /*******************************************************************************/
 static struct of_device_id my_driver_id[] = {
 	{
-		.compatible = "brightlight, mydev",
+		.compatible = "BRIGHTLIGHT",
 	},
 	{}
 };
@@ -38,6 +38,8 @@ static int dt_probe(struct platform_device *pdev)
 	struct device* dev = &pdev->dev;
 	const char* label;
 	int my_value, ret;
+	int my_abc;
+	int my_xyz = 0;
 	/* check for device properties */
 	printk("I'm in dt_probe function\n");
 	if (!device_property_present(dev, "label"))
@@ -50,6 +52,15 @@ static int dt_probe(struct platform_device *pdev)
 		printk("dt_probe - Error! Device property 'my_value' not found\n");
 		return -1;
 	}
+	if (!device_property_present(dev, "my_abc"))
+	{
+		printk("dt_probe - Error! Device property 'my_abc' not found\n");
+		return -1;
+	}
+	if (!device_property_present(dev, "my_xyz"))
+	{
+		printk("dt_probe - Error! Device property 'my_xyz' not found\n");
+	}
 	/* Read device property */
 	ret = device_property_read_string(dev, "label", &label);
 	if (ret)
@@ -58,6 +69,7 @@ static int dt_probe(struct platform_device *pdev)
 		return -1;
 	}
 	printk("dt_probe 'label': %s\n",label);
+	/* My value */
 	ret = device_property_read_u32(dev, "my_value", &my_value);
 	if (ret)
 	{
@@ -65,6 +77,31 @@ static int dt_probe(struct platform_device *pdev)
 		return -1;
 	}
 	printk("dt_probe 'my_value': %d\n",my_value);
+	/* My abc */
+	ret = device_property_read_u32(dev, "my_abc", &my_abc);
+	if (ret)
+	{
+		printk("dt_probe - Error! Cannot read 'my_abc'\n");
+		return -1;
+	}
+	printk("dt_probe 'my_abc': %d\n",my_abc);
+	/* try to read an integer with string format */
+	ret = device_property_read_string(dev, "my_abc", &label);
+	if (ret)
+	{
+		printk("dt_probe - Error! Cannot read 'my_abc' using string format\n");
+	}
+	else
+		printk("dt_probe 'my_abc' using string format: %s\n",label);
+	/* Read nothing */
+	ret = device_property_read_u32(dev, "my_xyz", &my_xyz);
+	printk("dt_probe - Reading 'my_xyz'\n");
+	if (ret)
+	{
+		printk("dt_probe - Error! Cannot read field 'my_xyz'\n");
+	}
+	else
+		printk("dt_probe 'my_xyz': %d\n",my_xyz);
 	return 0;
 }
 
