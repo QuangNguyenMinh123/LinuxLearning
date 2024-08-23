@@ -6,6 +6,7 @@
 #include <linux/of_device.h>
 #include <linux/gpio/consumer.h>
 #include <linux/proc_fs.h>
+#include <linux/uaccess.h>
 #include <linux/fs.h>
 /*******************************************************************************/
 #define DRIVER_AUTHOR 		"QuangNM13"
@@ -28,9 +29,11 @@ static struct of_device_id my_driver_id[] = {
 /* of = open firmware, thường được sử dụng cho các thiết bị được mô tả bằng Device Tree */
 MODULE_DEVICE_TABLE(of, my_driver_id);
 
-static const struct proc_ops file_ops = {
-	.proc_write = my_write,
+static struct file_operations file_ops = {
+    .owner = THIS_MODULE,
+    .write = my_write,
 };
+
 
 static struct platform_driver my_driver = {
 	.probe = dt_gpio,
@@ -49,10 +52,13 @@ static struct proc_dir_entry *proc_file;
  * @brief Write data to buffer
  */
 static ssize_t my_write(struct file *File, const char *user_buffer, size_t count, loff_t *offs) {
-	switch (user_buffer[0]) {
+	printk("my_write function is reading\n");
+	char buffer[10];
+	copy_from_user(buffer, user_buffer, 5);
+	switch (buffer[0]) {
 		case '0':
 		case '1':
-			gpiod_set_value(my_gpio, user_buffer[0] - '0');
+			gpiod_set_value(my_gpio, buffer[0] - '0');
 		default:
 			break;
 	}
@@ -85,7 +91,8 @@ static int dt_gpio(struct platform_device *pdev)
 		return -1;
 	}
 	/* Create procfs file */
-	proc_file = proc_create("my-led", 0666, NULL, &file_ops);
+	proc_file = proc_create_data("my_gpio", 0666, NULL, &file_ops, NULL);
+	
 	if(proc_file == NULL) {
 		printk("procfs_test - Error creating /proc/my-gpio\n");
 		gpiod_put(my_gpio);

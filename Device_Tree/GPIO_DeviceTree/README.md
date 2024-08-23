@@ -19,3 +19,11 @@ poweroff beagle beaglebone
 After power-up, navigate to folder /proc/device-tree/ to check if folder has name <device_name>
 is created. If this folder is exist, then device tree is added successfully.
 Run command "sudo insmod dt_probe.ko" and "sudo dmesg" to check returned value
+
+======================================
+
+move overlay.dtbo to /lib/firmware and poweroff
+insmod dt_gpio.ko in beagle bone black
+ls /proc/my_gpio to check if kernel module is installed successfully
+echo <value> > /proc/my_gpio to turn on/off led
+value = 0 or 1
