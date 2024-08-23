@@ -1,0 +1,16 @@
+/dts-v1/;
+/plugin/;
+/{
+    compatible = "ti,am335x";
+    fragment@0 {
+        target-path = "/";
+        __overlay__ {
+            MyGPIO {
+                compatible = "QuangNM13,GPIO";
+                status = "okay";
+                author = "QuangNM13";
+                gpio_pin-gpio = <&gpio0 30 0>;
+            };
+        };
+    };
+};
