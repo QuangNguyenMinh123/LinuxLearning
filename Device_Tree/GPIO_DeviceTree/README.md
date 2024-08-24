@@ -21,7 +21,7 @@ is created. If this folder is exist, then device tree is added successfully.
 Run command "sudo insmod dt_probe.ko" and "sudo dmesg" to check returned value
 
 ======================================
-
+at this point, file /proc/my_gpio is not exist
 move overlay.dtbo to /lib/firmware and poweroff
 insmod dt_gpio.ko in beagle bone black
 ls /proc/my_gpio to check if kernel module is installed successfully
