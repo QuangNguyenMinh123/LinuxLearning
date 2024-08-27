@@ -34,5 +34,10 @@ rebuild kernel: ./kernelbuildscripts/tools/rebuild.sh
 add to microSD, start from step 5
 reboot beagle bone black
 
-Step 3:
+Step 3: Register device from sysfs
+To add a device to device tree, normally, it is required to rebuild kernel
+However, this can be avoided by register/unregister via these command:
+	register: 	echo "name" "address" > /sys/bus/i2c/devices/i2c-d%/new_device
+	unregister: echo "address" > /sys/bus/i2c/devices/i2c-d%/delete_device
 /*****************************************************************************************/
+I2c dev:
