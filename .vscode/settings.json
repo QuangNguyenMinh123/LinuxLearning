@@ -2,6 +2,9 @@
     "files.associations": {
         "limits": "c",
         "type_traits": "c",
-        "api": "c"
+        "api": "c",
+        "time.h": "c",
+        "unistd.h": "c",
+        "i2c.h": "c"
     }
 }
