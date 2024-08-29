@@ -18,10 +18,10 @@ static struct of_device_id device_id[] = {
 		.compatible = "Mybmp180",
 	}, { /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, device_id);
+MODULE_DEVICE_TABLE(of, device_id);			/* Tell OS to find device compatible with "Mybmp180" */
 
 static struct i2c_device_id i2c_id[] = {
-	{"my_bmp180", 0},
+	{"my_bmp180_device_id", 0},
 	{ },
 };
 MODULE_DEVICE_TABLE(i2c, i2c_id);
@@ -31,7 +31,7 @@ static struct i2c_driver bmp180_driver = {
 	.remove = bmp180_remove,
 	.id_table = i2c_id,
 	.driver = {
-		.name = "my_bmp180",
+		.name = "my_bmp180_driver",
 		.of_match_table = device_id,
 	},
 };
@@ -63,7 +63,7 @@ static int bmp180_probe(struct i2c_client *client, const struct i2c_device_id *i
 	printk("bmp180_driver - Now I am in the Probe function!\n");
 
 	if(client->addr != BMP180_ADDRESS) {
-		printk("bmp180_driver - Wrong I2C address!\n");
+		printk("bmp180_driver - Cannot find bmp180 device!\n");
 		return -1;
 	}
 

@@ -1,5 +1,6 @@
 # Description
 A simple linux kernel module to read data from BPM180 using I2c driver in beagle bone black
+Device is added at build time
 /*****************************************************************************************/
 # Connection
 P9-19 = I2C2_SCL  ------- SCL

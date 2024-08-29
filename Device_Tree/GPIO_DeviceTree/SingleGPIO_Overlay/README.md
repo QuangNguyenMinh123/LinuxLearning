@@ -1,9 +1,9 @@
-A simple linux kernel module to parse the device tree for a specific device and its properties
-Compile device tree:
-dtc -@ -I dts -O dtb -o testoverlay.dtbo testoverlay.dts
-
+# Brief
+A simple linux kernel module to parse the device tree for GPIO
+This exmaple doesn't add devicev to device tree at build time 
+Device is added at run-time
 =============================
-Turotial
+# Turotial
 Compile testoverlay.dts to create testoverlay.dtbo file using command:
 dtc -@ -I dts -O dtb -o testoverlay.dtbo testoverlay.dts
 
