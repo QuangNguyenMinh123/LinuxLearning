@@ -1,7 +1,7 @@
 A simple linux kernel module to parse the device tree for a specific device and its properties
 Compile device tree:
 dtc -@ -I dts -O dtb -o testoverlay.dtbo testoverlay.dts
-
+using overlay
 =============================
 Turotial
 Compile testoverlay.dts to create testoverlay.dtbo file using command:

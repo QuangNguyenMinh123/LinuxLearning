@@ -5,6 +5,7 @@
 #include <linux/slab.h>     /* Thu vien nay dinh nghia cac ham cdev_init/cdev_add */
 #include <linux/uaccess.h>  /* Thu vien nay dinh nghia cac ham copy_to_user/copy_from_user */
 #include <linux/gpio.h>
+
 /*******************************************************************************/
 #define DRIVER_AUTHOR 		"QuangNM13"
 #define DRIVER_DESC   		"Turn on and off led by writing to file"
