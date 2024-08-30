@@ -26,7 +26,7 @@ LED5  ---------------------- GPIO0_03       GPIO_03
 
 /{
     compatible = "ti,am335x";
-    fragment@1 {
+    fragment@0 {
         target-path = "/";
         __overlay__ {
             MyGPIOCluster {

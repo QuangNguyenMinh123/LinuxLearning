@@ -6,6 +6,7 @@
         "time.h": "c",
         "unistd.h": "c",
         "i2c.h": "c",
-        "gpio.h": "c"
+        "gpio.h": "c",
+        "string.h": "c"
     }
 }

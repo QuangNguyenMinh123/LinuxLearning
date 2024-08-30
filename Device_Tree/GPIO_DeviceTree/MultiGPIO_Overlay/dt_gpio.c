@@ -88,8 +88,8 @@ static int dt_probe(struct platform_device *pdev)
 	/* Init GPIO */
 	for (i = 0;i < NO_LED; i++)
 	{
-		//my_gpio[i] = gpiod_get_index(dev, "gpio_pin", i, GPIOD_OUT_HIGH);
-		my_gpio[i] = gpiod_get(dev, "gpio_pin", GPIOD_OUT_HIGH);
+		my_gpio[i] = gpiod_get_index(dev, "gpio_pin", i, GPIOD_OUT_HIGH);
+		//my_gpio[i] = gpiod_get(dev, "gpio_pin", GPIOD_OUT_HIGH);
 		if (IS_ERR(my_gpio[i]))
 		{
 			printk("dt_probe - Error! cannot setup the GPIO for gpio pin %d\n",i);
