@@ -1,0 +1,32 @@
+/dts-v1/;
+/plugin/;
+/*
+LED1  ---------------------- GPIO0_30       GPIO_30
+LED2  ---------------------- GPIO0_31       GPIO_31
+LED3  ---------------------- GPIO1_16       GPIO_48
+LED4  ---------------------- GPIO0_05       GPIO_05
+LED5  ---------------------- GPIO0_03       GPIO_03
+*/
+
+/{
+    compatible = "ti,am335x";
+    fragment@0 {
+        target-path = "/";
+        __overlay__ {
+            MyGPIOCLuster {
+                compatible = "QuangNM13,GPIO";
+                author = "QuangNM13";
+                status = "okay";
+                
+                gpio_pin-gpio = <&gpio0 30 0
+                                &gpio0 31 0
+                                &gpio1 16 0
+                                &gpio0 5 0
+                                &gpio0 3 0>;
+                // pinctrl-names = "default", "gpio";
+		        // pinctrl-0 = <&state_0_node_a>;
+		        // pinctrl-1 = <&state_1_node_a>,
+            };
+        };
+    };
+};
