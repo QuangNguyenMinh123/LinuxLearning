@@ -12,7 +12,7 @@ Copy generated dt_probe.ko & testoverlay.dtbo to beaglebone black
 Use command "sudo mv testoverlay.dtbo /lib/firmware/"
 use nano to modify file /boot/uEnv.txt, add these line:
 enable_uboot_overlays=1
-uboot_overlay_addr_0-/lib/firmware/<filename>.dtbo
+uboot_overlay_addr_0=/lib/firmware/<filename>.dtbo
 In this case, <filename> is "testoverlay"
 uboot_overlay_addr_0 can be uboot_overlay_addr_0,uboot_overlay_addr_1,uboot_overlay_addr_2.uboot_overlay_addr_3
 poweroff beagle beaglebone

@@ -23,7 +23,7 @@ static ssize_t my_write(struct file *File, const char *user_buffer, size_t count
 /*******************************************************************************/
 static struct of_device_id my_driver_id[] = {
 	{
-		.compatible = "QuangNM13,GPIO",
+		.compatible = "QuangNM13,MultiGPIO",
 	},
 	{}
 };
@@ -53,12 +53,14 @@ static struct proc_dir_entry *proc_file;
  * @brief Write data to buffer
  */
 static ssize_t my_write(struct file *File, const char *user_buffer, size_t count, loff_t *offs) {
-	printk("my_write function is reading\n");
 	int i = 0;
+	int char2Int;
+	int minVal;
 	char buffer[10] = {0};
+	printk("my_write function is reading\n");
 	i = copy_from_user(buffer, user_buffer, NO_LED);
-	int char2Int = (int) buffer[0] - '0';
-	int minVal = min(char2Int, NO_LED);
+	char2Int = (int) buffer[0] - '0';
+	minVal = min(char2Int, NO_LED);
 	if (minVal >= 0 && minVal <= NO_LED)
 	{
 		for (i = 0; i < minVal; i++)
@@ -72,27 +74,27 @@ static ssize_t my_write(struct file *File, const char *user_buffer, size_t count
 static int dt_probe(struct platform_device *pdev)
 {
 	struct device* dev = &pdev->dev;
-	const char* label;
-	int ret;
 	int i = 0;
 	/* check for device properties */
 	printk("I'm in dt_probe function\n");
 	if (!device_property_present(dev, "author"))
 	{
-		printk("dt_gpio - Error! Device property 'author' not found\n");
+		printk("dt_probe - Error! Device property 'author' not found\n");
 	}
 	if (!device_property_present(dev, "gpio_pin-gpio"))
 	{
-		printk("dt_gpio - Error! Device property 'gpio_pin-gpio' not found\n");
+		printk("dt_probe - Error! Device property 'gpio_pin-gpio' not found\n");
 	}
 	/* Init GPIO */
 	for (i = 0;i < NO_LED; i++)
 	{
-		my_gpio[i] = gpiod_get_index(dev, "gpio_pin", i, GPIOD_OUT_HIGH);
+		//my_gpio[i] = gpiod_get_index(dev, "gpio_pin", i, GPIOD_OUT_HIGH);
+		my_gpio[i] = gpiod_get(dev, "gpio_pin", GPIOD_OUT_HIGH);
 		if (IS_ERR(my_gpio[i]))
 		{
 			printk("dt_probe - Error! cannot setup the GPIO for gpio pin %d\n",i);
 			gpiod_put(my_gpio[i]);
+			return -1;
 		}
 	}
 	/* Create procfs file */
@@ -111,8 +113,8 @@ static int dt_probe(struct platform_device *pdev)
 
 static int dt_remove(struct platform_device *pdev)
 {
-	printk("dt_remove\n");
 	int i = 0;
+	printk("dt_remove\n");
 	for (i = 0;i < NO_LED; i++)
 	{
 		gpiod_put(my_gpio[i]);
@@ -126,7 +128,7 @@ static int __init DT_init(void)
 	printk("DT_init - Loading the driver\n");
 	if (platform_driver_register(&my_driver))
 	{
-		printk("dt_probe - Error! Cannot load driver\n");
+		printk("DT_init - Error! Cannot load driver\n");
 		return -1;
 	}
 	return 0;
@@ -134,7 +136,7 @@ static int __init DT_init(void)
 
 static void __exit DT_exit(void)
 {
-	printk("dt_probe - Unloading the driver\n");
+	printk("DT_exit - Unloading the driver\n");
 	platform_driver_unregister(&my_driver);
 }
 /*******************************************************************************/
