@@ -13,6 +13,7 @@
 #define DRIVER_DESC   		"GPIO using device tree overlay"
 #define LOW					0
 #define HIGH				1
+#define NO_LED				5
 /*******************************************************************************/
 
 /*******************************************************************************/
@@ -44,7 +45,7 @@ static struct platform_driver my_driver = {
 	}
 };
 
-static struct gpio_desc *my_gpio[5] = {NULL};
+static struct gpio_desc *my_gpio[NO_LED] = {NULL};
 static struct proc_dir_entry *proc_file;
 
 /*******************************************************************************/
@@ -53,14 +54,17 @@ static struct proc_dir_entry *proc_file;
  */
 static ssize_t my_write(struct file *File, const char *user_buffer, size_t count, loff_t *offs) {
 	printk("my_write function is reading\n");
-	char buffer[10];
-	copy_from_user(buffer, user_buffer, 5);
-	switch (buffer[0]) {
-		case '0':
-		case '1':
-			gpiod_set_value(my_gpio[2], buffer[0] - '0');
-		default:
-			break;
+	int i = 0;
+	char buffer[10] = {0};
+	i = copy_from_user(buffer, user_buffer, NO_LED);
+	int char2Int = (int) buffer[0] - '0';
+	int minVal = min(char2Int, NO_LED);
+	if (minVal >= 0 && minVal <= NO_LED)
+	{
+		for (i = 0; i < minVal; i++)
+			gpiod_set_value(my_gpio[i], 1);
+		for (; i < NO_LED; i++)
+			gpiod_set_value(my_gpio[i], 0);
 	}
 	return count;
 }
@@ -82,14 +86,13 @@ static int dt_probe(struct platform_device *pdev)
 		printk("dt_gpio - Error! Device property 'gpio_pin-gpio' not found\n");
 	}
 	/* Init GPIO */
-	for (i = 0;i < 5; i++)
+	for (i = 0;i < NO_LED; i++)
 	{
 		my_gpio[i] = gpiod_get_index(dev, "gpio_pin", i, GPIOD_OUT_HIGH);
 		if (IS_ERR(my_gpio[i]))
 		{
 			printk("dt_probe - Error! cannot setup the GPIO for gpio pin %d\n",i);
 			gpiod_put(my_gpio[i]);
-			return -1;
 		}
 	}
 	/* Create procfs file */
@@ -97,7 +100,7 @@ static int dt_probe(struct platform_device *pdev)
 	
 	if(proc_file == NULL) {
 		printk("procfs_test - Error creating /proc/my-gpio\n");
-		for (i = 0;i < 5; i++)
+		for (i = 0;i < NO_LED; i++)
 		{
 			gpiod_put(my_gpio[i]);
 		}
@@ -110,7 +113,7 @@ static int dt_remove(struct platform_device *pdev)
 {
 	printk("dt_remove\n");
 	int i = 0;
-	for (i = 0;i < 5; i++)
+	for (i = 0;i < NO_LED; i++)
 	{
 		gpiod_put(my_gpio[i]);
 	}
