@@ -1,0 +1,26 @@
+Declare library and probe/remove function
+    #include <linux/module.h>
+    #include <linux/init.h>
+    #include <linux/proc_fs.h>
+    #include <linux/i2c.h>
+    #include <linux/uaccess.h>
+    static int bmp180_probe(struct i2c_client *client, const struct i2c_device_id *id);
+    static int bmp180_remove(struct i2c_client *client);
+Add compatible string
+    static struct of_device_id device_id[] = {
+        {
+            .compatible = "Mybmp180",
+        }, { /* sentinel */ }
+    };
+Declare bmp180_driver's function and compatible string
+    static struct i2c_driver bmp180_driver = {
+        .probe = bmp180_probe,
+        .remove = bmp180_remove,
+        .driver = {
+            .name = "bmp_Driver",
+            .of_match_table = match_id,
+        },
+    };
+Register bmp180_drvier to system
+    module_i2c_driver(bmp180_driver);
+

@@ -1,0 +1,28 @@
+/* i2c_smbus_read_byte_data */
+The i2c_smbus_read_byte_data function is used in the Linux kernel to read a single
+ byte of data from a specific register of an I2C device
+ /*******************************************************************************/
+ /* i2c_smbus_write_byte_data */
+ __s32 i2c_smbus_write_byte_data(struct i2c_client *client, __u8 command, __u8 value);
+The i2c_smbus_write_byte_data function is used in the Linux kernel to write a single
+byte to a specific register of an I2C device
+ /*******************************************************************************/
+ i2c_get_adapter
+ The i2c_get_adapter function in the Linux kernel is used to obtain a handle to an
+  I2C adapter (bus) by its bus number
+ /*******************************************************************************/
+/* struct i2c_board_info */
+struct i2c_board_info {
+char        type[I2C_NAME_SIZE];
+unsigned short   flags;
+unsigned short   addr;
+void        *platform_data;
+struct dev_archdata *archdata;
+struct device_node *of_node;
+struct fwnode_handle *fwnode;
+int         irq;
+};
+The i2c_board_info struct is used in the Linux kernel to describe I2C devices
+that are present on a board. This struct helps in building tables of information
+listing these devices, which is then used to grow the driver model tree
+/*******************************************************************************/
