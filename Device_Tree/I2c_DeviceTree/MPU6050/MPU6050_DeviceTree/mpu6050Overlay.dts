@@ -1,0 +1,18 @@
+/dts-v1/;
+/plugin/;
+/{
+    compatible = "ti,am335x";
+    fragment@0 {
+        target-path = <&i2c2>;
+        __overlay__ {
+            #address-cells = <1>;
+			#size-cells = <0>;
+            MyMPU6050: mpu6050@68 {
+                compatible = "QuangNM13,MyMPU6050";
+                status = "okay";
+                author = "QuangNM13";
+                reg = <0x68>;
+            };
+        };
+    };
+};

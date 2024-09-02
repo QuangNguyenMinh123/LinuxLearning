@@ -5,7 +5,7 @@
 #include <linux/uaccess.h>
 /*******************************************************************************/
 #define BMP180_ADDRESS					0x77
-#define BMP085_OVERSAMPLING_SETTING		3
+#define BMP180_OVERSAMPLING_SETTING		3
 /*******************************************************************************/
 /* Declate the probe and remove functions */
 static int bmp180_probe(struct i2c_client *client, const struct i2c_device_id *id);
@@ -46,7 +46,7 @@ static ssize_t bmp180_read(struct file *File, char *user_buffer, size_t count, l
 	buffer[0] = i2c_smbus_read_byte_data(bmp180_slave, 0xF6);
 	buffer[1] = i2c_smbus_read_byte_data(bmp180_slave, 0xF7);
 	buffer[2] = i2c_smbus_read_byte_data(bmp180_slave, 0xF8);
-	i2c_smbus_write_byte_data(bmp180_slave, 0xF4, 0x34 + (BMP085_OVERSAMPLING_SETTING<<6));
+	i2c_smbus_write_byte_data(bmp180_slave, 0xF4, 0x34 + (BMP180_OVERSAMPLING_SETTING<<6));
 	copy_to_user(user_buffer, buffer, 3);
 	return count;
 }
@@ -81,7 +81,7 @@ static int bmp180_probe(struct i2c_client *client, const struct i2c_device_id *i
 	i2c_smbus_write_byte_data(bmp180_slave, 0xE0, 0XB6);
 	/* Read chip ID from 0xD0, returned value should be 0x55 */
 	dummy = i2c_smbus_read_byte_data(bmp180_slave, 0xD0);
-	i2c_smbus_write_byte_data(bmp180_slave, 0xF4, 0x34 + (BMP085_OVERSAMPLING_SETTING<<6));
+	i2c_smbus_write_byte_data(bmp180_slave, 0xF4, 0x34 + (BMP180_OVERSAMPLING_SETTING<<6));
 	printk("bmp180 Chip ID: %d\n", dummy);
 	return 0;
 }

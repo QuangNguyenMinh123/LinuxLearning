@@ -1,11 +1,11 @@
 # Gpio Driver Legacy
 BBB_KERNEL := /home/quangnm/Desktop/buildBBB/kernelbuildscripts/KERNEL
 TOOLCHAIN := /home/quangnm/Desktop/buildBBB/kernelbuildscripts/dl/gcc-8.5.0-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-
-DEVICE_TREE_MODULE := testoverlay
-C_FILE_NAME	:= dt_gpio
+DEVICE_TREE_MODULE := mpu6050Overlay
+C_FILE_NAME	:= mpu6050
 obj-m := $(C_FILE_NAME).o
 BEAGLEBONE_PASSWORD := temppwd
-BEAGLEBONE_IP := 192.168.0.103
+BEAGLEBONE_IP := 192.168.16.103
 BEAGLEBONE_HOME_PATH := debian@$(BEAGLEBONE_IP):/home/debian
 
 dt: $(DEVICE_TREE_MODULE).dts

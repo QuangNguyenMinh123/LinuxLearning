@@ -5,6 +5,7 @@
 #include <linux/uaccess.h>
 /*******************************************************************************/
 #define MPU6050_ADDRESS					0x68
+#define BMP085_OVERSAMPLING_SETTING		1
 /*******************************************************************************/
 /* Declate the probe and remove functions */
 static int mpu6050_probe(struct i2c_client *client, const struct i2c_device_id *id);
@@ -59,6 +60,7 @@ static struct file_operations fops = {
  * @brief This function is called on loading the driver 
  */
 static int mpu6050_probe(struct i2c_client *client, const struct i2c_device_id *id) {
+	u8 dummy;
 	printk("mpu6050_driver - Now I am in the Probe function!\n");
 
 	if(client->addr != MPU6050_ADDRESS) {
@@ -74,8 +76,6 @@ static int mpu6050_probe(struct i2c_client *client, const struct i2c_device_id *
 		printk("mpu6050_driver - Error creating /proc/my_mpu6050\n");
 		return -ENOMEM;
 	}
-
-	u8 dummy;
 	/* Write 0XB6 to 0xE0 to reset mpu6050 */
 	i2c_smbus_write_byte_data(mpu6050_slave, 0xE0, 0XB6);
 	/* Read chip ID from 0xD0, returned value should be 0x55 */
