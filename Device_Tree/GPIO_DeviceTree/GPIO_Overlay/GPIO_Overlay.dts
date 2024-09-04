@@ -7,28 +7,41 @@ LED3  ---------------------- GPIO1_16       GPIO_48
 LED4  ---------------------- GPIO0_05       GPIO_05
 LED5  ---------------------- GPIO0_03       GPIO_03
 */
-
-// &i2c1 {
-//     status = "disabled";
-// };
-
-// &spi0 {
-//     status = "disabled";
-// };
-
-// &uart4 {
-//     status = "disabled";
-// };
-
-// &uart2 {
-//     status = "disabled";
-// };
+// #define OMAP_IOPAD_OFFSET(pa, offset)	    (((pa) & 0xffff) - (offset))
+// #define AM33XX_IOPAD(pa, val)		        OMAP_IOPAD_OFFSET((pa), 0x0800) (val) (0)
+// #define PULL_UP			                    1 << 4)
+// #define PIN_OUTPUT_PULLUP	                (PULL_UP)
+// #define INPUT_EN		                    1 << 8)
+// #define MUX_MODE7	                        7
+// #define PIN_OUTPUT		                    0
+// #define PULL_ENA		                    1 << 3)
+// #define PIN_OUTPUT_PULLDOWN	                (PIN_OUTPUT | PULL_ENA)
 
 /{
-    compatible = "ti,am335x";
+    compatible = "ti,am335x-bone-black";
     fragment@0 {
         target-path = "/";
         __overlay__ {
+            DefaultSetting: default_setting{
+                pinctrl-single,pins = <
+                    0x70  (1 << 4 | 1 << 8 | 7)
+                    0x74  (1 << 4 | 1 << 8 | 7)
+                    0x40  (1 << 3 | 1 << 8 | 7)
+                    0x15c (1 << 4 | 1 << 8 | 7)
+                    0x154 (1 << 4 | 1 << 8 | 7)
+                >;
+            };
+
+            GPIOSetting: gpio_setting{
+                pinctrl-single,pins = <
+                    0x70  (0 | 1 << 8 | 7)
+                    0x74  (0 | 1 << 8 | 7)
+                    0x40  (0 | 1 << 8 | 7)
+                    0x15c (0 | 1 << 8 | 7)
+                    0x154 (0 | 1 << 8 | 7)
+                >;
+            };
+
             MyGPIOCluster {
                 compatible = "QuangNM13,MultiGPIO";
                 author = "QuangNM13";
@@ -38,17 +51,9 @@ LED5  ---------------------- GPIO0_03       GPIO_03
                                 <&gpio1 16 0>,
                                 <&gpio0 5 0>,
                                 <&gpio0 3 0>;
-                // pinctrl-names = "default", "gpio";
-		        // pinctrl-0 = <&P9_11_default_pin>,
-                //             <&P9_13_default_pin>,
-                //             <&P9_15_default_pin>,
-                //             <&P9_17_default_pin>,
-                //             <&P9_21_default_pin>;
-		        // pinctrl-1 = <&P9_11_gpio_pin>,
-                //             <&P9_13_gpio_pin>,
-                //             <&P9_15_gpio_pin>,
-                //             <&P9_17_gpio_pin>,
-                //             <&P9_21_gpio_pin>;
+                pinctrl-names = "default", "gpio";
+		        pinctrl-0 = <&DefaultSetting>;
+		        pinctrl-1 = <&GPIOSetting>;
             };
         }; 
     };

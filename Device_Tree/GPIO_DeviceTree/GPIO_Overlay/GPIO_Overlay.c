@@ -8,9 +8,11 @@
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
 #include <linux/fs.h>
+#include <linux/pinctrl/consumer.h>
 /*******************************************************************************/
 #define DRIVER_AUTHOR 		"QuangNM13"
 #define DRIVER_DESC   		"GPIO using device tree overlay"
+#define COMPATIBLE			"QuangNM13,MultiGPIO"
 #define LOW					0
 #define HIGH				1
 #define NO_LED				5
@@ -23,7 +25,7 @@ static ssize_t my_write(struct file *File, const char *user_buffer, size_t count
 /*******************************************************************************/
 static struct of_device_id my_driver_id[] = {
 	{
-		.compatible = "QuangNM13,MultiGPIO",
+		.compatible = COMPATIBLE,
 	},
 	{}
 };
@@ -50,6 +52,39 @@ static struct proc_dir_entry *proc_file;
 
 /*******************************************************************************/
 /**
+ * @brief Set pin as gpio
+ */
+struct pinctrl* SetGPIO(struct device* dev, char* mode)
+{
+	struct pinctrl *p;
+	struct pinctrl_state *state;
+	int ret;
+
+	p = pinctrl_get(dev);
+	if (IS_ERR(p))
+	{
+		printk("SetGPIO - Error! 1");
+		return p;
+	}
+		
+	state = pinctrl_lookup_state(p, mode);
+	if (IS_ERR(p))
+	{
+		printk("SetGPIO - Error! 2");
+		devm_pinctrl_put(p);
+		return ERR_PTR(PTR_ERR(state));
+	}
+	ret = pinctrl_select_state(p, state);
+	if (ret < 0)
+	{
+		printk("SetGPIO - Error! 3");
+		devm_pinctrl_put(p);
+		return ERR_PTR(ret);
+	}
+	return p;
+}
+
+/**
  * @brief Write data to buffer
  */
 static ssize_t my_write(struct file *File, const char *user_buffer, size_t count, loff_t *offs) {
@@ -57,7 +92,7 @@ static ssize_t my_write(struct file *File, const char *user_buffer, size_t count
 	int char2Int;
 	int minVal;
 	char buffer[10] = {0};
-	printk("my_write function is reading\n");
+	printk("my_write function is writing\n");
 	i = copy_from_user(buffer, user_buffer, NO_LED);
 	char2Int = (int) buffer[0] - '0';
 	minVal = min(char2Int, NO_LED);
@@ -73,6 +108,7 @@ static ssize_t my_write(struct file *File, const char *user_buffer, size_t count
 
 static int dt_probe(struct platform_device *pdev)
 {
+	struct pinctrl* checkPinCtrl;
 	struct device* dev = &pdev->dev;
 	int i = 0;
 	/* check for device properties */
@@ -94,7 +130,11 @@ static int dt_probe(struct platform_device *pdev)
 		{
 			printk("dt_probe - Error! cannot setup the GPIO for gpio pin %d\n",i);
 			gpiod_put(my_gpio[i]);
-			return -1;
+		}
+		checkPinCtrl = SetGPIO(dev, "gpio");
+		if (IS_ERR(checkPinCtrl))
+		{
+			printk("dt_probe - Error! cannot setup the pin mux for gpio pin %d\n",i);
 		}
 	}
 	/* Create procfs file */

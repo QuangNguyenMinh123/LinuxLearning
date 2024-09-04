@@ -1,26 +1,30 @@
-# Gpio Driver Legacy
+# Gpio Driver using overlay
+PHONY: all clean move
+
 BBB_KERNEL := /home/quangnm/Desktop/buildBBB/kernelbuildscripts/KERNEL
 TOOLCHAIN := /home/quangnm/Desktop/buildBBB/kernelbuildscripts/dl/gcc-8.5.0-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-
-DEVICE_TREE_MODULE := GPIO_Overlay
-C_FILE_NAME	:= GPIO_Overlay
-obj-m := $(C_FILE_NAME).o
+OVERLAY_FILE := GPIO_Overlay
+C_FILE	:= GPIO_Overlay
+obj-m := $(C_FILE).o
 BEAGLEBONE_PASSWORD := temppwd
 BEAGLEBONE_IP := 192.168.16.103
 BEAGLEBONE_HOME_PATH := debian@$(BEAGLEBONE_IP):/home/debian
 
-dt: $(DEVICE_TREE_MODULE).dts
-	@dtc -@ -I dts -O dtb -o $(DEVICE_TREE_MODULE).dtbo $(DEVICE_TREE_MODULE).dts
+first:
+	scp $(OVERLAY_FILE).dtbo $(BEAGLEBONE_HOME_PATH)
 
 all:
-	make -C $(BBB_KERNEL) M=$(shell pwd) clean
-	rm -rf $(DEVICE_TREE_MODULE).dtbo
-	make ARCH=arm CROSS_COMPILE=$(TOOLCHAIN) -C $(BBB_KERNEL) M=$(shell pwd) modules
-	dtc -@ -I dts -O dtb -o $(DEVICE_TREE_MODULE).dtbo $(DEVICE_TREE_MODULE).dts
-	sshpass -p $(BEAGLEBONE_PASSWORD) scp $(DEVICE_TREE_MODULE).dtbo $(BEAGLEBONE_HOME_PATH)
-	sshpass -p $(BEAGLEBONE_PASSWORD) scp $(C_FILE_NAME).ko $(BEAGLEBONE_HOME_PATH)
+	@make -C $(BBB_KERNEL) M=$(shell pwd) clean
+	@rm -rf $(OVERLAY_FILE).dtbo
+	@make ARCH=arm CROSS_COMPILE=$(TOOLCHAIN) -C $(BBB_KERNEL) M=$(shell pwd) modules
+	@dtc -@ -I dts -O dtb -o $(OVERLAY_FILE).dtbo $(OVERLAY_FILE).dts
 
 clean:
 	@make -C $(BBB_KERNEL) M=$(shell pwd) clean
-	@rm -rf $(DEVICE_TREE_MODULE).dtbo
+	@rm -rf $(OVERLAY_FILE).dtbo
+
+move:
+	sshpass -p $(BEAGLEBONE_PASSWORD) scp $(OVERLAY_FILE).dtbo $(BEAGLEBONE_HOME_PATH)
+	sshpass -p $(BEAGLEBONE_PASSWORD) scp $(C_FILE).ko $(BEAGLEBONE_HOME_PATH)
 
 again: clean all
