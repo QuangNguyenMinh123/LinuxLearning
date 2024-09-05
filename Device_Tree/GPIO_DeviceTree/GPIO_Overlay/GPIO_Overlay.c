@@ -12,7 +12,7 @@
 /*******************************************************************************/
 #define DRIVER_AUTHOR 		"QuangNM13"
 #define DRIVER_DESC   		"GPIO using device tree overlay"
-#define COMPATIBLE			"QuangNM13,MultiGPIO"
+#define COMPATIBLE			"MultiGPIO_Devicetree"
 #define LOW					0
 #define HIGH				1
 #define NO_LED				5
@@ -26,6 +26,9 @@ static ssize_t my_write(struct file *File, const char *user_buffer, size_t count
 static struct of_device_id my_driver_id[] = {
 	{
 		.compatible = COMPATIBLE,
+	},
+	{
+		.compatible = "bone-pinmux-helper",
 	},
 	{}
 };
@@ -42,8 +45,8 @@ static struct platform_driver my_driver = {
 	.probe = dt_probe,
 	.remove = dt_remove,
 	.driver = {
-		.name = "my_device_driver",
-		.of_match_table = my_driver_id
+		.name = "MultiGPIO_Devicetree_Driver",
+		.of_match_table = of_match_ptr(my_driver_id),
 	}
 };
 
@@ -51,39 +54,6 @@ static struct gpio_desc *my_gpio[NO_LED] = {NULL};
 static struct proc_dir_entry *proc_file;
 
 /*******************************************************************************/
-/**
- * @brief Set pin as gpio
- */
-struct pinctrl* SetGPIO(struct device* dev, char* mode)
-{
-	struct pinctrl *p;
-	struct pinctrl_state *state;
-	int ret;
-
-	p = pinctrl_get(dev);
-	if (IS_ERR(p))
-	{
-		printk("SetGPIO - Error! 1");
-		return p;
-	}
-		
-	state = pinctrl_lookup_state(p, mode);
-	if (IS_ERR(p))
-	{
-		printk("SetGPIO - Error! 2");
-		devm_pinctrl_put(p);
-		return ERR_PTR(PTR_ERR(state));
-	}
-	ret = pinctrl_select_state(p, state);
-	if (ret < 0)
-	{
-		printk("SetGPIO - Error! 3");
-		devm_pinctrl_put(p);
-		return ERR_PTR(ret);
-	}
-	return p;
-}
-
 /**
  * @brief Write data to buffer
  */
@@ -117,11 +87,16 @@ static int dt_probe(struct platform_device *pdev)
 	{
 		printk("dt_probe - Error! Device property 'author' not found\n");
 	}
-	if (!device_property_present(dev, "gpio_pin-gpio"))
+	if (!device_property_present(dev, "gpio_pin-gpios"))
 	{
-		printk("dt_probe - Error! Device property 'gpio_pin-gpio' not found\n");
+		printk("dt_probe - Error! Device property 'gpio_pin-gpios' not found\n");
 	}
 	/* Init GPIO */
+	checkPinCtrl = devm_pinctrl_get_select(dev, "gpio");
+	if (IS_ERR(checkPinCtrl))
+	{
+		printk("SetGPIO - Error! cannot setup the pin mux for gpio\n");
+	}
 	for (i = 0;i < NO_LED; i++)
 	{
 		my_gpio[i] = gpiod_get_index(dev, "gpio_pin", i, GPIOD_OUT_HIGH);
@@ -130,11 +105,6 @@ static int dt_probe(struct platform_device *pdev)
 		{
 			printk("dt_probe - Error! cannot setup the GPIO for gpio pin %d\n",i);
 			gpiod_put(my_gpio[i]);
-		}
-		checkPinCtrl = SetGPIO(dev, "gpio");
-		if (IS_ERR(checkPinCtrl))
-		{
-			printk("dt_probe - Error! cannot setup the pin mux for gpio pin %d\n",i);
 		}
 	}
 	/* Create procfs file */
@@ -180,8 +150,12 @@ static void __exit DT_exit(void)
 	platform_driver_unregister(&my_driver);
 }
 /*******************************************************************************/
+
 module_init(DT_init);
 module_exit(DT_exit);
+
+// module_platform_driver_probe(my_driver, dt_probe);
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC); 
