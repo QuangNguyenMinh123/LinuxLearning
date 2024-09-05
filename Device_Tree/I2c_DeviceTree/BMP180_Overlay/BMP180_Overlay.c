@@ -15,7 +15,7 @@ static struct i2c_client *bmp180_slave;
 
 static struct of_device_id device_id[] = {
 	{
-		.compatible = "Mybmp180",
+		.compatible = "QuangNM13,BMP180",
 	}, { /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, device_id);			/* Tell OS to find device compatible with "Mybmp180" */
@@ -31,7 +31,7 @@ static struct i2c_driver bmp180_driver = {
 	.remove = bmp180_remove,
 	.id_table = i2c_id,
 	.driver = {
-		.name = "my_bmp180_driver",
+		.name = "bmp180_driver",
 		.of_match_table = device_id,
 	},
 };
@@ -43,11 +43,12 @@ static struct proc_dir_entry *proc_file;
  */
 static ssize_t bmp180_read(struct file *File, char *user_buffer, size_t count, loff_t *offs) {
 	u8 buffer[3];
+	int cnt;
 	buffer[0] = i2c_smbus_read_byte_data(bmp180_slave, 0xF6);
 	buffer[1] = i2c_smbus_read_byte_data(bmp180_slave, 0xF7);
 	buffer[2] = i2c_smbus_read_byte_data(bmp180_slave, 0xF8);
 	i2c_smbus_write_byte_data(bmp180_slave, 0xF4, 0x34 + (BMP180_OVERSAMPLING_SETTING<<6));
-	copy_to_user(user_buffer, buffer, 3);
+	cnt = copy_to_user(user_buffer, buffer, 3);
 	return count;
 }
 
@@ -59,7 +60,9 @@ static struct file_operations fops = {
 /**
  * @brief This function is called on loading the driver 
  */
-static int bmp180_probe(struct i2c_client *client, const struct i2c_device_id *id) {
+static int bmp180_probe(struct i2c_client *client, const struct i2c_device_id *id)
+{
+	u8 dummy;
 	printk("bmp180_driver - Now I am in the Probe function!\n");
 
 	if(client->addr != BMP180_ADDRESS) {
@@ -68,15 +71,12 @@ static int bmp180_probe(struct i2c_client *client, const struct i2c_device_id *i
 	}
 
 	bmp180_slave = client;
-		
 	/* Creating procfs file */
 	proc_file = proc_create("my_bmp180", 0666, NULL, &fops);
 	if(proc_file == NULL) {
 		printk("bmp180_driver - Error creating /proc/my_bmp180\n");
 		return -ENOMEM;
 	}
-
-	u8 dummy;
 	/* Write 0XB6 to 0xE0 to reset bmp180 */
 	i2c_smbus_write_byte_data(bmp180_slave, 0xE0, 0XB6);
 	/* Read chip ID from 0xD0, returned value should be 0x55 */
