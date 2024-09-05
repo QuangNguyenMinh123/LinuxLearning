@@ -8,7 +8,6 @@ LED4  ---------------------- GPIO0_05       GPIO_05
 LED5  ---------------------- GPIO0_03       GPIO_03
 */
 
-
 /{
     compatible = "ti,am33xx";
     fragment@0 {
@@ -40,7 +39,7 @@ LED5  ---------------------- GPIO0_03       GPIO_03
         target-path = "/";
         __overlay__ {
             MyGPIOCluster {
-                compatible = "MultiGPIO_Devicetree";
+                compatible = "MultiGPIO_Overlay";
                 author = "QuangNM13";
                 status = "okay";
                 gpio_pin-gpios = <&gpio0 30 0>,

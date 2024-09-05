@@ -12,7 +12,7 @@
 /*******************************************************************************/
 #define DRIVER_AUTHOR 		"QuangNM13"
 #define DRIVER_DESC   		"GPIO using device tree overlay"
-#define COMPATIBLE			"MultiGPIO_Devicetree"
+#define COMPATIBLE			"MultiGPIO_Overlay"
 #define LOW					0
 #define HIGH				1
 #define NO_LED				5
@@ -26,9 +26,6 @@ static ssize_t my_write(struct file *File, const char *user_buffer, size_t count
 static struct of_device_id my_driver_id[] = {
 	{
 		.compatible = COMPATIBLE,
-	},
-	{
-		.compatible = "bone-pinmux-helper",
 	},
 	{}
 };
@@ -45,7 +42,7 @@ static struct platform_driver my_driver = {
 	.probe = dt_probe,
 	.remove = dt_remove,
 	.driver = {
-		.name = "MultiGPIO_Devicetree_Driver",
+		.name = "MultiGPIO_Overlay_Driver",
 		.of_match_table = of_match_ptr(my_driver_id),
 	}
 };
