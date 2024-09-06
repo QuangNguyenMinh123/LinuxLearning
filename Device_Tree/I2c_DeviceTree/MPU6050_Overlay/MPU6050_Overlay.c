@@ -5,7 +5,7 @@
 #include <linux/uaccess.h>
 /*******************************************************************************/
 #define MPU6050_ADDRESS					0x68
-#define BMP085_OVERSAMPLING_SETTING		1
+#define Who_Am_I_Reg					117
 /*******************************************************************************/
 /* Declate the probe and remove functions */
 static int mpu6050_probe(struct i2c_client *client, const struct i2c_device_id *id);
@@ -15,13 +15,13 @@ static struct i2c_client *mpu6050_slave;
 
 static struct of_device_id device_id[] = {
 	{
-		.compatible = "Mympu6050",
+		.compatible = "QuangNM13,MPU6050",
 	}, { /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, device_id);			/* Tell OS to find device compatible with "Mympu6050" */
 
 static struct i2c_device_id i2c_id[] = {
-	{"my_mpu6050_device_id", 0},
+	{"mpu6050_device_id", 0},
 	{ },
 };
 MODULE_DEVICE_TABLE(i2c, i2c_id);
@@ -31,7 +31,7 @@ static struct i2c_driver mpu6050_driver = {
 	.remove = mpu6050_remove,
 	.id_table = i2c_id,
 	.driver = {
-		.name = "my_mpu6050_driver",
+		.name = "mpu6050_driver",
 		.of_match_table = device_id,
 	},
 };
@@ -43,10 +43,6 @@ static struct proc_dir_entry *proc_file;
  */
 static ssize_t mpu6050_read(struct file *File, char *user_buffer, size_t count, loff_t *offs) {
 	u8 buffer[3];
-	buffer[0] = i2c_smbus_read_byte_data(mpu6050_slave, 0xF6);
-	buffer[1] = i2c_smbus_read_byte_data(mpu6050_slave, 0xF7);
-	buffer[2] = i2c_smbus_read_byte_data(mpu6050_slave, 0xF8);
-	i2c_smbus_write_byte_data(mpu6050_slave, 0xF4, 0x34 + (BMP085_OVERSAMPLING_SETTING<<6));
 	copy_to_user(user_buffer, buffer, 3);
 	return count;
 }
@@ -67,21 +63,27 @@ static int mpu6050_probe(struct i2c_client *client, const struct i2c_device_id *
 		printk("mpu6050_driver - Cannot find mpu6050 device!\n");
 		return -1;
 	}
-
 	mpu6050_slave = client;
-		
 	/* Creating procfs file */
-	proc_file = proc_create("my_mpu6050", 0666, NULL, &fops);
+	proc_file = proc_create("mpu6050", 0666, NULL, &fops);
 	if(proc_file == NULL) {
-		printk("mpu6050_driver - Error creating /proc/my_mpu6050\n");
+		printk("mpu6050_driver - Error creating /proc/mpu6050\n");
 		return -ENOMEM;
 	}
-	/* Write 0XB6 to 0xE0 to reset mpu6050 */
-	i2c_smbus_write_byte_data(mpu6050_slave, 0xE0, 0XB6);
-	/* Read chip ID from 0xD0, returned value should be 0x55 */
-	dummy = i2c_smbus_read_byte_data(mpu6050_slave, 0xD0);
-	i2c_smbus_write_byte_data(mpu6050_slave, 0xF4, 0x34 + (BMP085_OVERSAMPLING_SETTING<<6));
-	printk("mpu6050 Chip ID: %d\n", dummy);
+	/* Read mpu6050 from Who_Am_I_Reg, returned value should be 0x68 */
+	dummy = i2c_smbus_read_byte_data(mpu6050_slave, Who_Am_I_Reg);
+	if (dummy == MPU6050_ADDRESS)
+		printk("mpu6050 is detected\n");
+	else
+	{
+		printk("Cannot detect mpu6050\n");
+		return -1;
+	}
+	/* MPU6050 init */
+	i2c_smbus_write_byte_data(mpu6050_slave, 0x6B, 0x00);		/* 0x6B */
+	i2c_smbus_write_byte_data(mpu6050_slave, 0x1B, 0x08);		/* 0x1B */
+	i2c_smbus_write_byte_data(mpu6050_slave, 0x1C, 0x10);		/* 0x1C */
+	i2c_smbus_write_byte_data(mpu6050_slave, 0x1A, 0x03);		/* 0x1C */
 	return 0;
 }
 
@@ -91,7 +93,6 @@ static int mpu6050_probe(struct i2c_client *client, const struct i2c_device_id *
 static int mpu6050_remove(struct i2c_client *client) {
 	printk("mpu6050_driver - Now I am in the Remove function!\n");
 	proc_remove(proc_file);
-	i2c_smbus_write_byte_data(mpu6050_slave, 0xE0, 0XB6);
 	return 0;
 }
 /*******************************************************************************/

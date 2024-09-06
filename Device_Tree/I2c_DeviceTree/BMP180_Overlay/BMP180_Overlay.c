@@ -73,9 +73,9 @@ static int BMP180_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 	bmp180_slave = client;
 	/* Creating procfs file */
-	proc_file = proc_create("my_bmp180", 0666, NULL, &fops);
+	proc_file = proc_create("bmp180", 0666, NULL, &fops);
 	if(proc_file == NULL) {
-		printk("bmp180_driver - Error creating /proc/my_bmp180\n");
+		printk("bmp180_driver - Error creating /proc/bmp180\n");
 		return -ENOMEM;
 	}
 	/* Write 0XB6 to 0xE0 to reset bmp180 */

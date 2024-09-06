@@ -7,7 +7,7 @@
 #include <stdio_ext.h>
 #include <time.h>
 
-#define CDEV_PATH "/proc/my_bmp180"
+#define CDEV_PATH "/proc/bmp180"
 
 char read_buf[1024];
 

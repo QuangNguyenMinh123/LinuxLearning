@@ -7,7 +7,7 @@
 #include <stdio_ext.h>
 #include <time.h>
 
-#define CDEV_PATH "/proc/my_mpu6050"
+#define CDEV_PATH "/proc/mpu6050"
 
 char read_buf[1024];
 
