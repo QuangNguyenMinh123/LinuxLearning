@@ -1,12 +1,12 @@
 /dts-v1/;
 /plugin/;
-
 /{
     compatible = "ti,am33xx";
     fragment@0 {
-        target-path = <&i2c2>;
+        target = <&i2c2>;
         __overlay__ {
-            MPU6050@68 {
+            status = "okay";
+            MPU6050: MPU6050@68 {
                 compatible = "QuangNM13,MPU6050";
                 author = "QuangNM13";
                 reg = <0x68>;

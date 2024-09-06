@@ -3,13 +3,14 @@
 #include <linux/proc_fs.h>
 #include <linux/i2c.h>
 #include <linux/uaccess.h>
+#include <linux/of_device.h>
 /*******************************************************************************/
 #define BMP180_ADDRESS					0x77
 #define BMP180_OVERSAMPLING_SETTING		3
 /*******************************************************************************/
 /* Declate the probe and remove functions */
-static int bmp180_probe(struct i2c_client *client, const struct i2c_device_id *id);
-static int bmp180_remove(struct i2c_client *client);
+static int BMP180_probe(struct i2c_client *client, const struct i2c_device_id *id);
+static int BMP180_remove(struct i2c_client *client);
 /*******************************************************************************/
 static struct i2c_client *bmp180_slave;
 
@@ -21,14 +22,14 @@ static struct of_device_id device_id[] = {
 MODULE_DEVICE_TABLE(of, device_id);			/* Tell OS to find device compatible with "Mybmp180" */
 
 static struct i2c_device_id i2c_id[] = {
-	{"my_bmp180_device_id", 0},
+	{"bmp180_device_id", 0},
 	{ },
 };
 MODULE_DEVICE_TABLE(i2c, i2c_id);
 
 static struct i2c_driver bmp180_driver = {
-	.probe = bmp180_probe,
-	.remove = bmp180_remove,
+	.probe = BMP180_probe,
+	.remove = BMP180_remove,
 	.id_table = i2c_id,
 	.driver = {
 		.name = "bmp180_driver",
@@ -41,7 +42,7 @@ static struct proc_dir_entry *proc_file;
 /**
  * @brief Read bmp180 data
  */
-static ssize_t bmp180_read(struct file *File, char *user_buffer, size_t count, loff_t *offs) {
+static ssize_t BMP180_read(struct file *File, char *user_buffer, size_t count, loff_t *offs) {
 	u8 buffer[3];
 	int cnt;
 	buffer[0] = i2c_smbus_read_byte_data(bmp180_slave, 0xF6);
@@ -54,13 +55,13 @@ static ssize_t bmp180_read(struct file *File, char *user_buffer, size_t count, l
 
 static struct file_operations fops = {
 	.write = NULL,
-	.read = bmp180_read,
+	.read = BMP180_read,
 };
 
 /**
  * @brief This function is called on loading the driver 
  */
-static int bmp180_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int BMP180_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	u8 dummy;
 	printk("bmp180_driver - Now I am in the Probe function!\n");
@@ -89,13 +90,25 @@ static int bmp180_probe(struct i2c_client *client, const struct i2c_device_id *i
 /**
  * @brief This function is called on unloading the driver 
  */
-static int bmp180_remove(struct i2c_client *client) {
+static int BMP180_remove(struct i2c_client *client) {
 	printk("bmp180_driver - Now I am in the Remove function!\n");
 	proc_remove(proc_file);
 	i2c_smbus_write_byte_data(bmp180_slave, 0xE0, 0XB6);
 	return 0;
 }
+
+// static int __init BMP180_init(void)
+// {
+// 	printk("BMP180_init - Loading the driver\n");
+// 	return 0;
+// }
+
+// static void __exit BMP180_exit(void)
+// {
+// 	printk("BMP180_exit - Unloading the driver\n");
+// }
 /*******************************************************************************/
+
 /* This will create the init and exit function automatically */
 module_i2c_driver(bmp180_driver);
 /* Meta Information */

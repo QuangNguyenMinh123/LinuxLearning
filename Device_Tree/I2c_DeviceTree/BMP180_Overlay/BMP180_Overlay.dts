@@ -1,19 +1,17 @@
 /dts-v1/;
 /plugin/;
-
 /{
     compatible = "ti,am33xx";
     fragment@0 {
-            target = <&i2c2>;
-            #address-cells = <0x02>;
-		    #size-cells = <0x01>;
-            __overlay__ {
-                BMP180: BMP180@77 {
-                    compatible = "QuangNM13,BMP180";
-                    author = "QuangNM13";
-                    reg = <0x77>;
-                    status = "okay";
-                };
+        target = <&i2c2>;
+        __overlay__ {
+            status = "okay";
+            BMP180: BMP180@77 {
+                compatible = "QuangNM13,BMP180";
+                author = "QuangNM13";
+                reg = <0x77>;
+                status = "okay";
             };
+        };
     };
 };
