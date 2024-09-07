@@ -1,9 +1,0 @@
-pwm with cross-compile, using subsystem
-Input a number and output according number.
-
-Open BeagleBone black
-Build driver using command: make all
-Copy generated pwm.ko to beaglebone black
-Install driver using command: sudo insmod pwm.ko
-sudo chmod 0777 /dev/UserPWM
-sudo echo X > /dev/UserPWM
