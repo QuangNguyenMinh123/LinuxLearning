@@ -8,6 +8,7 @@
         "i2c.h": "c",
         "gpio.h": "c",
         "string.h": "c",
-        "module.h": "c"
+        "module.h": "c",
+        "fs.h": "c"
     }
 }

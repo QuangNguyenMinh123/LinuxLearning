@@ -1,0 +1,56 @@
+/dts-v1/;
+/plugin/;
+/*
+SW1  ---------------------- GPIO0_30       GPIO_30
+SW1  ---------------------- GPIO0_31       GPIO_31
+SW1  ---------------------- GPIO1_16       GPIO_48
+SW1  ---------------------- GPIO0_05       GPIO_05
+SW1  ---------------------- GPIO0_13       GPIO_13
+*/
+
+/{
+    compatible = "ti,am33xx";
+    fragment@0 {
+            target = <&am33xx_pinmux>;
+            __overlay__ {
+                default_setting: default_setting {
+                    pinctrl-single,pins = <
+                        0x70  (1 << 4 | 1 << 8 | 7)
+                        0x74  (1 << 4 | 1 << 8 | 7)
+                        0x40  (1 << 3 | 1 << 8 | 7)
+                        0x15c (1 << 4 | 1 << 8 | 7)
+                        0x17c (1 << 4 | 1 << 8 | 7)
+                    >;
+                };
+
+                gpio_setting: gpio_setting {
+                    pinctrl-single,pins = <
+                        0x70  (0 | 1 << 8 | 7)
+                        0x74  (0 | 1 << 8 | 7)
+                        0x40  (0 | 1 << 8 | 7)
+                        0x15c (0 | 1 << 8 | 7)
+                        0x17c (0 | 1 << 8 | 7)
+                    >;
+                };
+            };
+    };
+
+    fragment@1 {
+        target-path = "/";
+        __overlay__ {
+            UserInterrupt {
+                compatible = "Interrupt_Pinmux";
+                author = "QuangNM13";
+                status = "okay";
+                gpio_pin-gpios = <&gpio0 30 0>,
+                                <&gpio0 31 0>,
+                                <&gpio1 16 0>,
+                                <&gpio0 5 0>,
+                                <&gpio0 3 0>;
+                pinctrl-names = "default", "gpio";
+		        pinctrl-0 = <&default_setting>;
+		        pinctrl-1 = <&gpio_setting>;
+            };
+        }; 
+    };
+};
