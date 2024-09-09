@@ -19,20 +19,20 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Johannes 4 GNU/Linux");
 MODULE_DESCRIPTION("A simple LKM for a gpio interrupt");
 /*******************************************************************************/
-#define GPIO_PIN 			49
+#define GPIO_PIN 			03
 #define LOW					0
 #define HIGH				1
 #define GPIO0_30			30
 #define GPIO0_31			31
 #define GPIO0_48			48
 #define GPIO0_05			5
-#define GPIO0_13			13
+#define GPIO0_03			03
 #define noLed				5
 #define COMPATIBLE			"Interrupt_Pinmux"
 /*******************************************************************************/
 /** variable contains pin number o interrupt controller to which GPIO 17 is mapped to */
 unsigned int irq_number[noLed] = {0};
-int gpioArr[noLed] = {GPIO0_30, GPIO0_31, GPIO0_48, GPIO0_05, GPIO0_13};
+int gpioArr[noLed] = {GPIO0_30, GPIO0_31, GPIO0_48, GPIO0_05, GPIO0_03};
 /*******************************************************************************/
 static int dt_probe(struct platform_device *pdev);
 /*******************************************************************************/
@@ -75,33 +75,24 @@ static irqreturn_t gpio_irq_handler05(int irq, void *dev_id)
 	printk("gpio_irq: This is pin 05!\n");
 	return IRQ_HANDLED;
 }
-static irqreturn_t gpio_irq_handler13(int irq, void *dev_id)
+static irqreturn_t gpio_irq_handler03(int irq, void *dev_id)
 {
-	printk("gpio_irq: This is pin 13!\n");
+	printk("gpio_irq: This is pin 03!\n");
 	return IRQ_HANDLED;
 }
 /*******************************************************************************/
 static int dt_probe(struct platform_device *pdev)
 {
-	struct pinctrl* checkPinCtrl;
-	struct device* dev = &pdev->dev;
-	printk("dt_probe\n");
-	return 0;
-}
-/**
- * @brief This function is called, when the module is loaded into the kernel
- */
-static int __init ModuleInit(void) {
 	int i = 0;
 	char str[]="rpi-gpio-0";
 	irqreturn_t (*funcPtr[5]) (int irq, void *dev_id) = {NULL};
-	printk("qpio_irq: Loading module... ");
+	
+	printk("dt_probe\n");
 	funcPtr[0] = gpio_irq_handler30;
 	funcPtr[1] = gpio_irq_handler31;
 	funcPtr[2] = gpio_irq_handler48;
 	funcPtr[3] = gpio_irq_handler05;
-	funcPtr[4] = gpio_irq_handler13;
-	
+	funcPtr[4] = gpio_irq_handler03;
 
 	/* Setup the gpio */
 	for (i=0; i < noLed; i++)
@@ -134,13 +125,21 @@ static int __init ModuleInit(void) {
 		}
 		printk("GPIO_PIN %d is mapped to IRQ Nr.: %d\n", gpioArr[i],irq_number[i]);
 	}
+
+	printk("Done!\n");
+	return 0;
+}
+/**
+ * @brief This function is called, when the module is loaded into the kernel
+ */
+static int __init ModuleInit(void) {
+	printk("qpio_irq: Loading module... ");
+	
 	if (platform_driver_register(&my_driver))
 	{
 		printk("DT_init - Error! Cannot load driver\n");
 		return -1;
 	}
-	printk("Done!\n");
-	
 	return 0;
 }
 
