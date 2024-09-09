@@ -19,20 +19,19 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Johannes 4 GNU/Linux");
 MODULE_DESCRIPTION("A simple LKM for a gpio interrupt");
 /*******************************************************************************/
-#define GPIO_PIN 			03
 #define LOW					0
 #define HIGH				1
-#define GPIO0_30			30
-#define GPIO0_31			31
-#define GPIO0_48			48
-#define GPIO0_05			5
-#define GPIO0_03			03
+#define GPIO0_15			15
+#define GPIO0_14			14
+#define GPIO0_60			60
+#define GPIO0_112			112
+#define GPIO0_07			07
 #define noLed				5
 #define COMPATIBLE			"Interrupt_Pinmux"
 /*******************************************************************************/
 /** variable contains pin number o interrupt controller to which GPIO 17 is mapped to */
 unsigned int irq_number[noLed] = {0};
-int gpioArr[noLed] = {GPIO0_30, GPIO0_31, GPIO0_48, GPIO0_05, GPIO0_03};
+int gpioArr[noLed] = {GPIO0_15, GPIO0_14, GPIO0_60, GPIO0_112, GPIO0_07};
 /*******************************************************************************/
 static int dt_probe(struct platform_device *pdev);
 /*******************************************************************************/
@@ -55,29 +54,29 @@ static struct platform_driver my_driver = {
 /**
  * @brief Interrupt service routine is called, when interrupt is triggered
  */
-static irqreturn_t gpio_irq_handler30(int irq, void *dev_id)
+static irqreturn_t gpio_irq_handler15(int irq, void *dev_id)
 {
-	printk("gpio_irq: This is pin 30!\n");
+	printk("gpio_irq: This is pin 15!\n");
 	return IRQ_HANDLED;
 }
-static irqreturn_t gpio_irq_handler31(int irq, void *dev_id)
+static irqreturn_t gpio_irq_handler14(int irq, void *dev_id)
 {
-	printk("gpio_irq: This is pin 31!\n");
+	printk("gpio_irq: This is pin 14!\n");
 	return IRQ_HANDLED;
 }
-static irqreturn_t gpio_irq_handler48(int irq, void *dev_id)
+static irqreturn_t gpio_irq_handler60(int irq, void *dev_id)
 {
-	printk("gpio_irq: This is pin 48!\n");
+	printk("gpio_irq: This is pin 60!\n");
 	return IRQ_HANDLED;
 }
-static irqreturn_t gpio_irq_handler05(int irq, void *dev_id)
+static irqreturn_t gpio_irq_handler112(int irq, void *dev_id)
 {
-	printk("gpio_irq: This is pin 05!\n");
+	printk("gpio_irq: This is pin 112!\n");
 	return IRQ_HANDLED;
 }
-static irqreturn_t gpio_irq_handler03(int irq, void *dev_id)
+static irqreturn_t gpio_irq_handler07(int irq, void *dev_id)
 {
-	printk("gpio_irq: This is pin 03!\n");
+	printk("gpio_irq: This is pin 07!\n");
 	return IRQ_HANDLED;
 }
 /*******************************************************************************/
@@ -88,11 +87,11 @@ static int dt_probe(struct platform_device *pdev)
 	irqreturn_t (*funcPtr[5]) (int irq, void *dev_id) = {NULL};
 	
 	printk("dt_probe\n");
-	funcPtr[0] = gpio_irq_handler30;
-	funcPtr[1] = gpio_irq_handler31;
-	funcPtr[2] = gpio_irq_handler48;
-	funcPtr[3] = gpio_irq_handler05;
-	funcPtr[4] = gpio_irq_handler03;
+	funcPtr[0] = gpio_irq_handler15;
+	funcPtr[1] = gpio_irq_handler14;
+	funcPtr[2] = gpio_irq_handler60;
+	funcPtr[3] = gpio_irq_handler112;
+	funcPtr[4] = gpio_irq_handler07;
 
 	/* Setup the gpio */
 	for (i=0; i < noLed; i++)
