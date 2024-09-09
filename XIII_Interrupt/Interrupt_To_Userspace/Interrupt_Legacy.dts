@@ -1,0 +1,40 @@
+/dts-v1/;
+/plugin/;
+/*
+SW3  ---------------------- P9_12       GPIO_60
+SW1  ---------------------- P9_24       GPIO_15
+SW2  ---------------------- P9_26       GPIO_14
+SW4  ---------------------- P9_30       GPIO_112
+SW5  ---------------------- P9_42       GPIO_7
+*/
+
+/{
+    compatible = "ti,am33xx";
+    fragment@0 {
+            target = <&am33xx_pinmux>;
+            __overlay__ {
+                default_setting: default_setting {
+                    pinctrl-single,pins = <
+                        0x78  (1 << 3 | 1 << 5 | 7)         /* P9_12 */
+                        0x184 (1 << 3 | 1 << 5 | 7)         /* P9_24 */
+                        0x180 (1 << 3 | 1 << 5 | 7)         /* P9_26 */
+                        0x198 (1 << 3 | 1 << 5 | 7)         /* P9_30 */
+                        0x164 (1 << 3 | 1 << 5 | 7)         /* P9_42 */
+                    >;
+                };
+            };
+    };
+
+    fragment@1 {
+        target-path = "/";
+        __overlay__ {
+            UserInterrupt {
+                compatible = "Interrupt_Pinmux";
+                author = "QuangNM13";
+                status = "okay";
+                pinctrl-names = "default";
+		        pinctrl-0 = <&default_setting>;
+            };
+        }; 
+    };
+};
