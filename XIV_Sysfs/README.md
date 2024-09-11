@@ -1,1 +1,1 @@
-control GPIO using custom Sysfs
+control GPIO 60 using custom Sysfs

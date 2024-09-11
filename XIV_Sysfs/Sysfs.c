@@ -16,9 +16,10 @@ MODULE_DESCRIPTION("A simple LKM for a gpio interrupt");
 #define HIGH				1
 #define GPIO_PIN			60
 /*******************************************************************************/
-typedef DirectionType{
+typedef enum DirectionType {
+	NOT_SETUP,
 	INPUT,
-	OUTPUT
+	OUTPUT,
 } DirectionType;
 /*******************************************************************************/
 static ssize_t value_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf);
@@ -26,7 +27,7 @@ static ssize_t value_store(struct kobject *kobj, struct kobj_attribute *attr,con
 static ssize_t direction_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf);
 static ssize_t direction_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 /*******************************************************************************/
-static int32_t _value = 0;
+// static int32_t _value = 0;
 static char _direction[8] = {};
 
 struct foo_type {
@@ -35,33 +36,64 @@ struct foo_type {
 
 struct kobj_attribute value = __ATTR(value, 0660, value_show, value_store);
 struct kobj_attribute direction = __ATTR(direction, 0660, direction_show, direction_store);
-
-DirectionType GPIO_Direction = INPUT;
+DirectionType GPIO_Direction = NOT_SETUP;
 /*******************************************************************************/
+int strCompr(const char *str1, const char *str2)
+{
+	int ctr=0;
+	while(str1[ctr]==str2[ctr])
+    {
+        if(str1[ctr]=='\0'|| str2[ctr]=='\0')
+            break;
+        ctr++;
+    }
+    if(str1[ctr]=='\0' && str2[ctr]=='\0')
+        return 1;
+    else
+        return 0;
+}
+
+void strPaste(char *des, char *src)
+{
+	while (*src != 0)
+	{
+		*des = *src;
+		src++;
+		des++;
+	}
+}
+
 static ssize_t value_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf)
 {
-	return sprintf(buf, "%d\n", _value);
+	int readInput = gpio_get_value(GPIO_PIN);
+	if (GPIO_Direction == INPUT)
+	{
+		return sprintf(buf, "%d\n", readInput);
+	}
+	else
+		return sprintf(buf, "%d\n", 0);
 }
 
 static ssize_t value_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
 	int32_t numb = 0;
 	sscanf(buf, "%d", &numb);
-	pr_info("num = %d\n",numb);
-	switch (numb)
+	if (GPIO_Direction == OUTPUT)
 	{
-	case 0: /* off */
-		gpio_set_value(GPIO_PIN, 0);
-		break;
-	
-	case 1: /* on */
-		gpio_set_value(GPIO_PIN, 1);
-		break;
-	
-	default:
-		return count;
+		switch (numb)
+		{
+		case 0: /* off */
+			gpio_set_value(GPIO_PIN, 0);
+			break;
+		
+		case 1: /* on */
+			gpio_set_value(GPIO_PIN, 1);
+			break;
+		
+		default:
+			return count;
+		}
 	}
-	sscanf(buf, "%d", &_value);
 	return count;
 }
 
@@ -72,17 +104,20 @@ static ssize_t direction_show(struct kobject *kobj, struct kobj_attribute *attr,
 
 static ssize_t direction_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	switch (count - 1)
+	char input[4] = {};
+	sscanf(buf, "%s", input);
+	if (strCompr(input, "out"))
 	{
-	case 2:
-		/* code */
-		break;
-	
-	case 3:
-		/* code */
-		break;
-	
-	default:
+		gpio_direction_output(GPIO_PIN, 0);
+		GPIO_Direction = OUTPUT;
+		strPaste(_direction, "out");
+		return count;
+	}
+	else if (strCompr(input, "in"))
+	{
+		gpio_direction_input(GPIO_PIN);
+		GPIO_Direction = INPUT;
+		strPaste(_direction, "in");
 		return count;
 	}
 	return count;
@@ -102,7 +137,7 @@ static struct attribute_group attr_group = {
  * @brief This function is called, when the module is loaded into the kernel
  */
 static int __init ModuleInit(void) {
-	printk("sysfs: Loading module... ");
+	
 	/* 1. Create directory under /sys */
 	mdev.kobj = kobject_create_and_add("bbb_gpio",NULL);
 	/* 2. Creating group sys entry under /sys/bbb_gpio */
@@ -113,8 +148,7 @@ static int __init ModuleInit(void) {
 	}
 	/* Request gpio */
 	gpio_request(GPIO_PIN, "led");
-	gpio_direction_output(GPIO_PIN, 1);
-	pr_info("sysfs: Initialize successfully!\n");
+	printk("sysfs: Module is loaded\n");
 	return 0;
 rm_kboj:
 	kobject_put(mdev.kobj);
@@ -125,11 +159,10 @@ rm_kboj:
  * @brief This function is called, when the module is removed from the kernel
  */
 static void __exit ModuleExit(void) {
-	printk("sysfs: Unloading module... ");
 	gpio_free(GPIO_PIN);
 	sysfs_remove_group(mdev.kobj,&attr_group);
 	kobject_put(mdev.kobj);
-
+	printk("sysfs: Module is removed\n");
 }
 /*******************************************************************************/
 module_init(ModuleInit);
