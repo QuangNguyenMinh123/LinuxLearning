@@ -25,3 +25,7 @@ nano Kconfig
 add: "source "drivers/BeagleBoneBuiltInDriver/Kconfig""
 cd ../KERNEL
 make menuconfig ARCH=arm    -> save to .config
+
+rebuild kernel: kernelbuildscripts/tools/rebuildkernel.sh
+
+if probe is failed, try to comment "enable_uboot_overlays=1" in /boot/uEnv.txt
