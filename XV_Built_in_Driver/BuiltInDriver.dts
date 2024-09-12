@@ -1,0 +1,18 @@
+/* Copy these codes to /kernelbuildscripts/KERNEL/arch/arm/boot/dts/am335x-boneblack.dts */
+/* User's builtin LED */
+/dts-v1/;
+/plugin/;
+/{
+    compatible = "ti,am33xx";
+    fragment@0 {
+        target-path = "/";
+        __overlay__ {
+            BUILT_IN_LED {
+                compatible = "USER_BUILT_IN_LED";
+                author = "QuangNM13";
+                builtInLed-gpio = <&gpio1 28 0>;
+                status = "okay";
+            };
+        };
+    };
+};
