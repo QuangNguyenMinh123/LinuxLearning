@@ -1,0 +1,10 @@
+menu "Builtin LED module 4 device tree"
+
+config LED_MODULE
+        bool "hello device tree"
+        depends on ARM
+        default y if ARM
+        help
+                Basic builtin driver using device tree
+
+endmenu
