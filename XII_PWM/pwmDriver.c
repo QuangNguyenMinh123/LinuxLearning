@@ -6,27 +6,28 @@
 #include <linux/cdev.h>
 #include <linux/gpio.h>
 #include <linux/uaccess.h>
-
+#include <linux/pwm.h>
 /*******************************************************************************/
 /* Meta Information */
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Johannes 4 GNU/Linux");
-MODULE_DESCRIPTION("A simple LKM for a gpio interrupt");
+MODULE_DESCRIPTION("A simple pwm driver");
 /*******************************************************************************/
-#define COMPATIBLE           "P9_14_USERPWM"
+#define COMPATIBLE           "p9_14_pwm_device"
 /*******************************************************************************/
 
 /*******************************************************************************/
 static int dt_probe(struct platform_device *pdev);
-static ssize_t value_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf);
-static ssize_t value_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
-static ssize_t direction_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf);
-static ssize_t direction_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static int dt_remove(struct platform_device *pdev);
+static ssize_t duty_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf);
+static ssize_t duty_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t period_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf);
+static ssize_t period_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 /*******************************************************************************/
-struct kobj_attribute value = __ATTR(value, 0660, value_show, value_store);
-struct kobj_attribute direction = __ATTR(direction, 0660, direction_show, direction_store);
-// static int32_t _value = 0;
-static char _direction[8] = {};
+struct kobj_attribute duty = __ATTR(duty, 0660, duty_show, duty_store);
+struct kobj_attribute period = __ATTR(period, 0660, period_show, period_store);
+static int32_t _duty = 0;
+static int32_t _period = 0;
 
 struct foo_type {
 	struct kobject *kobj;
@@ -41,12 +42,13 @@ static struct of_device_id my_driver_id[] = {
 MODULE_DEVICE_TABLE(of, my_driver_id);
 static struct platform_driver my_driver = {
 	.probe = dt_probe,
-	.remove = NULL,
+	.remove = dt_remove,
 	.driver = {
-		.name = "MyPWM",
+		.name = "MyPWMDriver",
 		.of_match_table = of_match_ptr(my_driver_id),
 	}
 };
+struct pwm_device *pwm = NULL;
 /*******************************************************************************/
 int strCompr(const char *str1, const char *str2)
 {
@@ -73,34 +75,74 @@ void strPaste(char *des, char *src)
 	}
 }
 
-static ssize_t value_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf)
+int pwm_trigger(void)
 {
+	pwm_disable(pwm);
+	if (pwm_config(pwm, _duty, _period) < 0)
+	{
+		pr_info("pwm_trigger: config failed\n");
+		return -1;
+	}
+	if (pwm_enable(pwm) < 0)
+	{
+		pr_info("pwm_trigger: enable failed\n");
+		return -1;
+	}
 	return 0;
 }
 
-static ssize_t value_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+static ssize_t duty_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
+	return sprintf(buf, "%d\n", _duty);
+}
+
+static ssize_t duty_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	sscanf(buf, "%d", &_duty);
+	pwm_trigger();
 	return count;
 }
 
-static ssize_t direction_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf)
+static ssize_t period_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf)
 {
-	return sprintf(buf, "%s\n", _direction);
+	return sprintf(buf, "%d\n", _period);
 }
 
-static ssize_t direction_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+static ssize_t period_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
+	sscanf(buf, "%d", &_period);
+	pwm_trigger();
 	return count;
 }
 
 static int dt_probe(struct platform_device *pdev)
 {
+    printk("MyPWM: dt_probe successfully\n");
+	/* 1. Read pwm device */
+	pwm = pwm_get(&pdev->dev,"led-pwm");
+	if (IS_ERR(pwm))
+	{
+		pr_info("PWM failed\n");
+		return -1;
+	}
+	pr_info("Period: %d\n",pwm->args.period);
+	_period = 1000000;
+	_duty = _period/2;
+	pwm_trigger();
     return 0;
+}
+
+static int dt_remove(struct platform_device *pdev)
+{
+	pr_info("dt_remove: pwm is removed\n");
+	pwm_disable(pwm);
+	pwm_put(pwm);
+	return 0;
 }
 /*******************************************************************************/
 static struct attribute *attrs[] = {
-	&direction.attr,
-	&value.attr,
+	&period.attr,
+	&duty.attr,
 	NULL,
 };
 
@@ -111,23 +153,23 @@ static struct attribute_group attr_group = {
 /**
  * @brief This function is called, when the module is loaded into the kernel
  */
-static int __init ModuleInit(void) {
-	
+static int __init ModuleInit(void)
+{
+	printk("MyPWM: Module is loaded\n");
+    if (platform_driver_register(&my_driver))
+	{
+		printk("ModuleInit - Error! Cannot load driver\n");
+		return -1;
+	}
 	/* 1. Create directory under /sys */
 	mdev.kobj = kobject_create_and_add("bbb_pwm",NULL);
 	/* 2. Creating group sys entry under /sys/bbb_gpio */
 	if (sysfs_create_group(mdev.kobj, &attr_group))
 	{
-		pr_err("Cannot create group attribute...\n");
+		pr_err("MyPWM: Cannot create group attribute...\n");
 		goto rm_kboj;
 	}
-    if (platform_driver_register(&my_driver))
-	{
-		printk("DT_init - Error! Cannot load driver\n");
-		return -1;
-	}
 	/* Request PWM */
-	printk("MyPWM: Module is loaded\n");
 	return 0;
 rm_kboj:
 	kobject_put(mdev.kobj);

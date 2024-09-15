@@ -1,1 +1,0 @@
-cmd_/home/quangnm/Documents/GitHub/LinuxLearning/XII_PWM/pwmDriver.mod := { echo  /home/quangnm/Documents/GitHub/LinuxLearning/XII_PWM/pwmDriver.o;  echo; } > /home/quangnm/Documents/GitHub/LinuxLearning/XII_PWM/pwmDriver.mod

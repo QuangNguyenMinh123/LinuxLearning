@@ -9,6 +9,7 @@
         "gpio.h": "c",
         "string.h": "c",
         "module.h": "c",
-        "fs.h": "c"
+        "fs.h": "c",
+        "stdio.h": "c"
     }
 }
