@@ -1,5 +1,5 @@
 # Brief
-PWM driver for pin P9_14 GPIO50
+PWM driver for pin P9_14 GPIO50, or PWM1A
 # Tutorial
 Add to buildBBB/kernelbuildscripts/KERNEL/arch/arm/boot/dts/am335x-boneblack.dts
 "
@@ -29,8 +29,10 @@ Add to buildBBB/kernelbuildscripts/KERNEL/arch/arm/boot/dts/am335x-boneblack.dts
     pwm_device {
         compatible = "p9_14_pwm_device";
         pwms = <&ehrpwm1 0 5000000 PWM_POLARITY_INVERTED>;
-		pwm-names = "led-pwm"
+		pwm-names = "led-pwm";
         status = "okay";
     };
 };
 "
+
+To control P9_16 or PWM1B, change "pwms = <&ehrpwm1 0 5000000 PWM_POLARITY_INVERTED>" to "pwms = <&ehrpwm1 1 5000000 PWM_POLARITY_INVERTED>"
