@@ -27,9 +27,12 @@ MODULE_DESCRIPTION("A simple LKM for a gpio interrupt");
 #define noLed				5
 #define COMPATIBLE			"Interrupt_Pinmux"
 /*******************************************************************************/
-/** variable contains pin number o interrupt controller to which GPIO 17 is mapped to */
-unsigned int irq_number[noLed] = {0};
-int gpioArr[noLed] = {GPIO0_15, GPIO0_14, GPIO0_60, GPIO0_112, GPIO0_07};
+unsigned int irq_number = 0;
+int gpioArr;
+/*******************************************************************************/
+/* Data struct for device tree*/
+struct irq_data	*irq = NULL;
+static struct gpio_desc *descGPIO = NULL;
 /*******************************************************************************/
 static int dt_probe(struct platform_device *pdev);
 /*******************************************************************************/
@@ -44,7 +47,7 @@ static struct platform_driver my_driver = {
 	.probe = dt_probe,
 	.remove = NULL,
 	.driver = {
-		.name = "MyInterrupt",
+		.name = "Interrupt_Userspace",
 		.of_match_table = of_match_ptr(my_driver_id),
 	}
 };
@@ -54,84 +57,48 @@ static struct platform_driver my_driver = {
  */
 static irqreturn_t gpio_irq_handler15(int irq, void *dev_id)
 {
-	printk("gpio_irq: This is pin 15!\n");
-	return IRQ_HANDLED;
-}
-static irqreturn_t gpio_irq_handler14(int irq, void *dev_id)
-{
-	printk("gpio_irq: This is pin 14!\n");
-	return IRQ_HANDLED;
-}
-static irqreturn_t gpio_irq_handler60(int irq, void *dev_id)
-{
-	printk("gpio_irq: This is pin 60!\n");
-	return IRQ_HANDLED;
-}
-static irqreturn_t gpio_irq_handler112(int irq, void *dev_id)
-{
-	printk("gpio_irq: This is pin 112!\n");
-	return IRQ_HANDLED;
-}
-static irqreturn_t gpio_irq_handler07(int irq, void *dev_id)
-{
-	printk("gpio_irq: This is pin 07!\n");
+	printk("gpio_irq: This is interrupt!\n");
 	return IRQ_HANDLED;
 }
 /*******************************************************************************/
 static int dt_probe(struct platform_device *pdev)
 {
-	int i = 0;
-	char str[]="rpi-gpio-0";
-	irqreturn_t (*funcPtr[5]) (int irq, void *dev_id) = {NULL};
-	
+	irqreturn_t (*funcPtr) (int irq, void *dev_id) = {NULL};
 	printk("dt_probe\n");
-	funcPtr[0] = gpio_irq_handler15;
-	funcPtr[1] = gpio_irq_handler14;
-	funcPtr[2] = gpio_irq_handler60;
-	funcPtr[3] = gpio_irq_handler112;
-	funcPtr[4] = gpio_irq_handler07;
-
-	/* Setup the gpio */
-	for (i=0; i < noLed; i++)
-	{
-		str[9]=i+'0';
-		if(gpio_request(gpioArr[i], str)) {
-			printk("Error!\nCan not allocate GPIO %d\n",gpioArr[i]);
-			return -1;
-		}
-	}
+	funcPtr = gpio_irq_handler15;
 	/* Set GPIO_PIN direction */
-	for (i=0; i < noLed; i++)
-	{
-		if(gpio_direction_input(gpioArr[i])) {
-			printk("Error!\nCan not set %d to input!\n",gpioArr[i]);
-			gpio_free(gpioArr[i]);
-			return -1;
-		}
-		gpio_set_debounce(gpioArr[i], 300);
-	}
 	
 	/* Setup the interrupt */
-	for (i=0; i < noLed; i++)
+	descGPIO = gpiod_get(&pdev->dev, "input", GPIOD_IN);
+    if (IS_ERR(descGPIO))
 	{
-		irq_number[i] = gpio_to_irq(gpioArr[i]);
-
-		if(request_irq(irq_number[i], funcPtr[i], IRQF_TRIGGER_RISING, "my_gpio_irq", NULL) != 0){
-			printk("Error!\nCan not request interrupt nr.: %d\n", irq_number[i]);
-			gpio_free(gpioArr[i]);
-			return -1;
-		}
-		printk("GPIO_PIN %d is mapped to IRQ Nr.: %d\n", gpioArr[i],irq_number[i]);
+		printk("dt_probe - Error! retrieve GPIO desc \n");
 	}
-
+	if (IS_ERR(devm_pinctrl_get_select(&pdev->dev, "default")))
+	{
+		printk("dt_probe - Error! cannot setup the pin mux to default\n");
+	}
+	irq_number = gpiod_to_irq(descGPIO);
+    if (irq_number < 0)
+	{
+		printk("dt_probe: request irq_number error\n");
+		return -1;
+	}
+	printk("dt_probe: irq_number = %d\n",irq_number);
+	if(request_irq(irq_number, funcPtr, IRQF_TRIGGER_RISING, "my_gpio_irq", NULL) != 0){
+		printk("Error! Can not request interrupt nr.: %d\n", irq_number);
+		gpiod_put(descGPIO);
+		return -1;
+	}
 	printk("Done!\n");
 	return 0;
 }
 /**
  * @brief This function is called, when the module is loaded into the kernel
  */
-static int __init ModuleInit(void) {
-	printk("qpio_irq: Loading module... ");
+static int __init ModuleInit(void)
+{
+	printk("GPIO_IRQ: Loading module... ");
 	
 	if (platform_driver_register(&my_driver))
 	{
@@ -144,14 +111,11 @@ static int __init ModuleInit(void) {
 /**
  * @brief This function is called, when the module is removed from the kernel
  */
-static void __exit ModuleExit(void) {
-	int i= 0;
-	printk("gpio_irq: Unloading module... ");
-	for (i=0; i < noLed; i++)
-	{
-		free_irq(irq_number[i], NULL);
-		gpio_free(gpioArr[i]);
-	}
+static void __exit ModuleExit(void)
+{
+	printk("GPIO_IRQ: Unloading module... ");
+	free_irq(irq_number, NULL);
+	gpiod_put(descGPIO);
 	platform_driver_unregister(&my_driver);
 }
 /*******************************************************************************/
