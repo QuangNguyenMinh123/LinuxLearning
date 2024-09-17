@@ -12,7 +12,6 @@
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
 #include <linux/pinctrl/consumer.h>
-
 /*******************************************************************************/
 /* Meta Information */
 MODULE_LICENSE("GPL");
@@ -25,13 +24,12 @@ MODULE_DESCRIPTION("A simple LKM for a gpio interrupt");
 #define GPIO0_14			14
 #define GPIO0_60			60
 #define GPIO0_112			112
-#define GPIO0_07			07
+#define GPIO0_50			50
 #define noLed				5
 #define COMPATIBLE			"Interrupt_Pinmux"
 /*******************************************************************************/
-/** variable contains pin number o interrupt controller to which GPIO 17 is mapped to */
 unsigned int irq_number[noLed] = {0};
-int gpioArr[noLed] = {GPIO0_15, GPIO0_14, GPIO0_60, GPIO0_112, GPIO0_07};
+int gpioArr[noLed] = {GPIO0_15, GPIO0_14, GPIO0_60, GPIO0_112, GPIO0_50};
 /*******************************************************************************/
 static int dt_probe(struct platform_device *pdev);
 /*******************************************************************************/
@@ -46,7 +44,7 @@ static struct platform_driver my_driver = {
 	.probe = dt_probe,
 	.remove = NULL,
 	.driver = {
-		.name = "MyInterrupt",
+		.name = "Interrupt_Pinmux",
 		.of_match_table = of_match_ptr(my_driver_id),
 	}
 };
@@ -74,9 +72,9 @@ static irqreturn_t gpio_irq_handler112(int irq, void *dev_id)
 	printk("gpio_irq: This is pin 112!\n");
 	return IRQ_HANDLED;
 }
-static irqreturn_t gpio_irq_handler07(int irq, void *dev_id)
+static irqreturn_t gpio_irq_handler50(int irq, void *dev_id)
 {
-	printk("gpio_irq: This is pin 07!\n");
+	printk("gpio_irq: This is pin 50!\n");
 	return IRQ_HANDLED;
 }
 /*******************************************************************************/
@@ -91,7 +89,7 @@ static int dt_probe(struct platform_device *pdev)
 	funcPtr[1] = gpio_irq_handler14;
 	funcPtr[2] = gpio_irq_handler60;
 	funcPtr[3] = gpio_irq_handler112;
-	funcPtr[4] = gpio_irq_handler07;
+	funcPtr[4] = gpio_irq_handler50;
 
 	/* Setup the gpio */
 	for (i=0; i < noLed; i++)
