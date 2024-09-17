@@ -7,6 +7,13 @@ SW3  ---------------------- P9_24       GPIO_15
 SW4  ---------------------- P9_26       GPIO_14
 SW5  ---------------------- P9_30       GPIO_112
 */
+/* Interrupt edge flags:
+1 = low-to-high edge triggered
+2 = high-to-low edge triggered
+4 = active high level-sensitive
+8 = active low level-sensitive 
+https://www.kernel.org/doc/Documentation/devicetree/bindings/interrupt-controller/interrupts.txt                  
+*/
 
 /{
     compatible = "ti,am33xx";
@@ -21,6 +28,7 @@ SW5  ---------------------- P9_30       GPIO_112
                         0x184 (1 << 3 | 1 << 5 | 7)         /* P9_24 GPIO_15 */
                         0x180 (1 << 3 | 1 << 5 | 7)         /* P9_26 GPIO_14 */
                         0x198 (1 << 3 | 1 << 5 | 7)         /* P9_30 GPIO_112 */
+                        
                     >;
                 };
             };
@@ -33,13 +41,18 @@ SW5  ---------------------- P9_30       GPIO_112
                 compatible = "Interrupt_Pinmux";
                 author = "QuangNM13";
                 status = "okay";
-                input-gpios = <&gpio0 14 0>;
+                input-gpios =   <&gpio0 14 0>,      /* P9_26 GPIO_14 */
+                                <&gpio0 15 0>,      /* P9_24 GPIO_15 */
+                                <&gpio1 18 0>,      /* P9_14 GPIO_50 */
+                                <&gpio1 28 0>,      /* P9_12 GPIO_60 */
+                                <&gpio3 16 0>;      /* P9_30 GPIO_112 */
                 pinctrl-names = "default";
 		        pinctrl-0 = <&input_setting>;
-                interrupt-parents = <&gpio0>;
-                interrupts = <14 0x1>;
-                /* 0x1 = low-to-high edge triggered -> https://www.kernel.org/doc/Documentation/devicetree/bindings/interrupt-controller/interrupts.txt */
-
+                interrupts-extended =   <&gpio0 14 0x1>,
+                                        <&gpio0 15 0x1>,
+                                        <&gpio1 18 0x1>,
+                                        <&gpio1 28 0x1>,
+                                        <&gpio3 16 0x1>;
             };
         }; 
     };

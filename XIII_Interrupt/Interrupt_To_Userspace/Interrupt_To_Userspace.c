@@ -17,24 +17,26 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Johannes 4 GNU/Linux");
 MODULE_DESCRIPTION("A simple LKM for a gpio interrupt");
 /*******************************************************************************/
-#define LOW					0
-#define HIGH				1
-#define GPIO0_15			15
-#define GPIO0_14			14
-#define GPIO0_60			60
-#define GPIO0_112			112
-#define GPIO0_07			07
 #define noLed				5
 #define COMPATIBLE			"Interrupt_Pinmux"
 /*******************************************************************************/
-unsigned int irq_number = 0;
-int gpioArr;
+/* Function prototype */
+static int dt_probe(struct platform_device *pdev);
+static irqreturn_t gpio_irq_handler0(int irq, void *dev_id);
+static irqreturn_t gpio_irq_handler1(int irq, void *dev_id);
+static irqreturn_t gpio_irq_handler2(int irq, void *dev_id);
+static irqreturn_t gpio_irq_handler3(int irq, void *dev_id);
+static irqreturn_t gpio_irq_handler4(int irq, void *dev_id);
+static irqreturn_t (*funcPtr[noLed]) (int irq, void *dev_id) = {
+	gpio_irq_handler0,
+	gpio_irq_handler1,
+	gpio_irq_handler2,
+	gpio_irq_handler3,
+	gpio_irq_handler4
+};
 /*******************************************************************************/
 /* Data struct for device tree*/
-struct irq_data	*irq = NULL;
-static struct gpio_desc *descGPIO = NULL;
-/*******************************************************************************/
-static int dt_probe(struct platform_device *pdev);
+static struct gpio_desc *descGPIO[noLed] = {NULL};
 /*******************************************************************************/
 static struct of_device_id my_driver_id[] = {
 	{
@@ -51,45 +53,73 @@ static struct platform_driver my_driver = {
 		.of_match_table = of_match_ptr(my_driver_id),
 	}
 };
+unsigned int irq_number[noLed] = {0};
 /*******************************************************************************/
 /**
  * @brief Interrupt service routine is called, when interrupt is triggered
  */
-static irqreturn_t gpio_irq_handler15(int irq, void *dev_id)
+static irqreturn_t gpio_irq_handler0(int irq, void *dev_id)
 {
-	printk("gpio_irq: This is interrupt!\n");
+	printk("gpio_irq: Interrupt 0!\n");
+	return IRQ_HANDLED;
+}
+static irqreturn_t gpio_irq_handler1(int irq, void *dev_id)
+{
+	printk("gpio_irq: Interrupt 1!\n");
+	return IRQ_HANDLED;
+}
+static irqreturn_t gpio_irq_handler2(int irq, void *dev_id)
+{
+	printk("gpio_irq: Interrupt 2!\n");
+	return IRQ_HANDLED;
+}
+static irqreturn_t gpio_irq_handler3(int irq, void *dev_id)
+{
+	printk("gpio_irq: Interrupt 3!\n");
+	return IRQ_HANDLED;
+}
+static irqreturn_t gpio_irq_handler4(int irq, void *dev_id)
+{
+	printk("gpio_irq: Interrupt 4!\n");
 	return IRQ_HANDLED;
 }
 /*******************************************************************************/
 static int dt_probe(struct platform_device *pdev)
 {
-	irqreturn_t (*funcPtr) (int irq, void *dev_id) = {NULL};
+	int i = 0;
 	printk("dt_probe\n");
-	funcPtr = gpio_irq_handler15;
-	/* Set GPIO_PIN direction */
-	
 	/* Setup the interrupt */
-	descGPIO = gpiod_get(&pdev->dev, "input", GPIOD_IN);
-    if (IS_ERR(descGPIO))
+	for (i = 0; i < noLed; i++)
 	{
-		printk("dt_probe - Error! retrieve GPIO desc \n");
+		descGPIO[i] = gpiod_get_index(&pdev->dev, "input", i, GPIOD_IN);
+		if (IS_ERR(descGPIO[i]))
+		{
+			printk("dt_probe - Error! retrieve GPIO desc \n");
+			gpiod_put(descGPIO[i]);
+		}
 	}
+	/* Change pinmux to input */
 	if (IS_ERR(devm_pinctrl_get_select(&pdev->dev, "default")))
 	{
 		printk("dt_probe - Error! cannot setup the pin mux to default\n");
 	}
-	irq_number = gpiod_to_irq(descGPIO);
-    if (irq_number < 0)
+	/* Change GPIO to Interrupt */
+	for (i = 0; i < noLed; i++)
 	{
-		printk("dt_probe: request irq_number error\n");
-		return -1;
+		irq_number[i] = gpiod_to_irq(descGPIO[i]);
+		if (irq_number[i] < 0)
+		{
+			printk("dt_probe: request irq_number %d error\n", i);
+			return -1;
+		}
+		printk("dt_probe: irq_number %d = %d\n",i,irq_number[i]);
+		if(request_irq(irq_number[i], funcPtr[i], IRQF_TRIGGER_RISING, "my_gpio_irq", NULL) != 0){
+			printk("Error! Can not request interrupt nr.: %d\n", irq_number[i]);
+			gpiod_put(descGPIO[i]);
+			return -1;
+		}
 	}
-	printk("dt_probe: irq_number = %d\n",irq_number);
-	if(request_irq(irq_number, funcPtr, IRQF_TRIGGER_RISING, "my_gpio_irq", NULL) != 0){
-		printk("Error! Can not request interrupt nr.: %d\n", irq_number);
-		gpiod_put(descGPIO);
-		return -1;
-	}
+
 	printk("Done!\n");
 	return 0;
 }
@@ -113,9 +143,13 @@ static int __init ModuleInit(void)
  */
 static void __exit ModuleExit(void)
 {
+	int i = 0;
 	printk("GPIO_IRQ: Unloading module... ");
-	free_irq(irq_number, NULL);
-	gpiod_put(descGPIO);
+	for (i = 0; i < noLed; i++)
+	{
+		free_irq(irq_number[i], NULL);
+		gpiod_put(descGPIO[i]);
+	}
 	platform_driver_unregister(&my_driver);
 }
 /*******************************************************************************/
