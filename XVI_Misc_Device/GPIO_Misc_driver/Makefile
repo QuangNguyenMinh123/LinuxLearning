@@ -3,8 +3,8 @@ PHONY: all clean move
 
 BBB_KERNEL := /home/quangnm/Desktop/buildBBB/kernelbuildscripts/KERNEL
 TOOLCHAIN := /home/quangnm/Desktop/buildBBB/kernelbuildscripts/dl/gcc-8.5.0-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-
-OVERLAY_FILE := BMP180MiscDevice
-C_FILE	:= BMP180MiscDevice
+OVERLAY_FILE := GPIOMiscDevice
+C_FILE	:= GPIOMiscDevice
 obj-m := $(C_FILE).o
 BEAGLEBONE_PASSWORD := temppwd
 BEAGLEBONE_IP := 192.168.16.103
