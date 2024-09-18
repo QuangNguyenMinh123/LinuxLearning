@@ -8,22 +8,21 @@
             __overlay__ {
                 default_setting: default_setting {
                     pinctrl-single,pins = <
-                        0x78  (0 | 1 << 8 | 7)          /* P9_12 GPIO_60 */
+                        0x48  (0 | 1 << 8 | 7)          /* P9_14 GPIO_50 */
                     >;
                 };
             };
     };
 
     fragment@1 {
-        target = <&i2c2>;
+        target-path = "/";
         __overlay__ {
-            status = "okay";
             GPIOMiscDevice: GPIOMiscDevice {
                 compatible = "GPIOMiscDevice";
                 author = "QuangNM13";
                 status = "okay";
                 arbitrary = "12345";
-                pin-gpios = <&gpio1 28 0>;
+                pin-gpios = <&gpio1 18 0>;
                 pinctrl-names = "default";
 		        pinctrl-0 = <&default_setting>;
             };
