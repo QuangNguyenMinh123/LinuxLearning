@@ -1,0 +1,21 @@
+/* Copy these codes to /kernelbuildscripts/KERNEL/arch/arm/boot/dts/am335x-boneblack.dts */
+/* User's builtin LED using overlay */
+/dts-v1/;
+/plugin/;
+/{
+    compatible = "ti,am33xx";
+    fragment@0 {
+        target = <&i2c2>;
+        __overlay__ {
+            status = "okay";
+            SSD1306: ssd1306@3c{
+                compatible = "QuangNM13,SSD1306";
+                author = "QuangNM13";
+                width = <128>;
+                height = <64>;
+                reg = <0x3c>;
+                status = "okay";
+            };
+        };
+    };
+};
