@@ -159,6 +159,9 @@ void SSD1306_Init(SSD1306_Type *ssd1306)
 	SSD1306_Write(ssd1306, true, 0x2E);			/* Deactive Scroll */
 	SSD1306_Write(ssd1306, true, 0xAF);			/* Display ON in normal mode */
 	SSD1306_Clear(ssd1306);
+	ssd1306->line_num = 0;
+	ssd1306->cursor_pos = 0;
+	ssd1306->font_size = SSD1306_DEF_FONT_SIZE;
 }
 
 static void SSD1306_set_cursor(SSD1306_Type *ssd1306, uint8_t line_numb, uint8_t cursor_position)
