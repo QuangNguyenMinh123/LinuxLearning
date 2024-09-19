@@ -10,14 +10,20 @@ C_FILE	:= SSD1306_Driver
 DEVICE_TREE := SSD1306_Driver
 obj-m := $(C_FILE).o
 #Included header
-SSD1306_SRC := $(CUR_DIR)/inc/SSD1306.c
-SSD1306_INC := $(CUR_DIR)/inc
+lib-y    := SSD1306.o
+BEAGLEBONE_PASSWORD := temppwd
+BEAGLEBONE_IP := 192.168.16.101
+BEAGLEBONE_HOME_PATH := debian@$(BEAGLEBONE_IP):/home/debian
 
+first:
+	scp $(C_FILE).ko $(BEAGLEBONE_HOME_PATH)
 
 all:
 	@make -C $(BBB_KERNEL) M=$(shell pwd) clean
-	@make ARCH=arm CROSS_COMPILE=$(TOOLCHAIN) -C $(BBB_KERNEL) M=$(shell pwd) modules -I$(SSD1306_INC)
+	@make -I$(INC_DIR) ARCH=arm CROSS_COMPILE=$(TOOLCHAIN) -C $(BBB_KERNEL) M=$(shell pwd) modules 
 
+move:
+	sshpass -p $(BEAGLEBONE_PASSWORD) scp $(C_FILE).ko $(BEAGLEBONE_HOME_PATH)
 
 clean:
 	@make -C $(BBB_KERNEL) M=$(shell pwd) clean
