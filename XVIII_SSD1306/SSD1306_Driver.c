@@ -15,6 +15,9 @@
 #define SCROLL_VERTICAL_DOWN 			_IO('V', 'd')
 #define SCROLL_HORIZONTAL_RIGHT 		_IO('H', 'r')
 #define SCROLL_HORIZONTAL_LEFT 			_IO('H', 'l')
+#define CLEAR_SCREEN 					_IO('S', 'c')
+#define ON_DISPLAY			 			_IO('S', 'n')
+#define OFF_DISPLAY			 			_IO('S', 'f')
 /*******************************************************************************/
 typedef struct SSD1306_Type{
 	struct i2c_client *device;
@@ -371,25 +374,36 @@ static long int SSD1306_Ioctl(struct file *file, unsigned cmd, unsigned long arg
 {
 	if(cmd == REGISTER_UAPP)
 	{
-		
+		printk("SSD1306_Ioctl: Register\n");
 	}
 	else if (cmd == SCROLL_VERTICAL_UP)
 	{
-
+		printk("SSD1306_Ioctl: up\n");
 	}
 	else if (cmd == SCROLL_VERTICAL_DOWN)
 	{
-
+		printk("SSD1306_Ioctl: down\n");
 	}
 	else if (cmd == SCROLL_HORIZONTAL_RIGHT)
 	{
-
+		printk("SSD1306_Ioctl: right\n");
 	}
 	else if (cmd == SCROLL_HORIZONTAL_LEFT)
 	{
-
+		printk("SSD1306_Ioctl: left\n");
 	}
-
+	else if (cmd == CLEAR_SCREEN)
+	{
+		printk("SSD1306_Ioctl: clear\n");
+	}
+	else if (cmd == ON_DISPLAY)
+	{
+		printk("SSD1306_Ioctl: on\n");
+	}
+	else if (cmd == OFF_DISPLAY)
+	{
+		printk("SSD1306_Ioctl: off\n");
+	}
 	return 0;
 }
 
