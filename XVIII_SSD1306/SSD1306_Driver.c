@@ -6,22 +6,92 @@
 #include <linux/of_device.h>
 // #include "SSD1306.h"
 /*******************************************************************************/
-#define SSD1306_ADDRESS				0x3c
-#define SSD1306_MAX_LINE			7
-#define SSD1306_MAX_SEG				128
-#define SSD1306_DEF_FONT_SIZE		5
+#define SSD1306_ADDRESS					0x3c
+#define SSD1306_MAX_LINE				7
+#define SSD1306_MAX_SEG					128
+#define SSD1306_DEF_FONT_SIZE			5
+#define REGISTER_UAPP 					_IO('R', 'g')
+#define SCROLL_VERTICAL_UP 				_IO('V', 'u')
+#define SCROLL_VERTICAL_DOWN 			_IO('V', 'd')
+#define SCROLL_HORIZONTAL_RIGHT 		_IO('H', 'r')
+#define SCROLL_HORIZONTAL_LEFT 			_IO('H', 'l')
+/*******************************************************************************/
 typedef struct SSD1306_Type{
 	struct i2c_client *device;
 	uint8_t line_num;
 	uint8_t cursor_pos;
 	uint8_t font_size;
 }SSD1306_Type;
+
 SSD1306_Type ssd1306 =
 {
 	NULL,
 	0,
 	0,
 	SSD1306_DEF_FONT_SIZE
+};
+
+struct foo_type {
+	struct kobject *kobj;
+}mdev;
+/*******************************************************************************/
+static void SSD1306_ScrollUp(SSD1306_Type *ssd1306, int val);
+static void SSD1306_ScrollDown(SSD1306_Type *ssd1306, int val);
+static void SSD1306_ScrollLeft(SSD1306_Type *ssd1306, int val);
+static void SSD1306_ScrollRight(SSD1306_Type *ssd1306, int val);
+/*******************************************************************************/
+static ssize_t scroll_vertical_up_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t scroll_vertical_down_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t scroll_horizontal_left_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t scroll_horizontal_right_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+/*******************************************************************************/
+struct kobj_attribute scroll_up_attr = __ATTR(scroll_up, 0660, NULL, scroll_vertical_up_store);
+struct kobj_attribute scroll_down_attr = __ATTR(scroll_down, 0660, NULL, scroll_vertical_down_store);
+struct kobj_attribute scroll_left_attr = __ATTR(scroll_left, 0660, NULL, scroll_horizontal_left_store);
+struct kobj_attribute scroll_right_attr = __ATTR(scroll_right, 0660, NULL, scroll_horizontal_right_store);
+/*******************************************************************************/
+static ssize_t scroll_vertical_up_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
+	int val = 0;
+	sscanf(buf, "%i", &val);
+	SSD1306_ScrollUp(&ssd1306, val);
+	return count;
+}
+
+static ssize_t scroll_vertical_down_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
+	int val = 0;
+	sscanf(buf, "%i", &val);
+	SSD1306_ScrollDown(&ssd1306, val);
+	return count;
+}
+
+static ssize_t scroll_horizontal_left_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
+	int val = 0;
+	sscanf(buf, "%i", &val);
+	SSD1306_ScrollLeft(&ssd1306, val);
+	return count;
+}
+
+static ssize_t scroll_horizontal_right_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
+	int val = 0;
+	sscanf(buf, "%i", &val);
+	SSD1306_ScrollRight(&ssd1306, val);
+	return count;
+}
+
+static struct attribute *attrs[] = {
+	&scroll_up_attr.attr,
+	&scroll_down_attr.attr,
+	&scroll_left_attr.attr,
+	&scroll_right_attr.attr,
+	NULL,
+};
+
+static struct attribute_group attr_group = {
+	.attrs = attrs,
 };
 /*******************************************************************************/
 static const unsigned char ssd1306_font[][SSD1306_DEF_FONT_SIZE] =
@@ -216,7 +286,7 @@ static void SSD1306_PrintString(SSD1306_Type *ssd1306, unsigned char *str)
 	}
 }
 
-static void SSD1306_PrintImage(SSD1306_Type *ssd1306, unsigned char *str, int len)
+static void SSD1306_PrintImage(SSD1306_Type *ssd1306,const unsigned char *str, int len)
 {
 	int i = 0;
 	SSD1306_set_cursor(ssd1306, 0, 0);
@@ -234,13 +304,31 @@ static void SSD1306_SetBrightness(SSD1306_Type *ssd1306, uint8_t brightness)
 	SSD1306_Write(ssd1306, true, 0x81);
 	SSD1306_Write(ssd1306, true, brightness);
 }
+
+static void SSD1306_ScrollUp(SSD1306_Type *ssd1306, int val)
+{
+
+}
+
+static void SSD1306_ScrollDown(SSD1306_Type *ssd1306, int val)
+{
+
+}
+
+static void SSD1306_ScrollLeft(SSD1306_Type *ssd1306, int val)
+{
+
+}
+
+static void SSD1306_ScrollRight(SSD1306_Type *ssd1306, int val)
+{
+
+}
 /*******************************************************************************/
 /* Declate the probe and remove functions */
 static int SSD1306_probe(struct i2c_client *client, const struct i2c_device_id *id);
 static int SSD1306_remove(struct i2c_client *client);
 /*******************************************************************************/
-
-
 static struct of_device_id device_id[] = {
 	{
 		.compatible = "QuangNM13,SSD1306",
@@ -267,27 +355,48 @@ module_i2c_driver(ssd1306_driver);
 static struct proc_dir_entry *proc_file;
 /*******************************************************************************/
 /**
- * @brief Read ssd1306 data
+ * @brief Write ssd1306 data
  */
-static ssize_t SSD1306_ProcRead(struct file *File, char *user_buffer, size_t count, loff_t *offs) {
-	u8 buffer[3];
+static ssize_t SSD1306_ProcWrite(struct file *File, const char *user_buffer, size_t count, loff_t *offs) {
+	u8 buffer[100];
 	int cnt;
-	printk("SSD1306_ProcRead: \n");
-	cnt = copy_to_user(user_buffer, buffer, 3);
+	memset(buffer, 0 , sizeof(buffer));
+	printk("SSD1306_ProcWrite: \n");
+	cnt = copy_from_user(buffer, user_buffer, count);
+	printk("%s: \n",buffer);
 	return count;
 }
 
-static ssize_t SSD1306_ProcWrite(struct file *File, const char *user_buffer, size_t count, loff_t *offs) {
-	u8 buffer[3];
-	int cnt;
-	printk("SSD1306_ProcWrite: \n");
-	cnt = copy_to_user(user_buffer, buffer, 3);
-	return count;
+static long int SSD1306_Ioctl(struct file *file, unsigned cmd, unsigned long arg)
+{
+	if(cmd == REGISTER_UAPP)
+	{
+		
+	}
+	else if (cmd == SCROLL_VERTICAL_UP)
+	{
+
+	}
+	else if (cmd == SCROLL_VERTICAL_DOWN)
+	{
+
+	}
+	else if (cmd == SCROLL_HORIZONTAL_RIGHT)
+	{
+
+	}
+	else if (cmd == SCROLL_HORIZONTAL_LEFT)
+	{
+
+	}
+
+	return 0;
 }
 
 static struct file_operations fops = {
 	.write = SSD1306_ProcWrite,
-	.read = SSD1306_ProcRead,
+	.read = NULL,
+	.unlocked_ioctl = SSD1306_Ioctl,
 };
 /*******************************************************************************/
 /**
@@ -309,7 +418,18 @@ static int SSD1306_probe(struct i2c_client *client, const struct i2c_device_id *
 	}
 	SSD1306_Init(&ssd1306);
 	SSD1306_PrintImage(&ssd1306, image, sizeof(image));
+	/* 1. Create directory under /sys */
+	mdev.kobj = kobject_create_and_add("SSD1306_Device",NULL);
+	/* 2. Creating group sys entry under /sys/bbb_gpio */
+	if (sysfs_create_group(mdev.kobj, &attr_group))
+	{
+		pr_err("Cannot create group attribute...\n");
+		goto rm_kboj;
+	}
 	return 0;
+rm_kboj:
+	kobject_put(mdev.kobj);
+	return -1;
 }
 
 /**
@@ -318,6 +438,8 @@ static int SSD1306_probe(struct i2c_client *client, const struct i2c_device_id *
 static int SSD1306_remove(struct i2c_client *client) {
 	printk("SSD1306_remove\n");
 	proc_remove(proc_file);
+	sysfs_remove_group(mdev.kobj,&attr_group);
+	kobject_put(mdev.kobj);
 	return 0;
 }
 /*******************************************************************************/
