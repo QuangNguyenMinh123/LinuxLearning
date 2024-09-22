@@ -4,15 +4,12 @@
 #include <linux/i2c.h>
 #include <linux/uaccess.h>
 #include <linux/of_device.h>
-// #include "SSD1306.h"
 /*******************************************************************************/
 #define SSD1306_MAX_LINE				7
 #define SSD1306_MAX_SEG					128
 #define SSD1306_DEF_FONT_SIZE			5
 #define SSD1306_ADDRESS					0x3c
-#define CLEAR_SCREEN 					_IO('S', 'c')
-#define ON_DISPLAY			 			_IO('S', 'n')
-#define OFF_DISPLAY			 			_IO('S', 'f')
+#define STOP_SCROLL						_IO('S', 's')
 /*******************************************************************************/
 typedef struct SSD1306_Type{
 	struct i2c_client *device;
@@ -21,6 +18,10 @@ typedef struct SSD1306_Type{
 	uint8_t font_size;
 }SSD1306_Type;
 
+struct foo_type {
+	struct kobject *kobj;
+}mdev;
+/*******************************************************************************/
 SSD1306_Type ssd1306 =
 {
 	NULL,
@@ -28,10 +29,6 @@ SSD1306_Type ssd1306 =
 	0,
 	SSD1306_DEF_FONT_SIZE
 };
-
-struct foo_type {
-	struct kobject *kobj;
-}mdev;
 /*******************************************************************************/
 static void SSD1306_ScrollUp(SSD1306_Type *ssd1306, int val);
 static void SSD1306_ScrollDown(SSD1306_Type *ssd1306, int val);
@@ -51,6 +48,7 @@ struct kobj_attribute scroll_left_attr = __ATTR(scroll_left, 0660, NULL, scroll_
 struct kobj_attribute scroll_right_attr = __ATTR(scroll_right, 0660, NULL, scroll_horizontal_right_store);
 struct kobj_attribute brightness_attr = __ATTR(brightness, 0660, NULL, brightness_store);
 /*******************************************************************************/
+/* Sysfs */
 static ssize_t scroll_vertical_up_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
 	int val = 0;
@@ -621,20 +619,9 @@ static ssize_t SSD1306_ProcWrite(struct file *File, const char *user_buffer, siz
 
 static long int SSD1306_Ioctl(struct file *file, unsigned cmd, unsigned long arg)
 {
-	if (cmd == CLEAR_SCREEN)
+	if (cmd == STOP_SCROLL)
 	{
-		printk("SSD1306_Ioctl: clear\n");
-		SSD1306_Clear(&ssd1306);
-	}
-	else if (cmd == ON_DISPLAY)
-	{
-		printk("SSD1306_Ioctl: on\n");
-		SSD1306_Write(&ssd1306, true, 0xAF);
-	}
-	else if (cmd == OFF_DISPLAY)
-	{
-		printk("SSD1306_Ioctl: off\n");
-		SSD1306_Write(&ssd1306, true, 0xAE);
+		SSD1306_DeactiveScroll(&ssd1306);
 	}
 	return 0;
 }
@@ -667,9 +654,7 @@ static int SSD1306_probe(struct i2c_client *client, const struct i2c_device_id *
 	/* test read ram */
 	// SSD1306_SaveRAMContent(&ssd1306);
 	/* scroll */
-	SSD1306_DeactiveScroll(&ssd1306);
-	SSD1306_ScrollUp(&ssd1306, 5);
-	SSD1306_ActiveScroll(&ssd1306);
+	SSD1306_ScrollLeft(&ssd1306, 8);
 
 	/* 1. Create directory under /sys */
 	mdev.kobj = kobject_create_and_add("SSD1306_Device",NULL);
