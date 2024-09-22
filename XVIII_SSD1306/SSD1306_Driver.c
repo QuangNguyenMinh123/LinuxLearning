@@ -360,6 +360,16 @@ static void SSD1306_GotoNextLine(SSD1306_Type *ssd1306)
 	SSD1306_set_cursor(ssd1306, ssd1306->line_num, 0);
 }
 
+static void SSD1306_DeactiveScroll(SSD1306_Type *ssd1306)
+{
+	SSD1306_Write(ssd1306, true, 0x2E);
+}
+
+static void SSD1306_ActiveScroll(SSD1306_Type *ssd1306)
+{
+	SSD1306_Write(ssd1306, true, 0x2F);
+}
+
 static void SSD1306_PrintChar(SSD1306_Type *ssd1306, unsigned char c)
 {
 	uint8_t dataByte = 1;
@@ -383,6 +393,7 @@ static void SSD1306_PrintChar(SSD1306_Type *ssd1306, unsigned char c)
 
 static void SSD1306_PrintString(SSD1306_Type *ssd1306, unsigned char *str)
 {
+	SSD1306_DeactiveScroll(ssd1306);
 	while (*str)
 	{
 		SSD1306_PrintChar(ssd1306, *str);
@@ -393,6 +404,7 @@ static void SSD1306_PrintString(SSD1306_Type *ssd1306, unsigned char *str)
 static void SSD1306_PrintImage(SSD1306_Type *ssd1306,const unsigned char *str, int len)
 {
 	int i = 0;
+	SSD1306_DeactiveScroll(ssd1306);
 	SSD1306_set_cursor(ssd1306, 0, 0);
 	while (i < len)
 	{
@@ -425,19 +437,49 @@ static void SSD1306_SaveRAMContent(SSD1306_Type *ssd1306)
 	// }
 }
 
-static void SSD1306_DeactiveScroll(SSD1306_Type *ssd1306)
-{
-	SSD1306_Write(ssd1306, true, 0x2E);
-}
 
-static void SSD1306_ActiveScroll(SSD1306_Type *ssd1306)
-{
-	SSD1306_Write(ssd1306, true, 0x2F);
-}
 
 static void SSD1306_ScrollUp(SSD1306_Type *ssd1306, int speed)
 {
+	/* speed 1->8 */
+	SSD1306_Write(ssd1306, true, 0x29);
 
+	SSD1306_Write(ssd1306, true, 0x00);			/* A[7:0], dummy */
+	SSD1306_Write(ssd1306, true, 0x00);			/* B[2:0], start page = 0 */
+	if ( (speed & 0b111) == 1)					/* C[2:0], time interval */
+	{
+		SSD1306_Write(ssd1306, true, 0b011);	/* 256 frames/scroll */
+	}
+	else if ((speed & 0b111) == 2)				/* 128 frames/scroll */
+	{
+		SSD1306_Write(ssd1306, true, 0b010);
+	}
+	else if ((speed & 0b111) == 3)				/* 64 frames/scroll */
+	{
+		SSD1306_Write(ssd1306, true, 0b001);
+	}
+	else if ((speed & 0b111) == 4)				/* 25 frames/scroll */
+	{
+		SSD1306_Write(ssd1306, true, 0b110);
+	}
+	else if ((speed & 0b111) == 5)				/* 5 frames/scroll */
+	{
+		SSD1306_Write(ssd1306, true, 0x0);
+	}
+	else if ((speed & 0b111) == 6)				/* 4 frames/scroll */
+	{
+		SSD1306_Write(ssd1306, true, 0b101);
+	}
+	else if ((speed & 0b111) == 7)				/* 3 frames/scroll */
+	{
+		SSD1306_Write(ssd1306, true, 0b100);
+	}
+	else										/* 2 frames/scroll */
+	{
+		SSD1306_Write(ssd1306, true, 0b111);
+	}
+	SSD1306_Write(ssd1306, true, 0b111);		/* D[2:0], end page = 7 */
+	SSD1306_Write(ssd1306, true, 0x01);			/* E[2:0], Vertical scrolling offset  */
 }
 
 static void SSD1306_ScrollDown(SSD1306_Type *ssd1306, int speed)
@@ -625,7 +667,10 @@ static int SSD1306_probe(struct i2c_client *client, const struct i2c_device_id *
 	/* test read ram */
 	// SSD1306_SaveRAMContent(&ssd1306);
 	/* scroll */
-	SSD1306_ScrollRight(&ssd1306, 4);
+	SSD1306_DeactiveScroll(&ssd1306);
+	SSD1306_ScrollUp(&ssd1306, 5);
+	SSD1306_ActiveScroll(&ssd1306);
+
 	/* 1. Create directory under /sys */
 	mdev.kobj = kobject_create_and_add("SSD1306_Device",NULL);
 	/* 2. Creating group sys entry under /sys/bbb_gpio */
