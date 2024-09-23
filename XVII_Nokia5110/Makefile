@@ -4,17 +4,22 @@ PHONY: all clean
 BBB_KERNEL := /home/quangnm/Desktop/buildBBB/kernelbuildscripts/KERNEL
 TOOLCHAIN := /home/quangnm/Desktop/buildBBB/kernelbuildscripts/dl/gcc-8.5.0-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-
 C_FILE	:= Nokia5110
-DEVICE_TREE := Nokia5110
 obj-m := $(C_FILE).o
+BEAGLEBONE_PASSWORD := temppwd
+BEAGLEBONE_IP := 192.168.16.101
+BEAGLEBONE_HOME_PATH := debian@$(BEAGLEBONE_IP):/home/debian
+
+first:
+	scp $(C_FILE).ko $(BEAGLEBONE_HOME_PATH)
 
 all:
 	@make -C $(BBB_KERNEL) M=$(shell pwd) clean
-	@rm -rf $(DEVICE_TREE).dtbo
 	@make ARCH=arm CROSS_COMPILE=$(TOOLCHAIN) -C $(BBB_KERNEL) M=$(shell pwd) modules
-	@dtc -@ -I dts -O dtb -o $(DEVICE_TREE).dtbo $(DEVICE_TREE).dts
+
+move:
+	sshpass -p $(BEAGLEBONE_PASSWORD) scp $(C_FILE).ko $(BEAGLEBONE_HOME_PATH)
 
 clean:
 	@make -C $(BBB_KERNEL) M=$(shell pwd) clean
-	@rm -rf $(DEVICE_TREE).dtbo
 
 again: clean all

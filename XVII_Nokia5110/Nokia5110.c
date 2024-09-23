@@ -1,91 +1,86 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/gpio.h>
-#include <linux/interrupt.h>
-#include <linux/platform_device.h>
-#include <linux/of_device.h>
-#include <linux/mod_devicetable.h>
-#include <linux/property.h>
-#include <linux/uaccess.h>
-#include <linux/fs.h>
-#include <linux/proc_fs.h>
-#include <linux/pinctrl/consumer.h>
-
+#include <linux/spi/spi.h>
 /*******************************************************************************/
 /* Meta Information */
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Johannes 4 GNU/Linux");
-MODULE_DESCRIPTION("A simple driver for builtin led");
+MODULE_AUTHOR("QuangNM13");
+MODULE_DESCRIPTION("A SPI driver for Nokia5110 LCD");
 /*******************************************************************************/
 #define LOW					0
 #define HIGH				1
-#define COMPATIBLE			"USER_BUILT_IN_LED"
+#define COMPATIBLE			"QuangNM13,Nokia5110"
 /*******************************************************************************/
-static struct gpio_desc *builtInLed = NULL;
+static struct gpio_desc *resetPin = NULL;
+static struct gpio_desc *dcPin = NULL;
 /*******************************************************************************/
-static int dt_probe(struct platform_device *pdev);
-static int dt_remove(struct platform_device *pdev);
+static int Nokia5110_probe(struct spi_device *pdev);
+static int Nokia5110_remove(struct spi_device *pdev);
 /*******************************************************************************/
-static struct of_device_id my_driver_id[] = {
+
+/*******************************************************************************/
+
+/*******************************************************************************/
+
+static struct of_device_id nokia5110_id[] = {
 	{
 		.compatible = COMPATIBLE,
 	},
 	{}
 };
-MODULE_DEVICE_TABLE(of, my_driver_id);
-static struct platform_driver my_driver = {
-	.probe = dt_probe,
-	.remove = dt_remove,
+MODULE_DEVICE_TABLE(spi0, nokia5110_id);
+static struct spi_driver nokia5110_driver = {
+	.probe = Nokia5110_probe,
+	.remove = Nokia5110_remove,
 	.driver = {
-		.name = "MyInterrupt",
-		.of_match_table = of_match_ptr(my_driver_id),
+		.name = "Nokia5110_Driver",
+		.of_match_table = nokia5110_id,
 	}
 };
+module_spi_driver(nokia5110_driver);
 /*******************************************************************************/
-static int dt_probe(struct platform_device *pdev)
+static int Nokia5110_probe(struct spi_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	printk("Built_In_Module_Probe\n");
-	builtInLed = gpiod_get_index(dev, "builtInLed", 0, GPIOD_OUT_HIGH);
-	if (IS_ERR(builtInLed))
+	printk("Nokia5110 Probe\n");
+	/* Check device properties */
+	if (!device_property_present(dev, "commandData-gpio"))
 	{
-		printk("Built_In_Module_Probe - Error! cannot setup the builtin LED\n");
-		gpiod_put(builtInLed);
+		printk("dt_probe - Error! Device property 'commandData-gpio' not found\n");
 	}
-	gpiod_set_value(builtInLed, HIGH);
+	if (!device_property_present(dev, "reset-gpio"))
+	{
+		printk("dt_probe - Error! Device property 'reset-gpio' not found\n");
+	}
+	/* Obtain GPIO */
+	resetPin = gpiod_get(dev, "reset", GPIOD_OUT_LOW);
+	if (IS_ERR(resetPin))
+	{
+		printk("Nokia5110 Probe - Error! cannot setup the reset-gpio\n");
+		gpiod_put(resetPin);
+	}
+	dcPin = gpiod_get(dev, "commandData", GPIOD_OUT_LOW);
+	if (IS_ERR(dcPin))
+	{
+		printk("Nokia5110 Probe - Error! cannot setup the dcPin\n");
+		gpiod_put(dcPin);
+	}
+	/* Obtain SPI device */
 	return 0;
 }
 /**
  * @brief This function is called, when the module is removed
  */
-static int dt_remove(struct platform_device *pdev)
+static int Nokia5110_remove(struct spi_device *pdev)
 {
-	printk("Built_In_Module_Remove\n");
-	gpiod_put(builtInLed);
+	printk("Nokia5110 Remove\n");
+	gpiod_put(resetPin);
+	gpiod_put(dcPin);
 	return 0;
-}
-/**
- * @brief This function is called, when the module is loaded into the kernel
- */
-static int __init ModuleInit(void) {
-	printk("Built_In_Module_Init: Loading module... ");
-	if (platform_driver_register(&my_driver))
-	{
-		printk("Built_In_Module_Init - Error! Cannot load driver\n");
-		return -1;
-	}
-	return 0;
-}
-/**
- * @brief This function is called, when the module is removed from the kernel
- */
-static void __exit ModuleExit(void) {
-	printk("Built_In_Module_Exit: Unloading module... ");
-	platform_driver_unregister(&my_driver);
 }
 /*******************************************************************************/
-module_init(ModuleInit);
-module_exit(ModuleExit);
+
 /*******************************************************************************/
 
 
