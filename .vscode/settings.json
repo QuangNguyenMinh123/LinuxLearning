@@ -11,6 +11,7 @@
         "module.h": "c",
         "fs.h": "c",
         "stdio.h": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "ssd1306.h": "c"
     }
 }
