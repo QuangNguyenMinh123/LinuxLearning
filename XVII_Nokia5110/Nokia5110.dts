@@ -15,6 +15,7 @@
 
 &spi0 {
 	status = "okay";
+	ti,pindir-d0-out-d1-in = <1>;		/* convert SPI_D0 = MOSI, SPI_D1 = MISO*/
 	Nokia5110: Nokia5110@0 {
 		compatible = "QuangNM13,Nokia5110";
 		author = "QuangNM13";

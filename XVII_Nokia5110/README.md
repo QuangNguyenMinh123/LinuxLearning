@@ -1,7 +1,7 @@
 # Brief
 Driver control Nokia5110 using SPI0
 # Tutorial
-Add this to kernelbuildscripts/KERNEL/arch/arm/boot/dts/am335x-boneblack.dts
+Add this to kernelbuildscripts/KERNEL/arch/arm/boot/dts/am335x-boneblack.dts and rebuild BBB
 "
 /* Nokia5110 DT */
 &am33xx_pinmux{
@@ -33,3 +33,8 @@ Add this to kernelbuildscripts/KERNEL/arch/arm/boot/dts/am335x-boneblack.dts
 	};
 };
 "
+
+make clean all move to move Nokia5110.ko driver to BBB
+insmod Nokia5110.ko
+compile and run test.c to move cursor to { x = 30 , y = 3}
+echo "<your string>" > /proc/nokia5110   To display <your string> to nokia5110

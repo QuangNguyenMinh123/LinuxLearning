@@ -3,6 +3,8 @@
 #include <linux/gpio.h>
 #include <linux/spi/spi.h>
 #include <linux/delay.h>
+#include <linux/proc_fs.h>
+#include <linux/uaccess.h>
 /*******************************************************************************/
 /* Meta Information */
 MODULE_LICENSE("GPL");
@@ -23,6 +25,14 @@ MODULE_DESCRIPTION("A SPI driver for Nokia5110 LCD");
 #define MAX_ROW						5
 #define MAX_COL						83
 #define FONT_SIZE					6
+/*******************************************************************************/
+typedef struct position {
+	unsigned char x;
+	unsigned char y;
+} Position_t;
+#define MAJIC_NO				100
+#define IOCTL_GOTOXY			_IOW(MAJIC_NO, 3, Position_t)
+#define IOCTL_CLEAR				_IO(MAJIC_NO, 4)
 /*******************************************************************************/
 typedef enum DisplayModeType{
 	BLANK 	= 0b00001000,
@@ -170,13 +180,13 @@ const uint8_t LCD_Font5x7[][FONT_SIZE] = {
 	{ 0x44, 0x64, 0x54, 0x4C, 0x44, 0x00 },   // z
 };
 /*******************************************************************************/
-
-/*******************************************************************************/
 static struct gpio_desc *resetPin = NULL;
-static struct gpio_desc *dcPin = NULL;
+static struct gpio_desc *dcPin = NULL; 
 /*******************************************************************************/
 static int Nokia5110_probe(struct spi_device *pdev);
 static int Nokia5110_remove(struct spi_device *pdev);
+static long int Nokia5110_Ioctl(struct file *file, unsigned cmd, unsigned long arg);
+static ssize_t Nokia5110_ProcWrite(struct file *File, const char *user_buffer, size_t count, loff_t *offs);
 /*******************************************************************************/
 static void Nokia5110_Write(Nokia5110Type *device, bool isCommand, char* buff, int size)
 {
@@ -279,8 +289,6 @@ static void Nokia5110_Init(Nokia5110Type *device)
 	Nokia5110_Write(device, true, buff, sizeof(buff));
 }
 /*******************************************************************************/
-
-/*******************************************************************************/
 static struct of_device_id nokia5110_id[] = {
 	{
 		.compatible = COMPATIBLE,
@@ -297,7 +305,45 @@ static struct spi_driver nokia5110_driver = {
 	}
 };
 module_spi_driver(nokia5110_driver);
+static struct file_operations fops = {
+	.owner = THIS_MODULE,
+	.open = NULL,
+	.release = NULL,
+	.unlocked_ioctl = Nokia5110_Ioctl,
+	.write = Nokia5110_ProcWrite,
+};
+static struct proc_dir_entry *proc_file;
 /*******************************************************************************/
+static long int Nokia5110_Ioctl(struct file *file, unsigned cmd, unsigned long arg)
+{
+	Position_t *pos = NULL;
+	void __user *argp = (void __user *)arg;
+	printk("Nokia5110_Ioctl: \n");
+	if (cmd == IOCTL_GOTOXY)
+	{
+		pos = kmalloc(sizeof(Position_t), GFP_KERNEL);
+		copy_from_user(pos, argp, sizeof(Position_t));
+		printk("x = %d, y = %d\n",(int)pos->x, (int)pos->y);
+		Nokia5110_goto(&nokia5110, pos->x, pos->y);
+	}
+	else if (cmd == IOCTL_CLEAR)
+	{
+		Nokia5110_ClearScreen(&nokia5110);
+	}
+	
+	return 0;
+}
+
+static ssize_t Nokia5110_ProcWrite(struct file *File, const char *user_buffer, size_t count, loff_t *offs) {
+	u8 buffer[100];
+	int cnt;
+	memset(buffer, 0 , sizeof(buffer));
+	printk("Nokia5110_ProcWrite: \n");
+	cnt = copy_from_user(buffer, user_buffer, count - 1);
+	Nokia5110_print(&nokia5110, buffer);
+	return count;
+}
+
 static int Nokia5110_probe(struct spi_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -328,11 +374,16 @@ static int Nokia5110_probe(struct spi_device *pdev)
 	gpiod_set_value(dcPin, HIGH);
 	/* Obtain SPI device */
 	nokia5110.nokia5110 = pdev;
+	/* Initialize device */
 	Nokia5110_Init(&nokia5110);
 	Nokia5110_ClearScreen(&nokia5110);
 	Nokia5110_goto(&nokia5110, 0, 0);
-	char ch[] = "abcdefghijklmnopqrtsxzy\n123467890/?\n\n1287361298378\n1  23123,.;'=.";
-	Nokia5110_print(&nokia5110, ch);
+	/* Create proc */
+	proc_file = proc_create("nokia5110", 0666, NULL, &fops);
+	if(proc_file == NULL) {
+		printk("SSD1306_probe: Error creating /proc/nokia5110\n");
+		return -ENOMEM;
+	}
 	return 0;
 }
 /**
@@ -343,6 +394,7 @@ static int Nokia5110_remove(struct spi_device *pdev)
 	printk("Nokia5110 Remove\n");
 	gpiod_put(resetPin);
 	gpiod_put(dcPin);
+	proc_remove(proc_file);
 	return 0;
 }
 /*******************************************************************************/

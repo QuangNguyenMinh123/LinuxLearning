@@ -12,6 +12,8 @@
         "fs.h": "c",
         "stdio.h": "c",
         "typeinfo": "c",
-        "ssd1306.h": "c"
+        "ssd1306.h": "c",
+        "ioctl.h": "c",
+        "stdlib.h": "c"
     }
 }
