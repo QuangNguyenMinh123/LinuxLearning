@@ -5,6 +5,7 @@
 #include <linux/delay.h>
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
+#include <linux/pinctrl/consumer.h>
 /*******************************************************************************/
 /* Meta Information */
 MODULE_LICENSE("GPL");
@@ -391,10 +392,16 @@ static int Nokia5110_probe(struct spi_device *pdev)
  */
 static int Nokia5110_remove(struct spi_device *pdev)
 {
+	struct pinctrl* checkPinCtrl;
 	printk("Nokia5110 Remove\n");
 	gpiod_put(resetPin);
 	gpiod_put(dcPin);
 	proc_remove(proc_file);
+	checkPinCtrl = devm_pinctrl_get_select(&pdev->dev, "spi0_pinmux_default");
+	if (IS_ERR(checkPinCtrl))
+	{
+		printk("ILI9341_remove: - Error! cannot reset spi0 pinmux to default\n");
+	}
 	return 0;
 }
 /*******************************************************************************/

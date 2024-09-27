@@ -6,7 +6,7 @@ TOOLCHAIN := /home/quangnm/Desktop/buildBBB/kernelbuildscripts/dl/gcc-8.5.0-noli
 C_FILE	:= Nokia5110
 obj-m := $(C_FILE).o
 BEAGLEBONE_PASSWORD := temppwd
-BEAGLEBONE_IP := 192.168.16.101
+BEAGLEBONE_IP := 192.168.16.106
 BEAGLEBONE_HOME_PATH := debian@$(BEAGLEBONE_IP):/home/debian
 
 first:

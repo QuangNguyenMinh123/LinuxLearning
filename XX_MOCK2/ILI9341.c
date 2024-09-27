@@ -5,6 +5,7 @@
 #include <linux/delay.h>
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
+#include <linux/pinctrl/consumer.h>
 /*******************************************************************************/
 /* Meta Information */
 MODULE_LICENSE("GPL");
@@ -265,7 +266,9 @@ static void ILI9341_ClearScreen(ILI9341Type *device)
 static void ILI9341_Init(ILI9341Type *device)
 {
 	char buff[] = {
-		0
+		0x21,		/* Function set */
+		0xC0,
+		0x20,		/* Basic command */
 	};
 	ILI9341_Reset();
 	ILI9341_Write(device, true, buff, sizeof(buff));
@@ -373,10 +376,16 @@ static int ILI9341_probe(struct spi_device *pdev)
  */
 static int ILI9341_remove(struct spi_device *pdev)
 {
+	struct pinctrl* checkPinCtrl;
 	printk("ILI9341_remove\n");
 	gpiod_put(resetPin);
 	gpiod_put(dcPin);
 	proc_remove(proc_file);
+	checkPinCtrl = devm_pinctrl_get_select(&pdev->dev, "spi0_pinmux_default");
+	if (IS_ERR(checkPinCtrl))
+	{
+		printk("ILI9341_remove: - Error! cannot reset spi0 pinmux to default\n");
+	}
 	return 0;
 }
 /*******************************************************************************/
