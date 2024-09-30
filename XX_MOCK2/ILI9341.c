@@ -1,48 +1,9 @@
-#include <linux/module.h>
-#include <linux/init.h>
-#include <linux/gpio.h>
-#include <linux/spi/spi.h>
+#include "ILI9341.h"
 #include <linux/delay.h>
-#include <linux/proc_fs.h>
-#include <linux/uaccess.h>
-#include <linux/pinctrl/consumer.h>
-/*******************************************************************************/
-/* Meta Information */
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("QuangNM13");
-MODULE_DESCRIPTION("A SPI driver for ILI9341 LCD");
-/*******************************************************************************/
-#define LOW					0
-#define HIGH				1
-#define COMPATIBLE			"QuangNM13,ILI9341"
-#define FONT_SIZE			6
-#define MAX_COL				320
-#define MAX_ROW				240
 /*******************************************************************************/
 
 /*******************************************************************************/
-typedef struct position {
-	unsigned char x;
-	unsigned char y;
-} Position_t;
-#define MAJIC_NO				100
-#define IOCTL_GOTOXY			_IOW(MAJIC_NO, 3, Position_t)
-#define IOCTL_CLEAR				_IO(MAJIC_NO, 4)
-/*******************************************************************************/
-typedef struct ILI9341Type{
-	struct spi_device *ili9341;
-	int col;
-	int row;
-}ILI9341Type;
-
-ILI9341Type ili9341 =
-{
-	NULL,
-	0,
-	0
-};
-/*******************************************************************************/
-const uint8_t LCD_Font5x7[][FONT_SIZE] = {
+uint8_t LCD_Font5x7[][FONT_SIZE] = {
 	{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },	// 0
 	{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },	// 1
 	{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },	// 2
@@ -167,80 +128,48 @@ const uint8_t LCD_Font5x7[][FONT_SIZE] = {
 	{ 0x0C, 0x50, 0x50, 0x50, 0x3C, 0x00 },   // y
 	{ 0x44, 0x64, 0x54, 0x4C, 0x44, 0x00 },   // z
 };
+
+uint8_t test_Str[] = {
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x0f, 0xfa, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
 /*******************************************************************************/
-static struct gpio_desc *resetPin = NULL;
-static struct gpio_desc *dcPin = NULL; 
-/*******************************************************************************/
-static int ILI9341_probe(struct spi_device *pdev);
-static int ILI9341_remove(struct spi_device *pdev);
-static long int ILI9341_Ioctl(struct file *file, unsigned cmd, unsigned long arg);
-static ssize_t ILI9341_ProcWrite(struct file *File, const char *user_buffer, size_t count, loff_t *offs);
-/*******************************************************************************/
-static void ILI9341_Write(ILI9341Type *device, bool isCommand, char* buff, int size)
+void ILI9341_printImage(ILI9341Type *device, char* ch, int size)
 {
-	if (isCommand)						/* If command is sent */
-		gpiod_set_value(dcPin, LOW);
-	else								/* If data is sent */
-	{
-		gpiod_set_value(dcPin, HIGH);
-	}
-	spi_write(device->ili9341, buff, size);
-	gpiod_set_value(dcPin, LOW);
+	ILI9341_goto(device, 0, 0);
+	// ILI9341_Write(device, false, ch, size);
 }
 
-static void ILI9341_Read(ILI9341Type *device, bool isCommand, char* senBuff, int sendSize, char* saveBuff, int saveSize)
-{
-	if (isCommand)						/* If command is sent */
-		gpiod_set_value(dcPin, LOW);
-	else								/* If data is sent */
-	{
-		gpiod_set_value(dcPin, HIGH);
-	}
-	spi_write(device->ili9341, senBuff, sendSize);
-	spi_read(device->ili9341, saveBuff, saveSize);
-	gpiod_set_value(dcPin, LOW);gpiod_set_value(dcPin, LOW);
-}
-
-static void ILI9341_Reset(void)
-{
-	gpiod_set_value(resetPin, LOW);
-	mdelay(100);
-	gpiod_set_value(resetPin, HIGH);
-}
-
-static void ILI9341_goto(ILI9341Type *device, int x, int y)
-{
-	int xVal = (x <= MAX_ROW) ? (x) : (MAX_ROW);
-	int yVal = (y <= MAX_COL) ? (y) : (MAX_COL);
-	char buff[3] = {
-		0
-	};
-	ILI9341_Write(device, true, buff, sizeof(buff));
-	device->col = xVal;
-	device->row = yVal;
-}
-
-static void ILI9341_Nextline(ILI9341Type *device)
-{
-	if (device->row + 1 <= MAX_ROW)
-		ILI9341_goto(device, 0, device->row + 1);
-	else
-		ILI9341_goto(device, 0, 0);
-}
-
-static void ILI9341_printChar(ILI9341Type *device, char ch)
+void ILI9341_printChar(ILI9341Type *device, char ch)
 {
 	if (ch == '\n')
+	{
 		ILI9341_Nextline(device);
+	}
 	else
 	{
-		if (ili9341.col + FONT_SIZE < MAX_COL)
+		if (device->col + FONT_SIZE < MAX_COL)
 		{
-			ili9341.col += FONT_SIZE;
+			device->col += FONT_SIZE;
 		}
 		else
 		{
-			if (ili9341.row + 1 > MAX_ROW)
+			if (device->row + 1 > MAX_ROW)
 			{
 				ILI9341_goto(device, 0, 0);
 			}
@@ -249,178 +178,224 @@ static void ILI9341_printChar(ILI9341Type *device, char ch)
 				ILI9341_goto(device, 0, device->row + 1);
 			}
 		}
-		ILI9341_Write(device, false, LCD_Font5x7[ch], FONT_SIZE);
+		// ILI9341_Write(device, false, LCD_Font5x7[(int) ch], FONT_SIZE);
 	}
-
 }
 
-static void ILI9341_print(ILI9341Type *device, char* ch)
+void ILI9341_print(ILI9341Type *device, char* ch)
 {
-	while (*ch != 0)
-	{
-		ILI9341_printChar(device, *ch);
-		ch++;
-	}
+
 }
 
-static void ILI9341_printImage(ILI9341Type *device, char* ch, int size)
+void ILI9341_Cmd1Byte(ILI9341Type *device, char buff)
 {
-	ILI9341_goto(device, 0, 0);
-	ILI9341_Write(device, false, ch, size);
+	gpiod_set_value(device->dcPin, LOW);
+	spi_write(device->ili9341, &buff, 1);
 }
 
-static void ILI9341_ClearScreen(ILI9341Type *device)
+void ILI9341_CmdMulBytes(ILI9341Type *device, char *buff, int size)
 {
-	char buff[504] = {0};
-	ILI9341_goto(device, 0, 0);
-	ILI9341_Write(device, false, buff, 504);
+	gpiod_set_value(device->dcPin, LOW);
+	spi_write(device->ili9341, buff, 1);			/* Send the first byte */
+	gpiod_set_value(device->dcPin, HIGH);
+	spi_write(device->ili9341, &buff[1], size - 1);	/* Send the rest */
 }
 
-static void ILI9341_Init(ILI9341Type *device)
+void ILI9341_Read(ILI9341Type *device, bool isCommand, char* senBuff, int sendSize, char* saveBuff, int saveSize)
 {
-	ILI9341_Reset();
-}
-/*******************************************************************************/
-static struct of_device_id ili9341_id[] = {
+	if (isCommand)						/* If command is sent */
+		gpiod_set_value(device->dcPin, LOW);
+	else								/* If data is sent */
 	{
-		.compatible = COMPATIBLE,
-	},
-	{}
-};
-MODULE_DEVICE_TABLE(spi0, ili9341_id);
-static struct spi_driver ili9341_driver = {
-	.probe = ILI9341_probe,
-	.remove = ILI9341_remove,
-	.driver = {
-		.name = "ILI9341_Driver",
-		.of_match_table = ili9341_id,
+		gpiod_set_value(device->dcPin, HIGH);
 	}
-};
-module_spi_driver(ili9341_driver);
-static struct file_operations fops = {
-	.owner = THIS_MODULE,
-	.open = NULL,
-	.release = NULL,
-	.unlocked_ioctl = ILI9341_Ioctl,
-	.write = ILI9341_ProcWrite,
-};
-static struct proc_dir_entry *proc_file;
-/*******************************************************************************/
-static long int ILI9341_Ioctl(struct file *file, unsigned cmd, unsigned long arg)
-{
-	Position_t *pos = NULL;
-	void __user *argp = (void __user *)arg;
-	printk("ILI9341_Ioctl: \n");
-	if (cmd == IOCTL_GOTOXY)
-	{
-		pos = kmalloc(sizeof(Position_t), GFP_KERNEL);
-		copy_from_user(pos, argp, sizeof(Position_t));
-		printk("x = %d, y = %d\n",(int)pos->x, (int)pos->y);
-		ILI9341_goto(&ili9341, pos->x, pos->y);
-	}
-	else if (cmd == IOCTL_CLEAR)
-	{
-		ILI9341_ClearScreen(&ili9341);
-	}
-	
-	return 0;
+	spi_write(device->ili9341, senBuff, sendSize);
+	spi_read(device->ili9341, saveBuff, saveSize);
+	gpiod_set_value(device->dcPin, LOW);
+
 }
 
-static ssize_t ILI9341_ProcWrite(struct file *File, const char *user_buffer, size_t count, loff_t *offs) {
-	u8 buffer[100];
-	int cnt;
-	memset(buffer, 0 , sizeof(buffer));
-	printk("ILI9341_ProcWrite: \n");
-	cnt = copy_from_user(buffer, user_buffer, count - 1);
-	ILI9341_print(&ili9341, buffer);
-	return count;
+void ILI9341_Reset(ILI9341Type *device)
+{
+	ILI9341_Cmd1Byte(device, 0x01); 	/* send command 0x01 to reset */
+	mdelay(120);
 }
 
-static int ILI9341_probe(struct spi_device *pdev)
+void ILI9341_SleepMode(ILI9341Type *device, bool isSleep)
 {
-	struct device *dev = &pdev->dev;
-	printk("ILI9341_probe\n");
-	/* Check device properties */
-	if (!device_property_present(dev, "commandData-gpio"))
+	if (isSleep)
 	{
-		printk("dt_probe - Error! Device property 'commandData-gpio' not found\n");
+		ILI9341_Cmd1Byte(device, 0x10);		/* Command to enter sleep mode */
 	}
-	if (!device_property_present(dev, "reset-gpio"))
+	else
 	{
-		printk("dt_probe - Error! Device property 'reset-gpio' not found\n");
+		ILI9341_Cmd1Byte(device, 0x11);		/* Command to exit sleep mode */
 	}
-	/* Obtain GPIO */
-	resetPin = gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
-	if (IS_ERR(resetPin))
+	mdelay(120);
+}
+
+void ILI9341_InverseMode(ILI9341Type *device, bool isInverse)
+{
+	if (isInverse)
 	{
-		printk("ILI9341_probe - Error! cannot setup the reset-gpio\n");
-		gpiod_put(resetPin);
+		ILI9341_Cmd1Byte(device, 0x20);		/* Command to inverse display */
 	}
-	gpiod_set_value(resetPin, HIGH);
-	dcPin = gpiod_get(dev, "commandData", GPIOD_OUT_HIGH);
-	if (IS_ERR(dcPin))
+	else
 	{
-		printk("ILI9341_probe - Error! cannot setup the dcPin\n");
-		gpiod_put(dcPin);
+		ILI9341_Cmd1Byte(device, 0x21);		/* Command to not inverse display */
 	}
-	gpiod_set_value(dcPin, HIGH);
-	/* Obtain SPI device */
-	ili9341.ili9341 = pdev;
-	/* Initialize device */
-	//ILI9341_Init(&ili9341);
-	char buff[] = {
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
+	mdelay(120);
+}
+
+void ILI9341_DispalyOn(ILI9341Type *device, bool isON)
+{
+	if (isON)
+	{
+		ILI9341_Cmd1Byte(device, 0x29);		/* Command to turn on display */
+		
+	}
+	else
+	{
+		ILI9341_Cmd1Byte(device, 0x28);		/* Command to turn off display */
+		
+	}
+	mdelay(120);
+}
+
+void ILI9341_gotoCol(ILI9341Type *device, int Col)
+{
+	int xVal = (Col < MAX_COL) ? (Col) : (0);
+	char buff[5] = {
+		0x2A, 					/* Cmd to set Column Address */
+		(xVal & 0xff00) >> 8,
+		xVal & 0x00ff,
+		(MAX_COL & 0xff00) >> 8,
+		MAX_COL & 0x00ff
 	};
-	char res[] = {
-		0x09,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		};
-	gpiod_set_value(dcPin, LOW);
-	spi_write(ili9341.ili9341, res, 16);
-	spi_write(ili9341.ili9341, res, 16);
-	/* Create proc */
-	proc_file = proc_create("ili9341", 0666, NULL, &fops);
-	if(proc_file == NULL) {
-		printk("SSD1306_probe: Error creating /proc/ili9341\n");
-		return -ENOMEM;
-	}
-	return 0;
+	ILI9341_CmdMulBytes(device, buff, 5);
+	device->col = xVal;
 }
-/**
- * @brief This function is called, when the module is removed
- */
-static int ILI9341_remove(struct spi_device *pdev)
+
+void ILI9341_gotoRow(ILI9341Type *device, int Row)
 {
-	struct pinctrl* checkPinCtrl;
-	printk("ILI9341_remove\n");
-	gpiod_put(resetPin);
-	gpiod_put(dcPin);
-	proc_remove(proc_file);
-	checkPinCtrl = devm_pinctrl_get_select(&pdev->dev, "spi0_pinmux_default");
-	if (IS_ERR(checkPinCtrl))
-	{
-		printk("ILI9341_remove: - Error! cannot reset spi0 pinmux to default\n");
-	}
-	return 0;
+	int yVal = (Row < MAX_ROW) ? (Row) : (0);
+	char buff[5] = {
+		0x2B, 			/* Cmd to set Row Address */
+		(yVal & 0xff00) >> 8,
+		yVal & 0x00ff,
+		(MAX_ROW & 0xff00) >> 8,
+		MAX_ROW & 0x00ff
+	};
+	ILI9341_CmdMulBytes(device, buff, 5);
+	device->row = yVal;
 }
+
+void ILI9341_goto(ILI9341Type *device, int Col, int Row) 
+{
+	ILI9341_gotoCol(device, Col);
+	ILI9341_gotoRow(device, Row);
+}
+
+void ILI9341_WriteMem(ILI9341Type *device, char *Userbuff, int size)
+{
+	int i = 0;
+	char buff[4] = {
+		0x2C, 			/* Cmd to Write memory */
+		0,
+		0,
+		0
+	};
+	for (i = 0; i < size; i += 3)
+	{
+		buff[1] = Userbuff[i];
+		buff[2] = Userbuff[i+1];
+		buff[3] = Userbuff[i+2];
+		ILI9341_CmdMulBytes(device, buff, 4);
+	}
+}
+
+void ILI9341_Tearing(ILI9341Type *device, bool isTearing)
+{
+	char buff[2] =
+	{
+		0x35,			/* Command to turn on tearing */
+		0x00
+	};
+	if (isTearing)		/* Command to turn on tearing */
+	{
+		ILI9341_CmdMulBytes(device, buff, 2);
+	}
+	else
+	{
+		ILI9341_Cmd1Byte(device, 0x34);		/* Command to turn off tearing */
+	}
+}
+
+void ILI9341_GammaSet(ILI9341Type *device, int value)
+{
+	char buff[2] =
+	{
+		0x26,			/* Command to set gamma */
+		value & 0b00001111
+	};
+	ILI9341_CmdMulBytes(device, buff, 2);
+}
+
+void ILI9341_ColorSet(ILI9341Type *device, int red, int green, int blue)
+{
+	char buff[10] =
+	{
+		0x2D,			/* Command to set color */
+		0b00111111,
+		0b00111111,
+		0b00111111,
+		0b00111111,
+		0b00111111,
+		0b00111111,
+		0b00111111,
+		0b00111111,
+		0b00111111,
+	};
+	ILI9341_CmdMulBytes(device, buff, 10);
+}
+
+void ILI9341_Nextline(ILI9341Type *device)
+{
+	if (device->row + 1 <= MAX_ROW)
+		ILI9341_goto(device, 0, device->row + 1);
+	else
+		ILI9341_goto(device, 0, 0);
+}
+
+void ILI9341_ClearScreen(ILI9341Type *device)
+{
+	ILI9341_goto(device, 0, 0);
+}
+
+void ILI9341_Init(ILI9341Type *device)
+{
+	ILI9341_Reset(device);
+	ILI9341_SleepMode(device, false);
+	ILI9341_InverseMode(device, false);
+	ILI9341_DispalyOn(device, true);
+	ILI9341_InverseMode(device, true);
+	ILI9341_GammaSet(device, 4);
+	ILI9341_Tearing(device, true);
+	ILI9341_ColorSet(device, 0, 0, 0);
+	mdelay(200);
+	ILI9341_goto(device, 0 , 0);
+	ILI9341_WriteMem(device, test_Str, sizeof(test_Str));
+}
+
+void ILI9341_Deinit(ILI9341Type *device)
+{
+	gpiod_put(device->resetPin);
+	gpiod_put(device->dcPin);
+}
+/*******************************************************************************/
+
+/*******************************************************************************/
+
+/*******************************************************************************/
+
 /*******************************************************************************/
