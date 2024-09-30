@@ -188,6 +188,19 @@ static void ILI9341_Write(ILI9341Type *device, bool isCommand, char* buff, int s
 	gpiod_set_value(dcPin, LOW);
 }
 
+static void ILI9341_Read(ILI9341Type *device, bool isCommand, char* senBuff, int sendSize, char* saveBuff, int saveSize)
+{
+	if (isCommand)						/* If command is sent */
+		gpiod_set_value(dcPin, LOW);
+	else								/* If data is sent */
+	{
+		gpiod_set_value(dcPin, HIGH);
+	}
+	spi_write(device->ili9341, senBuff, sendSize);
+	spi_read(device->ili9341, saveBuff, saveSize);
+	gpiod_set_value(dcPin, LOW);gpiod_set_value(dcPin, LOW);
+}
+
 static void ILI9341_Reset(void)
 {
 	gpiod_set_value(resetPin, LOW);
@@ -265,13 +278,7 @@ static void ILI9341_ClearScreen(ILI9341Type *device)
 
 static void ILI9341_Init(ILI9341Type *device)
 {
-	char buff[] = {
-		0x21,		/* Function set */
-		0xC0,
-		0x20,		/* Basic command */
-	};
 	ILI9341_Reset();
-	ILI9341_Write(device, true, buff, sizeof(buff));
 }
 /*******************************************************************************/
 static struct of_device_id ili9341_id[] = {
@@ -360,9 +367,37 @@ static int ILI9341_probe(struct spi_device *pdev)
 	/* Obtain SPI device */
 	ili9341.ili9341 = pdev;
 	/* Initialize device */
-	ILI9341_Init(&ili9341);
-	ILI9341_ClearScreen(&ili9341);
-	ILI9341_goto(&ili9341, 0, 0);
+	//ILI9341_Init(&ili9341);
+	char buff[] = {
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+	};
+	char res[] = {
+		0x09,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		};
+	gpiod_set_value(dcPin, LOW);
+	spi_write(ili9341.ili9341, res, 16);
+	spi_write(ili9341.ili9341, res, 16);
 	/* Create proc */
 	proc_file = proc_create("ili9341", 0666, NULL, &fops);
 	if(proc_file == NULL) {
