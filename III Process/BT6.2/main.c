@@ -49,12 +49,12 @@ int main(int argc, char *argv[])
         if (WIFEXITED(childStatus))
         {
             /* normal termination */
-            printf("Child process is terminated normally\n");
+            printf("Child process is terminated normally, child PID = %d\n",ret);
         }
         else
         {
             /* abnormal termination*/
-            printf("Child process is terminated abnormally\n");
+            printf("Child process is terminated abnormally, child PID = %d\n",ret);
         }
         return 0;
 
