@@ -82,7 +82,7 @@ void ILI9341_print(ILI9341Type *device, char* ch)
 {
 
 }
-
+/* Function to write data and cmd to ILI9341 */
 void ILI9341_WriteReg(ILI9341Type *device, char buff)
 {
 	gpiod_set_value(device->dcPin, LOW);
@@ -102,7 +102,7 @@ void ILI9341_CmdMulBytes(ILI9341Type *device, char *buff, int size)
 	gpiod_set_value(device->dcPin, HIGH);
 	spi_write(device->ili9341, &buff[1], size - 1);	/* Send the rest */
 }
-
+/* Function to Read data from ILI9341 */
 void ILI9341_Read(ILI9341Type *device, bool isCommand, char* senBuff, int sendSize, char* saveBuff, int saveSize)
 {
 	if (isCommand)						/* If command is sent */
@@ -116,7 +116,32 @@ void ILI9341_Read(ILI9341Type *device, bool isCommand, char* senBuff, int sendSi
 	gpiod_set_value(device->dcPin, LOW);
 
 }
+/* Function to move cursor and set window size ILI9341 */
+void ILI9341_SetWindow(ILI9341Type *device, int startx, int starty, int sizex, int sizey)
+{
+	char buffx[5] = {
+		0x2A, 					/* Cmd to set Column Address */
+		(startx) >> 8,
+		startx & 0x00ff,
+		(startx + sizex) >> 8,
+		(startx + sizex) & 0x00ff
+	};
+	char buffy[5] = {
+		0x2B, 					/* Cmd to set Row Address */
+		(starty) >> 8,
+		starty & 0x00ff,
+		(starty + sizey) >> 8,
+		(starty + sizey) & 0x00ff
+	};
+	ILI9341_CmdMulBytes(device, buffx, 5);
+	ILI9341_CmdMulBytes(device, buffy, 5);
+}
 
+void ILI9341_goto(ILI9341Type *device, int Col, int Row) 
+{
+	ILI9341_SetWindow(device, Col, Row, 0, 0);
+}
+/* Function to reset ILI9341 */
 void ILI9341_Reset(ILI9341Type *device)
 {
 	ILI9341_WriteReg(device, 0x01); 	/* send command 0x01 to reset */
@@ -178,31 +203,6 @@ void ILI9341_DispalyOn(ILI9341Type *device, bool isON)
 		
 	}
 	mdelay(120);
-}
-
-void ILI9341_SetWindow(ILI9341Type *device, int startx, int starty, int sizex, int sizey)
-{
-	char buffx[5] = {
-		0x2A, 					/* Cmd to set Column Address */
-		(startx) >> 8,
-		startx & 0x00ff,
-		(startx + sizex) >> 8,
-		(startx + sizex) & 0x00ff
-	};
-	char buffy[5] = {
-		0x2B, 					/* Cmd to set Row Address */
-		(starty) >> 8,
-		starty & 0x00ff,
-		(starty + sizey) >> 8,
-		(starty + sizey) & 0x00ff
-	};
-	ILI9341_CmdMulBytes(device, buffx, 5);
-	ILI9341_CmdMulBytes(device, buffy, 5);
-}
-
-void ILI9341_goto(ILI9341Type *device, int Col, int Row) 
-{
-	ILI9341_SetWindow(device, Col, Row, 0, 0);
 }
 
 void ILI9341_WriteMem(ILI9341Type *device, char *Userbuff, int size)
@@ -339,7 +339,7 @@ void ILI9341_ClearScreen(ILI9341Type *device)
 {
 	ILI9341_goto(device, 0, 0);
 }
-
+/* Initialize fintion */
 void ILI9341_PowerInit(ILI9341Type *device)
 {
 	ILI9341_WriteReg(device, 0xCF);  			// Power control B 
