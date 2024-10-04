@@ -78,13 +78,11 @@ void print_ps(ILI9341Type *device)
 /* Function to print char and image */
 void ILI9341_DisplayPixel(ILI9341Type *device, u16 color)
 {
-	u8 bef = color >> 8;
-	u8 af = color & 0xff;
-	// ILI9341_WriteReg(device, 0x2C);
-	gpiod_set_value(device->dcPin, HIGH);
-	spi_write(device->ili9341, &bef, 1);
-	spi_write(device->ili9341, &af, 1);
-
+	u8 buff[2] = {
+		color >> 8,
+		color & 0xff
+	};
+	spi_write(device->ili9341, &buff, 2);
 }
 
 void ILI9341_printImage(ILI9341Type *device, u16* data, int size)
@@ -94,6 +92,7 @@ void ILI9341_printImage(ILI9341Type *device, u16* data, int size)
 	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
 	/* Print something */
 	ILI9341_WriteReg(device, 0x2C);
+	gpiod_set_value(device->dcPin, HIGH);
 	while (i < size)
 	{
 		ILI9341_DisplayPixel(device, *data);
@@ -102,34 +101,56 @@ void ILI9341_printImage(ILI9341Type *device, u16* data, int size)
 	}
 }
 
-void ILI9341_printChar(ILI9341Type *device, char ch)
+void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 {
+	int i = 0, j = 0;
+	unsigned char *ptr = NULL;
+	unsigned char buff = 0;
 	if (ch == '\n')
 	{
 		ILI9341_Nextline(device);
 	}
 	else
 	{
-		if (device->col + FONT_SIZE >= MAX_COL)
+		if (device->col + FONT_SIZE > MAX_COL)
 		{
 			if (device->row + 1 > MAX_ROW)
 			{
-				ILI9341_SetCursor(device, 0, 0);
+				ILI9341_SetWindow(device, 0, 0, FONT_16_ROW_SIZE, FONT_16_COL_SIZE);
 			}
 			else
 			{
-				ILI9341_SetCursor(device, 0, device->row + 1);
+				ILI9341_SetWindow(device, device->row + FONT_16_ROW_SIZE, 0, 
+										device->row + 2 * FONT_16_ROW_SIZE, FONT_16_COL_SIZE);
 			}
 		}
-		// ILI9341_Write(device, false, ascii_1608[(int) ch], FONT_SIZE);
+		else
+			ILI9341_SetWindow(device, device->row, device->col, 
+									device->row + FONT_16_ROW_SIZE, device->col + FONT_16_COL_SIZE);
+		ptr = ascii_1608[(int) ch];
+		for (i = 0; i < FONT_16_ROW_SIZE; i ++)
+		{
+			buff = *ptr;
+			for (j = 0; j < FONT_16_COL_SIZE; j++)
+			{
+				if ((buff & 0b1) == 1)
+					ILI9341_DisplayPixel(device, color);
+				else
+					ILI9341_DisplayPixel(device, bgColor);
+				buff = buff >> 1;
+			}
+			ptr++;
+		}
+		device->row += FONT_16_ROW_SIZE;
+		device->col += FONT_16_COL_SIZE;
 	}
 }
 
-void ILI9341_printString(ILI9341Type *device, char* ch)
+void ILI9341_printString(ILI9341Type *device, char* ch, u16 charColor, u16 bgColor)
 {
 	while (*ch != 0)
 	{
-		ILI9341_printChar(device, *ch);
+		ILI9341_printChar(device, *ch, charColor, bgColor);
 		ch++;
 	}
 }
@@ -171,7 +192,7 @@ void ILI9341_SetCursor(ILI9341Type *device, int Row, int Col)
 void ILI9341_Nextline(ILI9341Type *device)
 {
 	if (device->row + 1 < device->maxRow)
-		ILI9341_SetCursor(device, 0, device->row + 1);
+		ILI9341_SetCursor(device, 0, (device->row + 1));
 	else
 		ILI9341_SetCursor(device, 0, 0);
 }
@@ -323,7 +344,8 @@ void ILI9341_Set16bitColor(ILI9341Type *device)
 	ILI9341_CmdMulBytes(device, buff, 2);
 }
 
-void ILI9341_SetBrightness(ILI9341Type *device, int value){
+void ILI9341_SetBrightness(ILI9341Type *device, int value)
+{
 	char buff[2] =
 	{
 		0x51,
@@ -363,7 +385,6 @@ void ILI9341_SetFrameRate(ILI9341Type *device){
 void ILI9341_FillColor(ILI9341Type *device, u16 color)
 {
 	int i = 0;
-	printk("ILI9341_FillColor: color = %d\n", color);
 	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
 	ILI9341_WriteReg(device, 0x2C);
 	while (i < ILI9341_DEF_COL * ILI9341_DEF_ROW)
@@ -507,11 +528,14 @@ void ILI9341_Init(ILI9341Type *device)
 	ILI9341_Tearing(device, true);
 	ILI9341_Idle(device, false);
 	ILI9341_Set16bitColor(device);
-	ILI9341_SetBrightness(device, 100);
+	ILI9341_SetBrightness(device, 1);
 	ILI9341_SetCTRL(device);
 	ILI9341_SetAdaptiveBrightnessControl(device);
 	ILI9341_SetFrameRate(device);
 	/* Print something */
+	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
+	ILI9341_SetWindow(device, 50, 50, 0, 0);
+	ILI9341_printString(device,"ABCDEF,mcvxnbkjhdsf", BLACK_16, YELLOW_16);
 }
 
 void ILI9341_Deinit(ILI9341Type *device)

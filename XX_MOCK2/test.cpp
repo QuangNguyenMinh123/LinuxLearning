@@ -56,13 +56,13 @@ public:
 #define IOCTL_DISPLAY_ON				_IO(MAJIC_NO, 8)
 #define IOCTL_DISPLAY_OFF				_IO(MAJIC_NO, 9)
 /*******************************************************************************/
-#define PROC_FILE_PATH          "/proc/ili9341"
-#define LCD_INVERSE_FILE		"/sys/ili9341/inverse_on_off"
-#define LCD_DISPLAY_ON_FILE		"/sys/ili9341/display_on_off"
-#define LCD_FILL_COLOR_FILE		"/sys/ili9341/fill_color"
-#define LCD_ROTATE_FILE			"/sys/ili9341/rotate"
-#define LCD_INIT_FILE			"/sys/ili9341/init"
-#define YOUR_STRING				"THIS IS MY STRING"
+#define PROC_FILE_PATH          	"/proc/ili9341"
+#define LCD_INVERSE_FILE			"/sys/ili9341/inverse_on_off"
+#define LCD_DISPLAY_ON_FILE			"/sys/ili9341/display_on_off"
+#define LCD_FILL_COLOR_FILE			"/sys/ili9341/fill_color"
+#define LCD_ROTATE_FILE				"/sys/ili9341/rotate"
+#define LCD_INIT_FILE				"/sys/ili9341/init"
+#define YOUR_STRING					"THIS IS MY STRING"
 /*******************************************************************************/
 #define ms				1000000
 /*******************************************************************************/

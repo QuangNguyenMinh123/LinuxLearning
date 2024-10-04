@@ -28,9 +28,9 @@ typedef struct ILI9341Type{
 /*******************************************************************************/
 void ILI9341_printImage(ILI9341Type *device, u16* data, int size);
 
-void ILI9341_printChar(ILI9341Type *device, char ch);
+void ILI9341_printChar(ILI9341Type *device, char ch, u16 charColor, u16 bgColor);
 
-void ILI9341_printString(ILI9341Type *device, char* ch);
+void ILI9341_printString(ILI9341Type *device, char* ch, u16 charColor, u16 bgColor);
 
 void ILI9341_Cmd1Byte(ILI9341Type *device, char buff);
 
@@ -59,6 +59,8 @@ void ILI9341_GammaSet(ILI9341Type *device, int value);
 void ILI9341_Nextline(ILI9341Type *device);
 
 void ILI9341_FillColor(ILI9341Type *device, u16 color);
+
+void ILI9341_SetBrightness(ILI9341Type *device, int value);
 
 void ILI9341_Init(ILI9341Type *device);
 

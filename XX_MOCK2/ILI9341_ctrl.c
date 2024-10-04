@@ -48,6 +48,7 @@ static ssize_t inverse_on_off_store(struct kobject *kobj, struct kobj_attribute 
 static ssize_t display_on_off_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t fill_color_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t rotate_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t set_brightness_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t init_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf);
 /*******************************************************************************/
 static int ILI9341_Driver_probe(struct spi_device *pdev);
@@ -62,6 +63,7 @@ struct kobj_attribute inverse_on_off_attr = __ATTR(inverse_on_off, 0660, NULL, i
 struct kobj_attribute display_on_off_attr = __ATTR(display_on_off, 0660, NULL, display_on_off_store);
 struct kobj_attribute fill_color_attr = __ATTR(fill_color, 0660, NULL, fill_color_store);
 struct kobj_attribute rotate_attr = __ATTR(rotate, 0660, NULL, rotate_store);
+struct kobj_attribute set_brightness_attr = __ATTR(set_brightness, 0660, NULL, set_brightness_store);
 struct kobj_attribute init_attr = __ATTR(init, 0660, init_show, NULL);
 /*******************************************************************************/
 static struct of_device_id ili9341_id[] = {
@@ -96,6 +98,7 @@ static struct attribute *attrs[] = {
 	&display_on_off_attr.attr,
 	&fill_color_attr.attr,
 	&rotate_attr.attr,
+	&set_brightness_attr.attr,
 	&init_attr.attr,
 	NULL,
 };
@@ -106,33 +109,33 @@ static struct attribute_group attr_group = {
 /*******************************************************************************/
 static ssize_t reset_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	if (*buf)
+	if (*buf != '0')
 		ILI9341_Reset(&ili9341);
 	return count;
 }
 
 static ssize_t clear_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	if (*buf)
+	if (*buf == '1')
 		ILI9341_FillColor(&ili9341, BLACK_16);
 	return count;
 }
 
 static ssize_t inverse_on_off_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	if (*buf)
-		ILI9341_InverseMode(&ili9341, true);
-	else
+	if (*buf == '0')
 		ILI9341_InverseMode(&ili9341, false);
+	else
+		ILI9341_InverseMode(&ili9341, true);
 	return count;
 }
 
 static ssize_t display_on_off_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	if (*buf)
-		ILI9341_DispalyOn(&ili9341, true);
-	else
+	if (*buf == '0')
 		ILI9341_DispalyOn(&ili9341, false);
+	else
+		ILI9341_DispalyOn(&ili9341, true);
 	return count;
 }
 
@@ -151,9 +154,15 @@ static ssize_t fill_color_store(struct kobject *kobj, struct kobj_attribute *att
 
 static ssize_t rotate_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	u8 numb = 0;
+	ILI9341_RotateMode(&ili9341, *buf);
+	return count;
+}
+
+static ssize_t set_brightness_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
+	int32_t numb = 0;
 	sscanf(buf, "%d", &numb);
-	ILI9341_RotateMode(&ili9341, numb);
+	ILI9341_SetBrightness(&ili9341, numb);
 	return count;
 }
 
@@ -191,7 +200,7 @@ static ssize_t ILI9341_Driver_ProcWrite(struct file *File, const char *user_buff
 	int cnt;
 	memset(buffer, 0 , sizeof(buffer));
 	cnt = copy_from_user(buffer, user_buffer, count - 1);
-	ILI9341_printString(&ili9341,buffer);
+	ILI9341_printString(&ili9341,buffer,WHITE_16,BLACK_16);
 	return count;
 }
 
