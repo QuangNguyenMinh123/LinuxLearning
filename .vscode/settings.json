@@ -16,6 +16,9 @@
         "ioctl.h": "c",
         "stdlib.h": "c",
         "ili9341.h": "c",
-        "ili9341_gui.h": "c"
+        "ili9341_gui.h": "c",
+        "*.tcc": "cpp",
+        "fstream": "cpp",
+        "string": "cpp"
     }
 }
