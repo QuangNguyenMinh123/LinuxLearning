@@ -105,7 +105,7 @@ void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 	unsigned char *ptr = NULL;
 	unsigned char shift = 7;
 	int cnt = 0;
-	ptr = ascii_608[(int)ch];
+	ptr = ascii_1208[(int)ch];
 	if (ch == '\n')
 	{
 		ILI9341_Nextline(device);
@@ -548,16 +548,16 @@ void ILI9341_Init(ILI9341Type *device)
 	ILI9341_SetAdaptiveBrightnessControl(device);
 	ILI9341_SetFrameRate(device);
 
-	device->fontSize = 6;
-	device->fontRowSize = fontInfo[6].RowSize;
-	device->fontColSize = fontInfo[6].ColSize;
+	device->fontSize = 12;
+	device->fontRowSize = fontInfo[12].RowSize;
+	device->fontColSize = fontInfo[12].ColSize;
 	printk("device->fontRowSize = %d, device->fontColSize = %d\n",device->fontRowSize,device->fontColSize);
 	/* Print something */
 	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
 	ILI9341_SetCursor(device, 0, 0);
-	while (i < 1)
+	while (i < 26)
 	{
-		ILI9341_printString(device,"ABC", WHITE_16, BLACK_16);
+		ILI9341_printString(device,"QWERTYUIOPASDFGHJKLZXCVBNMQWER", WHITE_16, BLACK_16);
 		i++;
 	}
 }
