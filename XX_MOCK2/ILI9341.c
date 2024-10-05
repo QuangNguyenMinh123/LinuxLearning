@@ -103,6 +103,7 @@ void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 	int i = 0, j = 0;
 	unsigned char *ptr = NULL;
 	unsigned char shift = 7;
+	
 	if (ch == '\n')
 	{
 		ILI9341_Nextline(device);
@@ -111,18 +112,25 @@ void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 	{
 		if (device->col + FONT_12_COL_SIZE > device->maxCol)		/* Move to next line and print*/
 		{
-			if (device->row + FONT_12_ROW_SIZE > device->maxRow)	/* Move to beginning of the screen */
+			if (device->row + FONT_12_ROW_SIZE >= device->maxRow)	/* Move to beginning of the screen */
 			{
 				ILI9341_SetWindow(device, 0, 0, FONT_12_ROW_SIZE -1, FONT_12_COL_SIZE -1);
-				device->row = 0;
 				device->col = FONT_12_COL_SIZE;
 			}
 			else													/* Move to next line and print */
 			{
 				ILI9341_SetWindow(device, device->row + FONT_12_ROW_SIZE, 0, 
 										device->row + 2 * FONT_12_ROW_SIZE, FONT_12_COL_SIZE -1);
+				device->col = FONT_12_COL_SIZE;
 			}
+			if (device->col + FONT_12_COL_SIZE >= device->maxCol )
+				device->row += FONT_12_ROW_SIZE;
 		}
+		// else									/* device->col + FONT_12_COL_SIZE == device->maxCol */
+		// if (device->col + FONT_12_COL_SIZE == device->maxCol)		/* Move to next line and print*/
+		// {
+			
+		// }
 		else														/* Keep printing*/
 		{														
 			ILI9341_SetWindow(device, device->row, device->col, 
@@ -145,6 +153,7 @@ void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 			}
 			ptr++;
 		}
+		printk("Char = %c, col = %d, row = %d\n", ch, device->col, device->row);
 	}
 }
 
@@ -516,6 +525,7 @@ void ILI9341_PowerInit(ILI9341Type *device)
 
 void ILI9341_Init(ILI9341Type *device)
 {
+	int i = 0;
 	ILI9341_Reset(device);
 	/* Power setting */
 	ILI9341_PowerInit(device);
@@ -536,7 +546,11 @@ void ILI9341_Init(ILI9341Type *device)
 	/* Print something */
 	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
 	ILI9341_SetCursor(device, 0, 0);
-	ILI9341_printString(device,"QWERTYUIOPASDFGHJKLZXCVBNMQWERTY", WHITE_16, BLACK_16);
+	while (i < 26)
+	{
+		ILI9341_printString(device,"QWERTYUIOPASDFGHJKLZXCVBNMQWER", WHITE_16, BLACK_16);
+		i++;
+	}
 }
 
 void ILI9341_Deinit(ILI9341Type *device)
