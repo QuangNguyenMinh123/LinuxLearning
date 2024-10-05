@@ -8,6 +8,7 @@
 #define SPI_MAX_TRANSFER_BYTE		159
 /*******************************************************************************/
 u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
+u8 ILI9341_Font1208_Buffer[8*12] = {0};
 /*******************************************************************************/
 /* Function to write data and cmd to ILI9341 */
 void ILI9341_WriteReg(ILI9341Type *device, char buff)
@@ -112,7 +113,7 @@ void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 	{
 		if (device->col + FONT_12_COL_SIZE > device->maxCol)		/* Move to next line and print*/
 		{
-			if (device->row + FONT_12_ROW_SIZE >= device->maxRow)	/* Move to beginning of the screen */
+			if (device->row + 2 * FONT_12_ROW_SIZE >= device->maxRow)	/* Move to beginning of the screen */
 			{
 				ILI9341_SetWindow(device, 0, 0, FONT_12_ROW_SIZE -1, FONT_12_COL_SIZE -1);
 				device->col = FONT_12_COL_SIZE;
@@ -126,13 +127,8 @@ void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 			if (device->col + FONT_12_COL_SIZE >= device->maxCol )
 				device->row += FONT_12_ROW_SIZE;
 		}
-		// else									/* device->col + FONT_12_COL_SIZE == device->maxCol */
-		// if (device->col + FONT_12_COL_SIZE == device->maxCol)		/* Move to next line and print*/
-		// {
-			
-		// }
 		else														/* Keep printing*/
-		{														
+		{
 			ILI9341_SetWindow(device, device->row, device->col, 
 									device->row + FONT_12_ROW_SIZE -1, device->col + FONT_12_COL_SIZE -1);
 			device->col += FONT_12_COL_SIZE;
