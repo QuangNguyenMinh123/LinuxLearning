@@ -114,11 +114,13 @@ void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 			if (device->row + FONT_12_ROW_SIZE > device->maxRow)	/* Move to beginning of the screen */
 			{
 				ILI9341_SetWindow(device, 0, 0, FONT_12_ROW_SIZE -1, FONT_12_COL_SIZE -1);
+				device->row = 0;
+				device->col = FONT_12_COL_SIZE;
 			}
 			else													/* Move to next line and print */
 			{
 				ILI9341_SetWindow(device, device->row + FONT_12_ROW_SIZE, 0, 
-										device->row + 2 * FONT_12_ROW_SIZE, device->row + FONT_12_COL_SIZE -1);
+										device->row + 2 * FONT_12_ROW_SIZE, FONT_12_COL_SIZE -1);
 			}
 		}
 		else														/* Keep printing*/
@@ -534,7 +536,7 @@ void ILI9341_Init(ILI9341Type *device)
 	/* Print something */
 	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
 	ILI9341_SetCursor(device, 0, 0);
-	ILI9341_printString(device,"ksdjhfksdjfhsdkjfhskjdfhskjdfhkjsdhfkjsdhfkjsjdfnsd,mfnsd,mfnsd,mfnsd,mfnsd,mfns,dmfnsd,mfn,smdfn,msdnf,msdnf,msdnf,msdnf,msdfn,msdnf\n\nsdfsdfsdf \n\n\n\n fsdfsdASDFASDASDASD   sdfs dsf 2345678", WHITE_16, BLACK_16);
+	ILI9341_printString(device,"QWERTYUIOPASDFGHJKLZXCVBNMQWERTY", WHITE_16, BLACK_16);
 }
 
 void ILI9341_Deinit(ILI9341Type *device)

@@ -195,8 +195,9 @@ static long int ILI9341_Driver_Ioctl(struct file *file, unsigned cmd, unsigned l
 	return 0;
 }
 
-static ssize_t ILI9341_Driver_ProcWrite(struct file *File, const char *user_buffer, size_t count, loff_t *offs) {
-	u8 buffer[1024];
+static ssize_t ILI9341_Driver_ProcWrite(struct file *File, const char *user_buffer, size_t count, loff_t *offs)
+{
+	u8 buffer[1000];
 	int cnt;
 	memset(buffer, 0 , sizeof(buffer));
 	cnt = copy_from_user(buffer, user_buffer, count - 1);
