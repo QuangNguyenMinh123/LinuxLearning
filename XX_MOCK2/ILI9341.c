@@ -8,7 +8,7 @@
 #define SPI_MAX_TRANSFER_BYTE		159
 /*******************************************************************************/
 u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
-u8 ILI9341_Font1208_Buffer[8*12] = {0};
+u8 ILI9341_Font1208_Buffer[8*12*2] = {0};
 /*******************************************************************************/
 /* Function to write data and cmd to ILI9341 */
 void ILI9341_WriteReg(ILI9341Type *device, char buff)
@@ -102,9 +102,9 @@ void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size)
 void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 {
 	int i = 0, j = 0;
-	unsigned char *ptr = NULL;
+	unsigned char *ptr = device->fontPtr[(int)ch];
 	unsigned char shift = 7;
-	
+	int cnt = 0;
 	if (ch == '\n')
 	{
 		ILI9341_Nextline(device);
@@ -143,13 +143,22 @@ void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 			{
 				if (*ptr & (1 << shift))
 					ILI9341_DisplayPixel(device, color);
+				{
+					ILI9341_Font1208_Buffer[2 * cnt] = color >> 8;
+					ILI9341_Font1208_Buffer[2 * cnt + 1] = color & 0xff;
+				}
 				else
-					ILI9341_DisplayPixel(device, bgColor);
+				{
+					ILI9341_Font1208_Buffer[2 * cnt] = bgColor >> 8;
+					ILI9341_Font1208_Buffer[2 * cnt + 1] = bgColor & 0xff;
+				}
 				shift--;
+				cnt++;
 			}
 			ptr++;
 		}
-		printk("Char = %c, col = %d, row = %d\n", ch, device->col, device->row);
+		ILI9341_DisplayMultiPixel(device, ILI9341_Font1208_Buffer, cnt);
+		ILI9341_DisplayMultiPixel(device, &ILI9341_Font1208_Buffer[cnt], cnt);
 	}
 }
 
@@ -539,6 +548,10 @@ void ILI9341_Init(ILI9341Type *device)
 	ILI9341_SetCTRL(device);
 	ILI9341_SetAdaptiveBrightnessControl(device);
 	ILI9341_SetFrameRate(device);
+
+	device->fontPtr = fontInfo[12].ptr;
+	device->fontRowSize = fontInfo[12].RowSize;
+	device->fontColSize = fontInfo[12].ColSize;
 	/* Print something */
 	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
 	ILI9341_SetCursor(device, 0, 0);

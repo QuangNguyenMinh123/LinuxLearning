@@ -17,6 +17,10 @@ typedef struct ILI9341Type{
     struct gpio_desc *dcPin;
 	int maxRow;
 	int maxCol;
+	/* Font */
+	unsigned char** fontPtr;
+	int fontColSize;
+	int fontRowSize;
 } ILI9341Type;
 /*******************************************************************************/
 
