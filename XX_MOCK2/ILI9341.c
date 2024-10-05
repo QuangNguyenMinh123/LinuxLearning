@@ -303,12 +303,6 @@ void ILI9341_DispalyOn(ILI9341Type *device, bool isON)
 	mdelay(120);
 }
 
-void ILI9341_WriteMem(ILI9341Type *device, char *Userbuff, int size)
-{
-	ILI9341_WriteReg(device, 0x2C);
-	ILI9341_WriteRawData(device, Userbuff, size);
-}
-
 void ILI9341_Tearing(ILI9341Type *device, bool isTearing)
 {
 	char buff[2] =
@@ -401,6 +395,7 @@ void ILI9341_FillColor(ILI9341Type *device, u16 color)
 	int i = 0;
 	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
 	ILI9341_WriteReg(device, 0x2C);
+	gpiod_set_value(device->dcPin, HIGH);
 	while (i < ILI9341_DEF_COL * ILI9341_DEF_ROW)
 	{
 		ILI9341_DisplayPixel(device, color);
@@ -551,13 +546,12 @@ void ILI9341_Init(ILI9341Type *device)
 	device->fontSize = 12;
 	device->fontRowSize = fontInfo[12].RowSize;
 	device->fontColSize = fontInfo[12].ColSize;
-	printk("device->fontRowSize = %d, device->fontColSize = %d\n",device->fontRowSize,device->fontColSize);
 	/* Print something */
 	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
 	ILI9341_SetCursor(device, 0, 0);
 	while (i < 26)
 	{
-		ILI9341_printString(device,"QWERTYUIOPASDFGHJKLZXCVBNMQWER", WHITE_16, BLACK_16);
+		ILI9341_printString(device,"QWERTYUIOPASDFGHJKLZXCVBNMQWER", YELLOW_16, PURPLE_16);
 		i++;
 	}
 }

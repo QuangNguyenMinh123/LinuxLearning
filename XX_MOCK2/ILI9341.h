@@ -53,8 +53,6 @@ void ILI9341_DispalyOn(ILI9341Type *device, bool isON);
 
 void ILI9341_SetCursor(ILI9341Type *device, int Row, int Col);
 
-void ILI9341_WriteMem(ILI9341Type *device, char *Userbuff, int size);
-
 void ILI9341_Tearing(ILI9341Type *device, bool isTearing);
 
 void ILI9341_GammaSet(ILI9341Type *device, int value);
