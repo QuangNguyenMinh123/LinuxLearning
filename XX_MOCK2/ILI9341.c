@@ -142,7 +142,6 @@ void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 			for (j = 0; j < FONT_12_COL_SIZE; j++)
 			{
 				if (*ptr & (1 << shift))
-					ILI9341_DisplayPixel(device, color);
 				{
 					ILI9341_Font1208_Buffer[2 * cnt] = color >> 8;
 					ILI9341_Font1208_Buffer[2 * cnt + 1] = color & 0xff;
