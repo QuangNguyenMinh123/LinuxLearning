@@ -27,7 +27,7 @@ typedef struct FontInfoType
 #define AQUA_16                     0x07ff
 /*******************************************************************************/
 extern unsigned char ascii_1208[][FONTSIZE_12];
-
+extern unsigned char ascii_608[][FONTSIZE_6];
 extern FontInfoType fontInfo[13];
 extern short LinuxLogo [240*340];
 /*******************************************************************************/

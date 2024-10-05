@@ -102,44 +102,44 @@ void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size)
 void ILI9341_printChar(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 {
 	int i = 0, j = 0;
-	unsigned char *ptr = device->fontPtr[(int)ch];
+	unsigned char *ptr = NULL;
 	unsigned char shift = 7;
 	int cnt = 0;
+	ptr = ascii_1208[(int)ch];
 	if (ch == '\n')
 	{
 		ILI9341_Nextline(device);
 	}
 	else
 	{
-		if (device->col + FONT_12_COL_SIZE > device->maxCol)		/* Move to next line and print*/
+		if (device->col + device->fontColSize > device->maxCol)		/* Move to next line and print*/
 		{
-			if (device->row + 2 * FONT_12_ROW_SIZE >= device->maxRow)	/* Move to beginning of the screen */
+			if (device->row + 2 * device->fontRowSize >= device->maxRow)	/* Move to beginning of the screen */
 			{
-				ILI9341_SetWindow(device, 0, 0, FONT_12_ROW_SIZE -1, FONT_12_COL_SIZE -1);
-				device->col = FONT_12_COL_SIZE;
+				ILI9341_SetWindow(device, 0, 0, device->fontRowSize -1, device->fontColSize -1);
+				device->col = device->fontColSize;
 			}
 			else													/* Move to next line and print */
 			{
-				ILI9341_SetWindow(device, device->row + FONT_12_ROW_SIZE, 0, 
-										device->row + 2 * FONT_12_ROW_SIZE, FONT_12_COL_SIZE -1);
-				device->col = FONT_12_COL_SIZE;
+				ILI9341_SetWindow(device, device->row + device->fontRowSize, 0, 
+										device->row + 2 * device->fontRowSize, device->fontColSize -1);
+				device->col = device->fontColSize;
 			}
-			if (device->col + FONT_12_COL_SIZE >= device->maxCol )
-				device->row += FONT_12_ROW_SIZE;
+			if (device->col + device->fontColSize >= device->maxCol )
+				device->row += device->fontRowSize;
 		}
 		else														/* Keep printing*/
 		{
 			ILI9341_SetWindow(device, device->row, device->col, 
-									device->row + FONT_12_ROW_SIZE -1, device->col + FONT_12_COL_SIZE -1);
-			device->col += FONT_12_COL_SIZE;
+									device->row + device->fontRowSize -1, device->col + device->fontColSize -1);
+			device->col += device->fontColSize;
 		}
-		ptr = ascii_1208[(int) ch];
 		ILI9341_WriteReg(device, 0x2C);
 		gpiod_set_value(device->dcPin, HIGH);
-		for (i = 0; i < FONT_12_ROW_SIZE; i ++)
+		for (i = 0; i < device->fontRowSize; i ++)
 		{
-			shift = 7;
-			for (j = 0; j < FONT_12_COL_SIZE; j++)
+			shift = device->fontColSize - 1;
+			for (j = 0; j < device->fontColSize; j++)
 			{
 				if (*ptr & (1 << shift))
 				{
@@ -548,9 +548,10 @@ void ILI9341_Init(ILI9341Type *device)
 	ILI9341_SetAdaptiveBrightnessControl(device);
 	ILI9341_SetFrameRate(device);
 
-	device->fontPtr = fontInfo[12].ptr;
+	device->fontSize = 12;
 	device->fontRowSize = fontInfo[12].RowSize;
 	device->fontColSize = fontInfo[12].ColSize;
+	printk("device->fontRowSize = %d, device->fontColSize = %d\n",device->fontRowSize,device->fontColSize);
 	/* Print something */
 	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
 	ILI9341_SetCursor(device, 0, 0);

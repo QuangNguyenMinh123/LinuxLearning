@@ -18,7 +18,7 @@ typedef struct ILI9341Type{
 	int maxRow;
 	int maxCol;
 	/* Font */
-	unsigned char** fontPtr;
+	int fontSize;
 	int fontColSize;
 	int fontRowSize;
 } ILI9341Type;
