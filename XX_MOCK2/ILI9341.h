@@ -4,9 +4,6 @@
 #include <linux/gpio.h>
 #include <linux/spi/spi.h>
 /*******************************************************************************/
-#define MAX_COL						320
-#define MAX_ROW						240
-#define FONT_SIZE					FONTSIZE_16
 #define LOW							0
 #define HIGH						1
 /*******************************************************************************/
@@ -26,7 +23,7 @@ typedef struct ILI9341Type{
 /*******************************************************************************/
 
 /*******************************************************************************/
-void ILI9341_printImage(ILI9341Type *device, u16* data, int size);
+void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size);
 
 void ILI9341_printChar(ILI9341Type *device, char ch, u16 charColor, u16 bgColor);
 
@@ -34,7 +31,7 @@ void ILI9341_printString(ILI9341Type *device, char* ch, u16 charColor, u16 bgCol
 
 void ILI9341_Cmd1Byte(ILI9341Type *device, char buff);
 
-void ILI9341_SetWindow(ILI9341Type *device, int startx, int starty, int endx, int endy);
+void ILI9341_SetWindow(ILI9341Type *device, int StartRow, int StartCol, int EndRow, int EndCol);
 
 void ILI9341_CmdMulBytes(ILI9341Type *device, char *buff, int size);
 

@@ -3,10 +3,10 @@
 /*******************************************************************************/
 
 /*******************************************************************************/
+/* Font size : 12 row x 8 col */
 #define FONTSIZE_12                 12
-#define FONTSIZE_16                 16
-#define FONT_16_COL_SIZE            8
-#define FONT_16_ROW_SIZE            16
+#define FONT_12_COL_SIZE            8
+#define FONT_12_ROW_SIZE            12
 /* define ILI9341 color */
 #define WHITE_16                    0xffff
 #define BLACK_16                    0x00
@@ -17,8 +17,7 @@
 #define YELLOW_16                   0xffe0
 #define AQUA_16                     0x07ff
 /*******************************************************************************/
-extern unsigned char ascii_1206[][FONTSIZE_12];
-extern unsigned char ascii_1608[][FONTSIZE_16];
+extern unsigned char ascii_1208[][FONTSIZE_12];
 extern short LinuxLogo [240*340];
 /*******************************************************************************/
 

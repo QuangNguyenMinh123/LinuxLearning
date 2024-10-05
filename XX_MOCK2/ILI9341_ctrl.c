@@ -196,18 +196,17 @@ static long int ILI9341_Driver_Ioctl(struct file *file, unsigned cmd, unsigned l
 }
 
 static ssize_t ILI9341_Driver_ProcWrite(struct file *File, const char *user_buffer, size_t count, loff_t *offs) {
-	u8 buffer[200];
+	u8 buffer[1024];
 	int cnt;
 	memset(buffer, 0 , sizeof(buffer));
 	cnt = copy_from_user(buffer, user_buffer, count - 1);
-	ILI9341_printString(&ili9341,buffer,WHITE_16,BLACK_16);
+	ILI9341_printString(&ili9341, buffer, WHITE_16, BLACK_16);
 	return count;
 }
 
 static int ILI9341_Driver_probe(struct spi_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	printk("ILI9341_Driver_probe\n");
 	/* Check device properties */
 	if (!device_property_present(dev, "commandData-gpio"))
 	{
@@ -265,7 +264,6 @@ rm_kboj:
 static int ILI9341_Driver_remove(struct spi_device *pdev)
 {
 	struct pinctrl* checkPinCtrl;
-	printk("ILI9341_Driver_remove\n");
 	ILI9341_Deinit(&ili9341);
 	proc_remove(proc_file);
 	checkPinCtrl = devm_pinctrl_get_select(&pdev->dev, "spi0_pinmux_default");
