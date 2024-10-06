@@ -118,7 +118,7 @@ void ILI9341_printCharOverlay(ILI9341Type *device, char ch, u16 color, u16 bgCol
 	{
 		if (device->col + device->fontColSize > device->maxCol)		/* Move to next line and print*/
 		{
-			if (device->row + 2 * device->fontRowSize >= device->maxRow)	/* Move to beginning of the screen */
+			if (device->row + device->fontRowSize >= device->maxRow)	/* Move to beginning of the screen */
 			{
 				ILI9341_SetWindow(device, 0, 0, device->fontRowSize -1, device->fontColSize -1);
 				device->col = device->fontColSize;
