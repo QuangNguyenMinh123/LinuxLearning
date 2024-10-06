@@ -175,12 +175,12 @@ void ILI9341_printStringOverlay(ILI9341Type *device, char* ch, u16 charColor, u1
 }
 
 void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColor)
-{
+{		
 	int i = 0, j = 0;
 	unsigned char *ptr = NULL;
 	unsigned char shift = 7;
 	int cnt = 0;
-	ptr = ascii_1208[(int)ch];
+	ptr = ascii_0808[(int)ch];
 	if (ch == '\n')
 	{
 		ILI9341_Nextline(device);
@@ -191,7 +191,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 		{
 			if (device->row + device->fontRowSize >= device->maxRow)	/* Move to beginning of the screen */
 			{
-				ILI9341_ScrollDown(device, 12);
+				ILI9341_ScrollDown(device, device->fontSize);
 				ILI9341_SetWindow(device, device->row, 0, 
 							device->row + 2 * device->fontRowSize, device->fontColSize -1);
 			}
@@ -377,7 +377,7 @@ void ILI9341_ScrollDown(ILI9341Type *device, u16 val)
 	char bufferSetCrollDown [2] =
 	{
 		0x36,
-		(1<<3) | (1<<4)
+		(1<<3) | (0<<4)
 	};
 	char bufferReady [7] = 
 	{
@@ -748,7 +748,7 @@ void ILI9341_Init(ILI9341Type *device)
 	ILI9341_SetAdaptiveBrightnessControl(device);
 	ILI9341_SetFrameRate(device);
 
-	device->fontSize = 0;
+	device->fontSize = 8;
 	device->fontRowSize = fontInfo[0].RowSize;
 	device->fontColSize = fontInfo[0].ColSize;
 	/* Print something */
@@ -763,7 +763,7 @@ void ILI9341_Init(ILI9341Type *device)
 	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
 	// ILI9341_ScrollUp( device,12);
 	// ILI9341_SetCursor(device, 315, 0);
-	ILI9341_printStringOverlay(device,"ABC", YELLOW_16, PURPLE_16);
+	// ILI9341_printStringOverlay(device,"ABC", YELLOW_16, PURPLE_16);
 }
 
 void ILI9341_Deinit(ILI9341Type *device)
