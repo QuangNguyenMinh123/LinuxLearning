@@ -8,6 +8,7 @@
 #define SPI_MAX_TRANSFER_BYTE		159
 /*******************************************************************************/
 u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
+int ramBufStart = 0;
 u8 ILI9341_Font1208_Buffer[8*12*2] = {0};
 /*******************************************************************************/
 /* Function to write data and cmd to ILI9341 */
@@ -238,6 +239,113 @@ void ILI9341_RotateMode(ILI9341Type *device, int mode)
 	}
 }
 /*******************************************************************************/
+/* Functions to scroll screen */
+void ILI9341_ScrollUp(ILI9341Type *device, u16 val)
+{
+	char bufferSetCrollUp [2] =
+	{
+		0x36,
+		(1<<3) | (0<<4)
+	};
+	char bufferReady [7] = 
+	{
+		0x33,
+		0,
+		0,
+		(device->maxRow) >> 8,
+		(device->maxRow) & 0x00ff, 
+		0,
+		0
+	};
+	char bufferStartScroll [3] = 
+	{
+		0x37,
+		val >> 8,
+		val & 0x00ff
+	};
+	ramBufStart = val;
+	ILI9341_CmdMulBytes(device, bufferSetCrollUp, 2);
+	ILI9341_CmdMulBytes(device, bufferReady, 7);
+	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
+}
+
+void ILI9341_PartialScrollUp(ILI9341Type *device, u16 TopRowFix, u16 BotRowFix, u16 val)
+{
+	char bufferReady [7] = 
+	{
+		0x33,
+		TopRowFix >> 8,
+		TopRowFix & 0x00ff,
+		(BotRowFix - TopRowFix) >> 8,
+		(BotRowFix - TopRowFix) & 0x00ff, 
+		(device->maxRow - BotRowFix) >> 8,
+		(device->maxRow - BotRowFix) & 0x00ff
+	};
+	char bufferStartScroll [3] = 
+	{
+		0x37,
+		val >> 8,
+		val & 0x00ff
+	};
+	if (BotRowFix <= TopRowFix)
+		return;
+	
+	ILI9341_CmdMulBytes(device, bufferReady, 7);
+	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
+}
+
+void ILI9341_ScrollDown(ILI9341Type *device, u16 val)
+{
+	char bufferSetCrollDown [2] =
+	{
+		0x36,
+		(1<<3) | (1<<4)
+	};
+	char bufferReady [7] = 
+	{
+		0x33,
+		0,
+		0,
+		(device->maxRow) >> 8,
+		(device->maxRow) & 0x00ff, 
+		0,
+		0
+	};
+	char bufferStartScroll [3] = 
+	{
+		0x37,
+		val >> 8,
+		val & 0x00ff
+	};
+	ILI9341_CmdMulBytes(device, bufferSetCrollDown, 2);
+	ILI9341_CmdMulBytes(device, bufferReady, 7);
+	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
+}
+
+void ILI9341_PartialScrollDown(ILI9341Type *device, u16 TopRowFix, u16 BotRowFix, u16 val)
+{
+	char bufferReady [7] = 
+	{
+		0x33,
+		TopRowFix >> 8,
+		TopRowFix & 0x00ff,
+		(BotRowFix - TopRowFix) >> 8,
+		(BotRowFix - TopRowFix) & 0x00ff, 
+		(device->maxRow - BotRowFix) >> 8,
+		(device->maxRow - BotRowFix) & 0x00ff
+	};
+	char bufferStartScroll [3] = 
+	{
+		0x37,
+		val >> 8,
+		val & 0x00ff
+	};
+	if (BotRowFix <= TopRowFix)
+		return;
+	ILI9341_CmdMulBytes(device, bufferReady, 7);
+	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
+}
+/*******************************************************************************/
 /* Function to reset ILI9341 */
 void ILI9341_Reset(ILI9341Type *device)
 {
@@ -380,7 +488,8 @@ void ILI9341_SetAdaptiveBrightnessControl(ILI9341Type *device){
 	ILI9341_CmdMulBytes(device, buff, 2);
 }
 
-void ILI9341_SetFrameRate(ILI9341Type *device){
+void ILI9341_SetFrameRate(ILI9341Type *device)
+{
 	char buff[3] =
 	{
 		0xB1,
@@ -548,12 +657,13 @@ void ILI9341_Init(ILI9341Type *device)
 	device->fontColSize = fontInfo[12].ColSize;
 	/* Print something */
 	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
-	ILI9341_SetCursor(device, 0, 0);
-	while (i < 26)
-	{
-		ILI9341_printString(device,"QWERTYUIOPASDFGHJKLZXCVBNMQWER", YELLOW_16, PURPLE_16);
-		i++;
-	}
+	// ILI9341_SetCursor(device, 0, 0);
+	// while (i < 26)
+	// {
+	// 	ILI9341_printString(device,"QWERTYUIOPASDFGHJKLZXCVBNMQWER", YELLOW_16, PURPLE_16);
+	// 	i++;
+	// }
+	// ILI9341_PartialScrollUp(device, 0, 250,100);
 }
 
 void ILI9341_Deinit(ILI9341Type *device)

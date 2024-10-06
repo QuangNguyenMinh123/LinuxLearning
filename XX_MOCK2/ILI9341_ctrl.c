@@ -49,6 +49,12 @@ static ssize_t display_on_off_store(struct kobject *kobj, struct kobj_attribute 
 static ssize_t fill_color_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t rotate_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t set_brightness_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t setCharColor_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t setBgColor_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t scroll_vertical_up_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t scroll_vertical_down_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t scroll_horizontal_left_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t scroll_horizontal_right_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t init_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf);
 /*******************************************************************************/
 static int ILI9341_Driver_probe(struct spi_device *pdev);
@@ -64,6 +70,12 @@ struct kobj_attribute display_on_off_attr = __ATTR(display_on_off, 0660, NULL, d
 struct kobj_attribute fill_color_attr = __ATTR(fill_color, 0660, NULL, fill_color_store);
 struct kobj_attribute rotate_attr = __ATTR(rotate, 0660, NULL, rotate_store);
 struct kobj_attribute set_brightness_attr = __ATTR(set_brightness, 0660, NULL, set_brightness_store);
+struct kobj_attribute setCharColor_attr = __ATTR(setCharColor, 0660, NULL, setCharColor_store);
+struct kobj_attribute setBgColor_attr = __ATTR(setBgColor, 0660, NULL, setBgColor_store);
+struct kobj_attribute scroll_up_attr = __ATTR(scroll_up, 0660, NULL, scroll_vertical_up_store);
+struct kobj_attribute scroll_down_attr = __ATTR(scroll_down, 0660, NULL, scroll_vertical_down_store);
+struct kobj_attribute scroll_left_attr = __ATTR(scroll_left, 0660, NULL, scroll_horizontal_left_store);
+struct kobj_attribute scroll_right_attr = __ATTR(scroll_right, 0660, NULL, scroll_horizontal_right_store); 
 struct kobj_attribute init_attr = __ATTR(init, 0660, init_show, NULL);
 /*******************************************************************************/
 static struct of_device_id ili9341_id[] = {
@@ -99,6 +111,12 @@ static struct attribute *attrs[] = {
 	&fill_color_attr.attr,
 	&rotate_attr.attr,
 	&set_brightness_attr.attr,
+	&setCharColor_attr.attr,
+	&setBgColor_attr.attr,
+	&scroll_up_attr.attr,
+	&scroll_down_attr.attr,
+	&scroll_left_attr.attr,
+	&scroll_right_attr.attr,
 	&init_attr.attr,
 	NULL,
 };
@@ -163,6 +181,42 @@ static ssize_t set_brightness_store(struct kobject *kobj, struct kobj_attribute 
 	int32_t numb = 0;
 	sscanf(buf, "%d", &numb);
 	ILI9341_SetBrightness(&ili9341, numb);
+	return count;
+}
+
+static ssize_t setCharColor_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
+	return count;
+}
+
+static ssize_t setBgColor_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
+	return count;
+}
+/* Screen Scroll*/
+static ssize_t scroll_vertical_up_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
+	int val = 0;
+	sscanf(buf, "%i", &val);
+	ILI9341_ScrollUp(&ili9341, val);
+	return count;
+}
+
+static ssize_t scroll_vertical_down_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
+	int val = 0;
+	sscanf(buf, "%i", &val);
+	ILI9341_ScrollDown(&ili9341, val);
+	return count;
+}
+
+static ssize_t scroll_horizontal_left_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
+	return count;
+}
+
+static ssize_t scroll_horizontal_right_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
 	return count;
 }
 
