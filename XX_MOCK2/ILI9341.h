@@ -82,7 +82,7 @@ void ILI9341_PartialScrollUp(ILI9341Type *device, u16 TopRowFix, u16 BotRowFix, 
 
 void ILI9341_ScrollDown(ILI9341Type *device, u16 val);
 
-
+void ILI9341_FillBlankLine(ILI9341Type *device);
 
 /*******************************************************************************/
 

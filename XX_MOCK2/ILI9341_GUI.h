@@ -18,7 +18,8 @@ typedef struct FontInfoType
 #define FONT_6_ROW_SIZE            8
 /* define ILI9341 color */
 #define WHITE_16                    0xffff
-#define BLACK_16                    0x00
+#define BLACK_16                    0x0000
+#define GREY_16                     0x7bef
 #define RED_16                      0xf800
 #define GREEN_16                    0x07e0
 #define BLUE_16                     0x001f

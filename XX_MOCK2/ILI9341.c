@@ -608,6 +608,43 @@ void ILI9341_CreateWindowAndFill(ILI9341Type *device, u16 color, int StartRow, i
 	}
 }
 
+void ILI9341_PrintCursor(ILI9341Type *device, u16 color)
+{
+	u8 buff[64*2];
+	int i = 0;
+	for (i=0;i<64;i++)
+	{
+		buff[i*2] = color >> 8;
+		buff[i*2 + 1] = color & 0x00ff;
+	}
+	ILI9341_SetWindow(device, device->row, device->col, 
+				device->row + device->fontRowSize, device->col + device->fontColSize);
+	ILI9341_WriteReg(device, 0x2C);
+	gpiod_set_value(device->dcPin, HIGH);
+	ILI9341_DisplayMultiPixel(device, buff,64*2);
+	ILI9341_SetCursor(device, device->row,device->col);
+}
+
+void ILI9341_FillBlankLine(ILI9341Type *device)
+{
+	u8 buff[64*2];
+	int i = 0;
+	for (i=0;i<64;i++)
+	{
+		buff[i*2] = BLACK_16;
+		buff[i*2 + 1] = BLACK_16;
+	}
+	ILI9341_SetWindow(device, device->row, device->col, 
+				device->row + device->fontRowSize, device->maxCol);
+	ILI9341_WriteReg(device, 0x2C);
+	gpiod_set_value(device->dcPin, HIGH);
+	while (device->col < device->maxCol)
+	{
+		ILI9341_DisplayMultiPixel(device, buff,64*2);
+		device->col += device->fontColSize;
+	}
+}
+
 /* Initialize fintion */
 void ILI9341_PowerInit(ILI9341Type *device)
 {
