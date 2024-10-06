@@ -13,9 +13,9 @@ typedef struct FontInfoType
 #define FONT_12_COL_SIZE            8
 #define FONT_12_ROW_SIZE            12
 /* Font size : 6 row x 8 col */
-#define FONTSIZE_6                 6
+#define FONTSIZE_8                 8
 #define FONT_6_COL_SIZE            8
-#define FONT_6_ROW_SIZE            6
+#define FONT_6_ROW_SIZE            8
 /* define ILI9341 color */
 #define WHITE_16                    0xffff
 #define BLACK_16                    0x00
@@ -27,8 +27,8 @@ typedef struct FontInfoType
 #define AQUA_16                     0x07ff
 /*******************************************************************************/
 extern unsigned char ascii_1208[][FONTSIZE_12];
-extern unsigned char ascii_608[][FONTSIZE_6];
-extern FontInfoType fontInfo[13];
+extern unsigned char ascii_0808[][FONTSIZE_8];
+extern FontInfoType fontInfo[2];
 extern short LinuxLogo [240*340];
 /*******************************************************************************/
 

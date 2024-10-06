@@ -36,9 +36,11 @@ typedef struct ILI9341VerticalScrollType{
 /*******************************************************************************/
 void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size);
 
-void ILI9341_printChar(ILI9341Type *device, char ch, u16 charColor, u16 bgColor);
+void ILI9341_printCharOverlay(ILI9341Type *device, char ch, u16 charColor, u16 bgColor);
 
-void ILI9341_printString(ILI9341Type *device, char* ch, u16 charColor, u16 bgColor);
+void ILI9341_printStringOverlay(ILI9341Type *device, char* ch, u16 charColor, u16 bgColor);
+
+void ILI9341_printStringScroll(ILI9341Type *device, char* ch, u16 charColor, u16 bgColor);
 
 void ILI9341_Cmd1Byte(ILI9341Type *device, char buff);
 

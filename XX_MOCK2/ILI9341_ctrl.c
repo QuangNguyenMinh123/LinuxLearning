@@ -255,7 +255,7 @@ static ssize_t ILI9341_Driver_ProcWrite(struct file *File, const char *user_buff
 	int cnt;
 	memset(buffer, 0 , sizeof(buffer));
 	cnt = copy_from_user(buffer, user_buffer, count - 1);
-	ILI9341_printString(&ili9341, buffer, WHITE_16, BLACK_16);
+	ILI9341_printStringOverlay(&ili9341, buffer, WHITE_16, BLACK_16);
 	return count;
 }
 
