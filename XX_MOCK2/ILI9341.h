@@ -21,6 +21,8 @@ typedef struct ILI9341Type{
 	int fontSize;
 	int fontColSize;
 	int fontRowSize;
+	/* Variable for scrolling */
+	int vitualRow;
 } ILI9341Type;
 
 typedef struct ILI9341VerticalScrollType{
