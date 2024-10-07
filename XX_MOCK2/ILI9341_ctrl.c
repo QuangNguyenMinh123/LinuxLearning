@@ -227,8 +227,6 @@ static ssize_t scroll_horizontal_right_store(struct kobject *kobj, struct kobj_a
 static ssize_t nextline_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
 	u8 buff[ili9341.maxCol * 2];
-	int i = 0;
-	int colcnt = 0;
 	int pos = 0;
 	int row = 0;
 	int printed = 0;
@@ -301,8 +299,6 @@ static ssize_t ILI9341_Driver_ProcWrite(struct file *File, const char *user_buff
 
 static int ILI9341_Driver_probe(struct spi_device *pdev)
 {
-	int bg = BLACK_16;
-	int i = 0;
 	struct device *dev = &pdev->dev;
 	/* Check device properties */
 	if (!device_property_present(dev, "commandData-gpio"))
@@ -334,6 +330,9 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 	ili9341.row = 0;
 	ili9341.maxCol = MAX_COL;
 	ili9341.maxRow = MAX_ROW;
+	ili9341.displayRow = 0;
+	ili9341.currentRow = 0;
+	ili9341.totalRow = 0;
 	/* Create proc */
 	proc_file = proc_create("ili9341", 0666, NULL, &fops);
 	if(proc_file == NULL) {

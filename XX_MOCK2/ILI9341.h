@@ -35,8 +35,8 @@ typedef struct ILI9341Type{
 	int fontColSize;
 	int fontRowSize;
 	/* Display pointer which points to row is being display */
-	int startDisplayRow;
-
+	int displayRow;
+	int currentRow;
 	int totalRow;
 	/* Variable for saving data */
 	struct file *fileBuffer;
@@ -104,7 +104,7 @@ void ILI9341_ScrollDown(ILI9341Type *device, u16 val);
 
 int ILI9341_FillBlankLine(ILI9341Type *device);
 
-ssize_t ILI9341_saveBuffer(ILI9341Type *device, u8 *buff, int size);
+ssize_t ILI9341_saveBuffer(ILI9341Type *device, u8 *buff, int size, int offset, int where);
 
 ssize_t ILI9341_readRowBuffer(ILI9341Type *device, u8 *toSaveBuff, int offset, int where);
 /*******************************************************************************/

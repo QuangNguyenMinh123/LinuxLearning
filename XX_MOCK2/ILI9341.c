@@ -57,8 +57,21 @@ void ILI9341_Read(ILI9341Type *device, bool isCommand, char* senBuff, int sendSi
 }
 /*******************************************************************************/
 /* Functions to save buffer */
-ssize_t ILI9341_saveBuffer(ILI9341Type *device, u8 *buff, int size)
+ssize_t ILI9341_saveBuffer(ILI9341Type *device, u8 *buff, int size, int offset, int where)
 {
+	switch(where) {
+   		case 0: /* SEEK_SET */
+    		device->fileBuffer->f_pos = offset;
+    	break;
+
+   		case 1: /* SEEK_CUR */
+    		device->fileBuffer->f_pos += offset;
+    	break;
+
+   		case 2: /* SEEK_END */
+    		device->fileBuffer->f_pos -= offset;
+    	break;
+	}
 	return kernel_write(device->fileBuffer, buff, size, &device->fileBuffer->f_pos);
 }
 
@@ -108,7 +121,7 @@ void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size)
 		i ++;
 		data++;
 	}
-	ILI9341_saveBuffer(device, ILI9341_RamBuffer, ILI9341_DEF_ROW * ILI9341_DEF_COL * 2);
+	ILI9341_saveBuffer(device, ILI9341_RamBuffer, ILI9341_DEF_ROW * ILI9341_DEF_COL * 2, 0, SEEK_CUR);
 	ILI9341_WriteReg(device, 0x2C);
 	gpiod_set_value(device->dcPin, HIGH);
 	toprint = size * 2;
@@ -200,8 +213,9 @@ void ILI9341_printStringOverlay(ILI9341Type *device, char* ch, u16 charColor, u1
 }
 
 void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColor)
-{		
+{
 	int i = 0, j = 0;
+	u8 buffer[device->fontColSize * device->fontRowSize * 2];
 	unsigned char *ptr = NULL;
 	unsigned char shift = 7;
 	int cnt = 0;
@@ -266,21 +280,24 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 			{
 				if (*ptr & (1 << shift))
 				{
-					ILI9341_Font1208_Buffer[2 * cnt] = color >> 8;
-					ILI9341_Font1208_Buffer[2 * cnt + 1] = color & 0xff;
+					buffer[2 * cnt] = color >> 8;
+					buffer[2 * cnt + 1] = color & 0xff;
 				}
 				else
 				{
-					ILI9341_Font1208_Buffer[2 * cnt] = bgColor >> 8;
-					ILI9341_Font1208_Buffer[2 * cnt + 1] = bgColor & 0xff;
+					buffer[2 * cnt] = bgColor >> 8;
+					buffer[2 * cnt + 1] = bgColor & 0xff;
 				}
 				shift--;
 				cnt++;
 			}
+			ILI9341_saveBuffer(device, &buffer[i*device->fontColSize*2], device->fontColSize * 2, 
+							(device->totalRow + i) * device->maxCol * 2, SEEK_SET);
+			printk("device->fileBuffer->f_pos = %lld\n",device->fileBuffer->f_pos);
 			ptr++;
 		}
-		ILI9341_DisplayMultiPixel(device, ILI9341_Font1208_Buffer, cnt);
-		ILI9341_DisplayMultiPixel(device, &ILI9341_Font1208_Buffer[cnt], cnt);
+		ILI9341_DisplayMultiPixel(device, buffer, cnt);
+		ILI9341_DisplayMultiPixel(device, &buffer[cnt], cnt);
 	}
 	// printk("char = %c, device->row = %d, device->col = %d, totalRow = %d\n",ch,device->row,device->col,device->totalRow);
 }
