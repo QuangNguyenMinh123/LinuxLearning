@@ -4,6 +4,7 @@ PHONY: all clean
 BBB_KERNEL := /home/quangnm/Desktop/buildBBB/kernelbuildscripts/KERNEL
 TOOLCHAIN := /home/quangnm/Desktop/buildBBB/kernelbuildscripts/dl/gcc-8.5.0-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-
 Driver_FILE	:= ILI9341_driver
+TEST_FILE := test.cpp
 obj-m := ILI9341_driver.o
 ILI9341_driver-objs := ILI9341.o ILI9341_ctrl.o ILI9341_GUI.o
 
@@ -19,6 +20,7 @@ all:
 
 move:
 	sshpass -p $(BEAGLEBONE_PASSWORD) scp $(Driver_FILE).ko $(BEAGLEBONE_HOME_PATH)
+	sshpass -p $(BEAGLEBONE_PASSWORD) scp $(TEST_FILE) $(BEAGLEBONE_HOME_PATH)
 
 clean:
 	@make -C $(BBB_KERNEL) M=$(shell pwd) clean

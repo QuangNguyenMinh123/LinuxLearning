@@ -17,10 +17,10 @@ MODULE_DESCRIPTION("A SPI driver for ILI9341 LCD");
 
 /*******************************************************************************/
 typedef struct PositionType {
-	int startx;
-	int starty;
-	int endx;
-	int endy;
+	int startRow;
+	int startCol;
+	int endRow;
+	int endCol;
 } PositionType;
 
 typedef struct VerticalCrollType {
@@ -271,12 +271,11 @@ static long int ILI9341_Driver_Ioctl(struct file *file, unsigned cmd, unsigned l
 {
 	PositionType *pos = NULL;
 	void __user *argp = (void __user *)arg;
-	printk("ILI9341_Driver_Ioctl: \n");
 	if (cmd == IOCTL_SET_WINDOW)
 	{
 		pos = kmalloc(sizeof(PositionType), GFP_KERNEL);
 		copy_from_user(pos, argp, sizeof(PositionType));
-		ILI9341_SetWindow(&ili9341, pos->startx, pos->starty, pos->endx, pos->endy);
+		ILI9341_SetWindow(&ili9341, pos->startRow, pos->startCol, pos->endRow, pos->endCol);
 	}
 	else if (cmd == IOCTL_CLEAR)
 	{

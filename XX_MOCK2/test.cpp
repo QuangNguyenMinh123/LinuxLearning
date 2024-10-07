@@ -33,7 +33,7 @@ public:
 	void LCDSetWindows(int startx, int starty, int endx, int endy);
 	int LCDColSize(void);
 	int LCDRowSize(void);
-	void LCDPrintString(const char* str);
+	void LCDPrintString(char* str, int size);
 	void LCDFill(uint16_t color);
 	void LCDRotate(uint8_t mode);
 };
@@ -182,7 +182,7 @@ void LCD::LCDSetWindows(int startx, int starty, int endx, int endy)
 	close(proc_file);
 }
 
-void LCD::LCDPrintString(const char* str)
+void LCD::LCDPrintString(char* str, int size)
 {
 	int proc_file = open(PROC_FILE_PATH, O_RDWR);
 	if(proc_file < 0) {
@@ -190,7 +190,7 @@ void LCD::LCDPrintString(const char* str)
 		return;
 	}
 	/* Write to ILI9341 */
-    write(proc_file, str, sizeof(str));
+    write(proc_file, str, size);
 	close(proc_file);
 }
 /*******************************************************************************/
@@ -199,21 +199,57 @@ void LCD::LCDPrintString(const char* str)
 int main(void)
 {
 	LCD MyLCD;
-	sleep(1);
-	MyLCD.LCDClear();
-	sleep(1);
-	MyLCD.LCDFill(RED_16);
-	sleep(1);
-	MyLCD.LCDInverse(true);
-	sleep(1);
-	MyLCD.LCDInverse(false);
-	sleep(1);
-	MyLCD.LCDDisplayOn(false);
-	sleep(1);
-	MyLCD.LCDDisplayOn(true);
-	sleep(1);
-	MyLCD.LCDSetWindows(0,0, MyLCD.LCDRowSize(), MyLCD.LCDColSize());
-	MyLCD.LCDPrintString("THIS IS MY STRING!");
+	char str[99][30];
+	int i,j; 
+	for (i=0;i<10;i++)
+	{
+		str[i][0]	='T';
+		str[i][1]	='H';
+		str[i][2]	='I';
+		str[i][3]	='S';
+		str[i][4]	=' ';
+		str[i][5]	='I';
+		str[i][6]	='S';
+		str[i][7]	=' ';
+		str[i][8]	='L';
+		str[i][9]	='I';
+		str[i][10]	='N';
+		str[i][11]	='E';
+		str[i][12]	=' ';
+		str[i][13]	= i + '0';
+		str[i][14]	= '\n';
+	}
+
+	for (i=10;i<99;i++)
+	{
+		str[i][0]	='T';
+		str[i][1]	='H';
+		str[i][2]	='I';
+		str[i][3]	='S';
+		str[i][4]	=' ';
+		str[i][5]	='I';
+		str[i][6]	='S';
+		str[i][7]	=' ';
+		str[i][8]	='L';
+		str[i][9]	='I';
+		str[i][10]	='N';
+		str[i][11]	='E';
+		str[i][12]	=' ';
+		str[i][13]	= (i/10) + '0';
+		str[i][14]	= (i%10) + '0';
+		str[i][15]	= '\n';
+	}
+	MyLCD.LCDSetWindows(0,0, 320, 240);
+	for (i=0;i<99;i++)
+	{
+		MyLCD.LCDPrintString(str[i], 16);
+	}
+
+	for (i=10;i<99;i++)
+	{
+		MyLCD.LCDPrintString(str[i], 17);
+	}
+
     return 0;
 }
 

@@ -34,10 +34,12 @@ typedef struct ILI9341Type{
 	int fontSize;
 	int fontColSize;
 	int fontRowSize;
+	/* Display pointer which points to row is being display */
+	int startDisplayRow;
+
+	int totalRow;
 	/* Variable for saving data */
 	struct file *fileBuffer;
-	/* Variable for scrolling */
-	int vitualRow;
 } ILI9341Type;
 
 typedef struct ILI9341VerticalScrollType{

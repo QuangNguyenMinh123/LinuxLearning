@@ -4,11 +4,8 @@
 #include <linux/fs.h>
 /*******************************************************************************/
 
-
-
 /*******************************************************************************/
 u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
-u8 cmpBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
 int ramBufStart = 0;
 u8 ILI9341_Font1208_Buffer[8*12*2] = {0};
 int scroll_val_down = 0;
@@ -211,14 +208,28 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 	ptr = ascii_0808[(int)ch];
 	if (ch == '\n')
 	{
-		ILI9341_Nextline(device);
-		device->vitualRow += device->fontRowSize;
+		if (device->totalRow + device->fontRowSize >= device->maxRow)
+		{
+			if (device->row + device->fontRowSize >= device->maxRow)
+				device->row = 0;
+			else
+				device->row += device->fontRowSize;
+			ILI9341_SetCursor(device, device->row,0);
+			ILI9341_FillBlankLine(device);
+			ILI9341_ScrollDown(device, device->fontSize);
+		}
+		else
+			device->row += device->fontRowSize;
+		device->totalRow += device->fontRowSize;
+		
+		ILI9341_SetWindow(device, device->row, 0, 
+									device->row + device->fontRowSize, device->fontColSize -1);
 	}
 	else
 	{
 		if (device->col + device->fontColSize > device->maxCol)		/* Move to next line and print*/
 		{
-			if (device->vitualRow + device->fontRowSize >= device->maxRow)	/* Move to beginning of the screen */
+			if (device->totalRow + device->fontRowSize >= device->maxRow)	/* Move to beginning of the screen */
 			{
 				if (device->row + device->fontRowSize >= device->maxRow)
 					device->row = 0;
@@ -238,7 +249,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 										device->row + 2 * device->fontRowSize, device->fontColSize -1);
 				device->col = device->fontColSize;
 			}
-			device->vitualRow += device->fontRowSize;
+			device->totalRow += device->fontRowSize;
 		}
 		else														/* Keep printing*/
 		{
@@ -271,7 +282,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 		ILI9341_DisplayMultiPixel(device, ILI9341_Font1208_Buffer, cnt);
 		ILI9341_DisplayMultiPixel(device, &ILI9341_Font1208_Buffer[cnt], cnt);
 	}
-	// printk("char = %c, device->row = %d, device->col = %d, virtualrow = %d\n",ch,device->row,device->col,device->vitualRow);
+	// printk("char = %c, device->row = %d, device->col = %d, totalRow = %d\n",ch,device->row,device->col,device->totalRow);
 }
 
 void ILI9341_printStringScroll(ILI9341Type *device, char* ch, u16 charColor, u16 bgColor)
@@ -389,6 +400,8 @@ void ILI9341_ScrollUp(ILI9341Type *device, u16 val)
 	};
 	
 	scroll_val_up += val;
+	if (scroll_val_up >= device->maxRow)
+		scroll_val_up = 0;
 	unsigned char bufferStartScroll[3] = 
 	{
 		0x37,
@@ -397,7 +410,7 @@ void ILI9341_ScrollUp(ILI9341Type *device, u16 val)
 	};
 	if ((memAccessControl & (1<<4)) == 0)
 		memAccessControl |= (1<<4);
-	device->vitualRow -= device->fontRowSize;
+	device->totalRow -= device->fontRowSize;
 	ILI9341_CmdMulBytes(device, bufferSetCrollUp, 2);
 	ILI9341_CmdMulBytes(device, bufferReady, 7);
 	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
@@ -794,16 +807,14 @@ void ILI9341_Init(ILI9341Type *device)
 	ILI9341_SetCTRL(device);
 	ILI9341_SetAdaptiveBrightnessControl(device);
 	ILI9341_SetFrameRate(device);
-
 	device->fontSize = 8;
 	device->fontRowSize = fontInfo[0].RowSize;
 	device->fontColSize = fontInfo[0].ColSize;
-	device->vitualRow = 0;
+	device->totalRow = 0;
 	/* Print something */
 	/* Set cursor to beginning of the screen */
 	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
 	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
-
 }
 
 void ILI9341_Deinit(ILI9341Type *device)
