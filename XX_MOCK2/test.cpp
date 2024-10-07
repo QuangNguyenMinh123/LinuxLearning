@@ -239,6 +239,7 @@ int main(void)
 		str[i][14]	= (i%10) + '0';
 		str[i][15]	= '\n';
 	}
+	str[98][15] = '|';
 	MyLCD.LCDSetWindows(0,0, 320, 240);
 	for (i=0;i<99;i++)
 	{
