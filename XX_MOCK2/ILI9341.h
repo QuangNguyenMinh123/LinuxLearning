@@ -3,6 +3,10 @@
 /*******************************************************************************/
 #include <linux/gpio.h>
 #include <linux/spi/spi.h>
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/proc_fs.h>
+#include <linux/uaccess.h>
 /*******************************************************************************/
 #define MAX_COL						320
 #define MAX_ROW						240
@@ -21,6 +25,8 @@ typedef struct ILI9341Type{
 	int fontSize;
 	int fontColSize;
 	int fontRowSize;
+	/* Variable for saving data */
+	struct file *fileBuffer;
 	/* Variable for scrolling */
 	int vitualRow;
 } ILI9341Type;
@@ -30,9 +36,9 @@ typedef struct ILI9341VerticalScrollType{
 	int Botfix;
 } ILI9341VerticalScrollType;
 /*******************************************************************************/
-
+extern struct file *fileBuffer;
 /*******************************************************************************/
-
+extern ILI9341Type ili9341;
 /*******************************************************************************/
 
 /*******************************************************************************/
@@ -84,8 +90,11 @@ void ILI9341_PartialScrollUp(ILI9341Type *device, u16 TopRowFix, u16 BotRowFix, 
 
 void ILI9341_ScrollDown(ILI9341Type *device, u16 val);
 
-void ILI9341_FillBlankLine(ILI9341Type *device);
+int ILI9341_FillBlankLine(ILI9341Type *device);
 
+ssize_t ILI9341_saveBuffer(ILI9341Type *device, u8 *buff, int size);
+
+ssize_t ILI9341_readRowbUFFER(ILI9341Type *device, u8 *toSaveBuff, int offset, int where);
 /*******************************************************************************/
 
 /*******************************************************************************/

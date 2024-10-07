@@ -40,7 +40,8 @@ typedef struct VerticalCrollType {
 #define IOCTL_DISPLAY_ON				_IO(MAJIC_NO, 8)
 #define IOCTL_DISPLAY_OFF				_IO(MAJIC_NO, 9)
 /*******************************************************************************/
-ILI9341Type ili9341;
+// ILI9341Type ili9341;
+
 /*******************************************************************************/
 static ssize_t reset_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t clear_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
@@ -55,6 +56,7 @@ static ssize_t scroll_vertical_up_store(struct kobject *kobj, struct kobj_attrib
 static ssize_t scroll_vertical_down_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t scroll_horizontal_left_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t scroll_horizontal_right_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t nextline_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t init_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf);
 /*******************************************************************************/
 static int ILI9341_Driver_probe(struct spi_device *pdev);
@@ -75,7 +77,8 @@ struct kobj_attribute setBgColor_attr = __ATTR(setBgColor, 0660, NULL, setBgColo
 struct kobj_attribute scroll_up_attr = __ATTR(scroll_up, 0660, NULL, scroll_vertical_up_store);
 struct kobj_attribute scroll_down_attr = __ATTR(scroll_down, 0660, NULL, scroll_vertical_down_store);
 struct kobj_attribute scroll_left_attr = __ATTR(scroll_left, 0660, NULL, scroll_horizontal_left_store);
-struct kobj_attribute scroll_right_attr = __ATTR(scroll_right, 0660, NULL, scroll_horizontal_right_store); 
+struct kobj_attribute scroll_right_attr = __ATTR(scroll_right, 0660, NULL, scroll_horizontal_right_store);
+struct kobj_attribute nextline_attr = __ATTR(nextline, 0660, NULL, nextline_store); 
 struct kobj_attribute init_attr = __ATTR(init, 0660, init_show, NULL);
 /*******************************************************************************/
 static struct of_device_id ili9341_id[] = {
@@ -117,6 +120,7 @@ static struct attribute *attrs[] = {
 	&scroll_down_attr.attr,
 	&scroll_left_attr.attr,
 	&scroll_right_attr.attr,
+	&nextline_attr.attr,
 	&init_attr.attr,
 	NULL,
 };
@@ -196,17 +200,17 @@ static ssize_t setBgColor_store(struct kobject *kobj, struct kobj_attribute *att
 /* Screen Scroll*/
 static ssize_t scroll_vertical_up_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	int val = 0;
-	sscanf(buf, "%i", &val);
-	ILI9341_ScrollUp(&ili9341, val);
+	// int val = 0;
+	// sscanf(buf, "%i", &val);
+	ILI9341_ScrollUp(&ili9341, ili9341.fontRowSize);
 	return count;
 }
 
 static ssize_t scroll_vertical_down_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	int val = 0;
-	sscanf(buf, "%i", &val);
-	ILI9341_ScrollDown(&ili9341, val);
+	// int val = 0;
+	// sscanf(buf, "%i", &val);
+	ILI9341_ScrollDown(&ili9341, ili9341.fontRowSize);
 	return count;
 }
 
@@ -217,6 +221,13 @@ static ssize_t scroll_horizontal_left_store(struct kobject *kobj, struct kobj_at
 
 static ssize_t scroll_horizontal_right_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
+	return count;
+}
+
+static ssize_t nextline_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+{
+	ILI9341_Nextline(&ili9341);
+	ili9341.vitualRow += ili9341.fontRowSize;
 	return count;
 }
 
@@ -307,7 +318,13 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 		pr_err("Cannot create group attribute...\n");
 		goto rm_kboj;
 	}
-
+	/* Create and open /temp/ili9341 */
+	ili9341.fileBuffer = filp_open("/tmp/ili9341_buffer", O_RDWR | O_CREAT, 0666);
+	if (!ili9341.fileBuffer)
+	{
+		printk("Cannot create /tmp/ili9341_buffer file buffer for ili9341\n");
+		goto rm_kboj;
+	}
 	return 0;
 rm_kboj:
 	kobject_put(kobj);
@@ -328,6 +345,10 @@ static int ILI9341_Driver_remove(struct spi_device *pdev)
 	}
 	sysfs_remove_group(kobj,&attr_group);
 	kobject_put(kobj);
+	if (ili9341.fileBuffer)
+	{
+		filp_close(ili9341.fileBuffer, NULL);
+	}
 	return 0;
 }
 /*******************************************************************************/

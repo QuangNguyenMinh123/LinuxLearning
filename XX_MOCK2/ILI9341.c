@@ -1,18 +1,25 @@
 #include "ILI9341.h"
 #include "ILI9341_GUI.h"
 #include <linux/delay.h>
+#include <linux/fs.h>
 /*******************************************************************************/
 #define ILI9341_FONT_SIZE			FONTSIZE_16
 #define ILI9341_DEF_COL				240
 #define ILI9341_DEF_ROW				320
 #define SPI_MAX_TRANSFER_BYTE		159
-
+#define SEEK_SET					0
+#define SEEK_CUR 					1
+#define SEEK_END					2
 /*******************************************************************************/
 u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
 int ramBufStart = 0;
 u8 ILI9341_Font1208_Buffer[8*12*2] = {0};
+int scroll_val_down = 0;
 int scroll_val_up = 0;
 u8 memAccessControl = 0;
+struct file *fileBuffer;
+int bufferRow = 0;
+ILI9341Type ili9341;
 /*******************************************************************************/
 /* Function to write data and cmd to ILI9341 */
 void ILI9341_WriteReg(ILI9341Type *device, char buff)
@@ -55,6 +62,30 @@ void ILI9341_Read(ILI9341Type *device, bool isCommand, char* senBuff, int sendSi
 
 }
 /*******************************************************************************/
+/* Functions to save buffer */
+ssize_t ILI9341_saveBuffer(ILI9341Type *device, u8 *buff, int size)
+{
+	return kernel_write(device->fileBuffer, buff, size, &device->fileBuffer->f_pos);
+}
+
+ssize_t ILI9341_readRowbUFFER(ILI9341Type *device, u8 *toSaveBuff, int offset, int where)
+{
+	switch(where) {
+   		case 0: /* SEEK_SET */
+    		device->fileBuffer->f_pos = offset;
+    	break;
+
+   		case 1: /* SEEK_CUR */
+    		device->fileBuffer->f_pos += offset;
+    	break;
+
+   		case 2: /* SEEK_END */
+    		device->fileBuffer->f_pos -= offset;
+    	break;
+	}
+	return kernel_read(device->fileBuffer, toSaveBuff, device->maxCol / device->fontColSize, &device->fileBuffer->f_pos);
+}
+/*******************************************************************************/
 /* Function to print char and image */
 void ILI9341_DisplayPixel(ILI9341Type *device, u16 color)
 {
@@ -75,7 +106,6 @@ void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size)
 	int i = 0;
 	int printed = 0;
 	int toprint;
-	int cntRamBuff = ramBufStart * device->maxCol;
 	/* Set cursor to beginning of the screen */
 	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
 	/* Print something */
@@ -94,11 +124,13 @@ void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size)
 		if ( printed + SPI_MAX_TRANSFER_BYTE < toprint)
 		{
 			ILI9341_DisplayMultiPixel(device, &ILI9341_RamBuffer[printed], SPI_MAX_TRANSFER_BYTE);
+			// ILI9341_saveBuffer(device, &ILI9341_RamBuffer[printed], SPI_MAX_TRANSFER_BYTE);
 			printed += SPI_MAX_TRANSFER_BYTE;
 		}
 		else
 		{
 			ILI9341_DisplayMultiPixel(device, &ILI9341_RamBuffer[printed], toprint - printed);
+			// ILI9341_saveBuffer(device, &ILI9341_RamBuffer[printed], toprint - printed);
 			break;
 		}
 	}
@@ -198,7 +230,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 					device->row = 0;
 				else
 					device->row += device->fontRowSize;
-				printk("device->row = %d\n",device->row);
+				// printk("device->row = %d\n",device->row);
 				ILI9341_SetCursor(device, device->row,0);
 				ILI9341_FillBlankLine(device);
 				ILI9341_ScrollDown(device, device->fontSize);
@@ -245,16 +277,28 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 		ILI9341_DisplayMultiPixel(device, ILI9341_Font1208_Buffer, cnt);
 		ILI9341_DisplayMultiPixel(device, &ILI9341_Font1208_Buffer[cnt], cnt);
 	}
-	printk("char = %c, device->row = %d, device->col = %d, virtualrow = %d\n",ch,device->row,device->col,device->vitualRow);
+	// printk("char = %c, device->row = %d, device->col = %d, virtualrow = %d\n",ch,device->row,device->col,device->vitualRow);
 }
 
 void ILI9341_printStringScroll(ILI9341Type *device, char* ch, u16 charColor, u16 bgColor)
 {
+	char buff[100] = {0};
+	int i =0;
+	memset(buff, 0, 100);
 	while (*ch != 0)
 	{
 		ILI9341_printCharScroll(device, *ch, charColor, bgColor);
+		if (ILI9341_saveBuffer(&ili9341, ch, 1) < 0)
+			printk("Error for kernel_write\n");
 		ch++;
+		i++;
 	}
+	if (ILI9341_readRowbUFFER(&ili9341, buff, i, SEEK_END) < 0)
+	{
+		printk("Error for ILI9341_readBuffer\n");
+	}
+	else
+		printk("char read = %s\n", buff);
 }
 
 /*******************************************************************************/
@@ -340,12 +384,12 @@ void ILI9341_RotateMode(ILI9341Type *device, int mode)
 /* Functions to scroll screen */
 void ILI9341_ScrollUp(ILI9341Type *device, u16 val)
 {
-	char bufferSetCrollUp [2] =
+	unsigned char bufferSetCrollUp[2] =
 	{
 		0x36,
 		(1<<3) | (1<<4)
 	};
-	char bufferReady [7] = 
+	unsigned char bufferReady[7] = 
 	{
 		0x33,
 		0,
@@ -357,54 +401,28 @@ void ILI9341_ScrollUp(ILI9341Type *device, u16 val)
 	};
 	
 	scroll_val_up += val;
-	char bufferStartScroll [3] = 
+	unsigned char bufferStartScroll[3] = 
 	{
 		0x37,
 		scroll_val_up >> 8,
 		scroll_val_up & 0x00ff
 	};
-	if (memAccessControl & (1<<4) == 0)
+	if ((memAccessControl & (1<<4)) == 0)
 		memAccessControl |= (1<<4);
-	ramBufStart = scroll_val_up;
-	
+	device->vitualRow -= device->fontRowSize;
 	ILI9341_CmdMulBytes(device, bufferSetCrollUp, 2);
-	ILI9341_CmdMulBytes(device, bufferReady, 7);
-	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
-}
-
-void ILI9341_PartialScrollUp(ILI9341Type *device, u16 TopRowFix, u16 BotRowFix, u16 val)
-{
-	char bufferReady [7] = 
-	{
-		0x33,
-		TopRowFix >> 8,
-		TopRowFix & 0x00ff,
-		(BotRowFix - TopRowFix) >> 8,
-		(BotRowFix - TopRowFix) & 0x00ff, 
-		(device->maxRow - BotRowFix) >> 8,
-		(device->maxRow - BotRowFix) & 0x00ff
-	};
-	char bufferStartScroll [3] = 
-	{
-		0x37,
-		val >> 8,
-		val & 0x00ff
-	};
-	if (BotRowFix <= TopRowFix)
-		return;
-	
 	ILI9341_CmdMulBytes(device, bufferReady, 7);
 	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
 }
 
 void ILI9341_ScrollDown(ILI9341Type *device, u16 val)
 {
-	char bufferSetCrollDown [2] =
+	unsigned char bufferSetCrollDown [2] =
 	{
 		0x36,
 		(1<<3) | (0<<4)
 	};
-	char bufferReady [7] = 
+	unsigned char bufferReady [7] = 
 	{
 		0x33,
 		0,
@@ -414,43 +432,19 @@ void ILI9341_ScrollDown(ILI9341Type *device, u16 val)
 		0,
 		0
 	};
-	scroll_val_up += val;
-	if (scroll_val_up > device->maxRow)
-		scroll_val_up = 0;
-	char bufferStartScroll [3] = 
+	scroll_val_down += val;
+	if (scroll_val_down >= device->maxRow)
+		scroll_val_down = 0;
+	printk("scroll_val_down = %d\n", scroll_val_down);
+	unsigned char bufferStartScroll [3] = 
 	{
 		0x37,
-		scroll_val_up >> 8,
-		scroll_val_up & 0x00ff
+		scroll_val_down >> 8,
+		scroll_val_down & 0x00ff
 	};
-	if (memAccessControl & (1<<4) == 1)
+	if ((memAccessControl & (1<<4)) == (1<<4))
 		memAccessControl ^= (1<<4);
-	ramBufStart = device->maxCol - val;
 	ILI9341_CmdMulBytes(device, bufferSetCrollDown, 2);
-	ILI9341_CmdMulBytes(device, bufferReady, 7);
-	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
-}
-
-void ILI9341_PartialScrollDown(ILI9341Type *device, u16 TopRowFix, u16 BotRowFix, u16 val)
-{
-	char bufferReady [7] = 
-	{
-		0x33,
-		TopRowFix >> 8,
-		TopRowFix & 0x00ff,
-		(BotRowFix - TopRowFix) >> 8,
-		(BotRowFix - TopRowFix) & 0x00ff, 
-		(device->maxRow - BotRowFix) >> 8,
-		(device->maxRow - BotRowFix) & 0x00ff
-	};
-	char bufferStartScroll [3] = 
-	{
-		0x37,
-		val >> 8,
-		val & 0x00ff
-	};
-	if (BotRowFix <= TopRowFix)
-		return;
 	ILI9341_CmdMulBytes(device, bufferReady, 7);
 	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
 }
@@ -651,7 +645,7 @@ void ILI9341_PrintCursor(ILI9341Type *device, u16 color)
 	ILI9341_SetCursor(device, device->row,device->col);
 }
 
-void ILI9341_FillBlankLine(ILI9341Type *device)
+int ILI9341_FillBlankLine(ILI9341Type *device)
 {
 	u8 buff[64*2];
 	int i = 0;
@@ -660,6 +654,7 @@ void ILI9341_FillBlankLine(ILI9341Type *device)
 		buff[i*2] = BLACK_16;
 		buff[i*2 + 1] = BLACK_16;
 	}
+	i = 0;
 	ILI9341_SetWindow(device, device->row, device->col, 
 				device->row + device->fontRowSize, device->maxCol);
 	ILI9341_WriteReg(device, 0x2C);
@@ -668,7 +663,9 @@ void ILI9341_FillBlankLine(ILI9341Type *device)
 	{
 		ILI9341_DisplayMultiPixel(device, buff,64*2);
 		device->col += device->fontColSize;
+		i++;
 	}
+	return i;
 }
 
 /* Initialize fintion */
@@ -793,7 +790,6 @@ void ILI9341_PowerInit(ILI9341Type *device)
 
 void ILI9341_Init(ILI9341Type *device)
 {
-	int i = 0;
 	ILI9341_Reset(device);
 	/* Power setting */
 	ILI9341_PowerInit(device);
@@ -821,6 +817,7 @@ void ILI9341_Init(ILI9341Type *device)
 	// ILI9341_ScrollUp( device,12);
 	// ILI9341_SetCursor(device, 315, 0);
 	// ILI9341_printStringOverlay(device,"ABC", YELLOW_16, PURPLE_16);
+	
 }
 
 void ILI9341_Deinit(ILI9341Type *device)
