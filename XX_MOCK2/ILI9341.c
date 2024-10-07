@@ -803,7 +803,6 @@ void ILI9341_Init(ILI9341Type *device)
 	/* Set cursor to beginning of the screen */
 	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
 	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
-	ILI9341_printStringOverlay(device,"ABC", YELLOW_16, PURPLE_16);
 
 }
 

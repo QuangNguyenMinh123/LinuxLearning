@@ -226,8 +226,38 @@ static ssize_t scroll_horizontal_right_store(struct kobject *kobj, struct kobj_a
 
 static ssize_t nextline_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	ILI9341_Nextline(&ili9341);
-	ili9341.vitualRow += ili9341.fontRowSize;
+	u8 buff[ili9341.maxCol * 2];
+	int i = 0;
+	int colcnt = 0;
+	int pos = 0;
+	int row = 0;
+	int printed = 0;
+	int toprint;
+	ILI9341_ScrollUp(&ili9341,0);
+	ILI9341_SetWindow(&ili9341, 0, 0, ili9341.maxRow, ili9341.maxCol);
+	ILI9341_WriteReg(&ili9341, 0x2C);
+	gpiod_set_value(ili9341.dcPin, HIGH);
+	while (row < ili9341.maxRow)
+	{
+		ILI9341_readRowBuffer(&ili9341, buff, pos, SEEK_SET);
+		toprint = ili9341.maxCol * 2;
+		printed = 0;
+		while (printed < toprint)
+		{
+			if (printed + SPI_MAX_TRANSFER_BYTE < toprint)
+			{
+				ILI9341_DisplayMultiPixel(&ili9341, &buff[printed], SPI_MAX_TRANSFER_BYTE);
+				printed += SPI_MAX_TRANSFER_BYTE;
+			}
+			else
+			{
+				ILI9341_DisplayMultiPixel(&ili9341, &buff[printed], toprint - printed);
+				break;
+			}
+		}
+		pos += ili9341.maxCol * 2;
+		row++;
+	}
 	return count;
 }
 
@@ -272,6 +302,8 @@ static ssize_t ILI9341_Driver_ProcWrite(struct file *File, const char *user_buff
 
 static int ILI9341_Driver_probe(struct spi_device *pdev)
 {
+	int bg = BLACK_16;
+	int i = 0;
 	struct device *dev = &pdev->dev;
 	/* Check device properties */
 	if (!device_property_present(dev, "commandData-gpio"))
@@ -303,8 +335,6 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 	ili9341.row = 0;
 	ili9341.maxCol = MAX_COL;
 	ili9341.maxRow = MAX_ROW;
-	/* Initialize device */
-	ILI9341_Init(&ili9341);
 	/* Create proc */
 	proc_file = proc_create("ili9341", 0666, NULL, &fops);
 	if(proc_file == NULL) {
@@ -325,6 +355,8 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 		printk("Cannot create /tmp/ili9341_buffer file buffer for ili9341\n");
 		goto rm_kboj;
 	}
+	/* Initialize device */
+	ILI9341_Init(&ili9341);
 	return 0;
 rm_kboj:
 	kobject_put(kobj);
