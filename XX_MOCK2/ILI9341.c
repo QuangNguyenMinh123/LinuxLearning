@@ -292,8 +292,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 				cnt++;
 			}
 			ILI9341_saveBuffer(device, &buffer[i*device->fontColSize*2], device->fontColSize * 2, 
-							(device->totalRow + i) * device->maxCol * 2, SEEK_SET);
-			printk("device->fileBuffer->f_pos = %lld\n",device->fileBuffer->f_pos);
+						(device->totalRow + i) * device->maxCol * 2 + (device->col - device->fontColSize) * 2, SEEK_SET);
 			ptr++;
 		}
 		ILI9341_DisplayMultiPixel(device, buffer, cnt);
