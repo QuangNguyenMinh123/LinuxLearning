@@ -12,6 +12,15 @@
 #define MAX_ROW						240
 #define LOW							0
 #define HIGH						1
+
+#define SEEK_SET					0
+#define SEEK_CUR 					1
+#define SEEK_END					2
+#define SPI_MAX_TRANSFER_BYTE		159
+
+#define ILI9341_FONT_SIZE			FONTSIZE_16
+#define ILI9341_DEF_COL				240
+#define ILI9341_DEF_ROW				320
 /*******************************************************************************/
 typedef struct ILI9341Type{
 	struct spi_device *ili9341;
@@ -40,7 +49,8 @@ extern struct file *fileBuffer;
 /*******************************************************************************/
 extern ILI9341Type ili9341;
 /*******************************************************************************/
-
+void ILI9341_WriteReg(ILI9341Type *device, char buff);
+void ILI9341_DisplayMultiPixel(ILI9341Type *device, u8 *color, unsigned int size);
 /*******************************************************************************/
 void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size);
 
@@ -94,7 +104,7 @@ int ILI9341_FillBlankLine(ILI9341Type *device);
 
 ssize_t ILI9341_saveBuffer(ILI9341Type *device, u8 *buff, int size);
 
-ssize_t ILI9341_readRowbUFFER(ILI9341Type *device, u8 *toSaveBuff, int offset, int where);
+ssize_t ILI9341_readRowBuffer(ILI9341Type *device, u8 *toSaveBuff, int offset, int where);
 /*******************************************************************************/
 
 /*******************************************************************************/

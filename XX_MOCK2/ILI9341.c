@@ -3,15 +3,12 @@
 #include <linux/delay.h>
 #include <linux/fs.h>
 /*******************************************************************************/
-#define ILI9341_FONT_SIZE			FONTSIZE_16
-#define ILI9341_DEF_COL				240
-#define ILI9341_DEF_ROW				320
-#define SPI_MAX_TRANSFER_BYTE		159
-#define SEEK_SET					0
-#define SEEK_CUR 					1
-#define SEEK_END					2
+
+
+
 /*******************************************************************************/
 u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
+u8 cmpBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
 int ramBufStart = 0;
 u8 ILI9341_Font1208_Buffer[8*12*2] = {0};
 int scroll_val_down = 0;
@@ -68,7 +65,7 @@ ssize_t ILI9341_saveBuffer(ILI9341Type *device, u8 *buff, int size)
 	return kernel_write(device->fileBuffer, buff, size, &device->fileBuffer->f_pos);
 }
 
-ssize_t ILI9341_readRowbUFFER(ILI9341Type *device, u8 *toSaveBuff, int offset, int where)
+ssize_t ILI9341_readRowBuffer(ILI9341Type *device, u8 *toSaveBuff, int offset, int where)
 {
 	switch(where) {
    		case 0: /* SEEK_SET */
@@ -83,7 +80,7 @@ ssize_t ILI9341_readRowbUFFER(ILI9341Type *device, u8 *toSaveBuff, int offset, i
     		device->fileBuffer->f_pos -= offset;
     	break;
 	}
-	return kernel_read(device->fileBuffer, toSaveBuff, device->maxCol / device->fontColSize, &device->fileBuffer->f_pos);
+	return kernel_read(device->fileBuffer, toSaveBuff, device->maxCol * 2, &device->fileBuffer->f_pos);
 }
 /*******************************************************************************/
 /* Function to print char and image */
@@ -106,8 +103,6 @@ void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size)
 	int i = 0;
 	int printed = 0;
 	int toprint;
-	/* Set cursor to beginning of the screen */
-	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
 	/* Print something */
 	while (i < size)
 	{
@@ -116,6 +111,7 @@ void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size)
 		i ++;
 		data++;
 	}
+	ILI9341_saveBuffer(device, ILI9341_RamBuffer, ILI9341_DEF_ROW * ILI9341_DEF_COL * 2);
 	ILI9341_WriteReg(device, 0x2C);
 	gpiod_set_value(device->dcPin, HIGH);
 	toprint = size * 2;
@@ -124,13 +120,11 @@ void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size)
 		if ( printed + SPI_MAX_TRANSFER_BYTE < toprint)
 		{
 			ILI9341_DisplayMultiPixel(device, &ILI9341_RamBuffer[printed], SPI_MAX_TRANSFER_BYTE);
-			// ILI9341_saveBuffer(device, &ILI9341_RamBuffer[printed], SPI_MAX_TRANSFER_BYTE);
 			printed += SPI_MAX_TRANSFER_BYTE;
 		}
 		else
 		{
 			ILI9341_DisplayMultiPixel(device, &ILI9341_RamBuffer[printed], toprint - printed);
-			// ILI9341_saveBuffer(device, &ILI9341_RamBuffer[printed], toprint - printed);
 			break;
 		}
 	}
@@ -282,23 +276,17 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 
 void ILI9341_printStringScroll(ILI9341Type *device, char* ch, u16 charColor, u16 bgColor)
 {
-	char buff[100] = {0};
+	char buff[100];
 	int i =0;
 	memset(buff, 0, 100);
 	while (*ch != 0)
 	{
 		ILI9341_printCharScroll(device, *ch, charColor, bgColor);
-		if (ILI9341_saveBuffer(&ili9341, ch, 1) < 0)
-			printk("Error for kernel_write\n");
+		// if (ILI9341_saveBuffer(device, ch, 1) < 0)
+		// 	printk("Error for kernel_write\n");
 		ch++;
 		i++;
 	}
-	if (ILI9341_readRowbUFFER(&ili9341, buff, i, SEEK_END) < 0)
-	{
-		printk("Error for ILI9341_readBuffer\n");
-	}
-	else
-		printk("char read = %s\n", buff);
 }
 
 /*******************************************************************************/
@@ -435,7 +423,6 @@ void ILI9341_ScrollDown(ILI9341Type *device, u16 val)
 	scroll_val_down += val;
 	if (scroll_val_down >= device->maxRow)
 		scroll_val_down = 0;
-	printk("scroll_val_down = %d\n", scroll_val_down);
 	unsigned char bufferStartScroll [3] = 
 	{
 		0x37,
@@ -813,11 +800,11 @@ void ILI9341_Init(ILI9341Type *device)
 	device->fontColSize = fontInfo[0].ColSize;
 	device->vitualRow = 0;
 	/* Print something */
+	/* Set cursor to beginning of the screen */
+	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
 	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
-	// ILI9341_ScrollUp( device,12);
-	// ILI9341_SetCursor(device, 315, 0);
-	// ILI9341_printStringOverlay(device,"ABC", YELLOW_16, PURPLE_16);
-	
+	ILI9341_printStringOverlay(device,"ABC", YELLOW_16, PURPLE_16);
+
 }
 
 void ILI9341_Deinit(ILI9341Type *device)
