@@ -98,9 +98,9 @@ void ILI9341_RotateMode(ILI9341Type *device, int mode);
 
 void ILI9341_ScrollUp(ILI9341Type *device, u16 val);
 
-void ILI9341_PartialScrollUp(ILI9341Type *device, u16 TopRowFix, u16 BotRowFix, u16 val);
-
 void ILI9341_ScrollDown(ILI9341Type *device, u16 val);
+
+void ILI9341_ScrollDownToPrint(ILI9341Type *device, u16 val);
 
 int ILI9341_FillBlankLine(ILI9341Type *device);
 

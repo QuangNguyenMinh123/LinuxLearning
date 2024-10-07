@@ -210,7 +210,7 @@ static ssize_t scroll_vertical_down_store(struct kobject *kobj, struct kobj_attr
 {
 	// int val = 0;
 	// sscanf(buf, "%i", &val);
-	ILI9341_ScrollDown(&ili9341, ili9341.fontRowSize);
+	ILI9341_ScrollDownToPrint(&ili9341, ili9341.fontRowSize);
 	return count;
 }
 
@@ -226,7 +226,7 @@ static ssize_t scroll_horizontal_right_store(struct kobject *kobj, struct kobj_a
 
 static ssize_t nextline_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	u8 buff[ili9341.maxCol * 2];
+	u8 buff[12 * 2];
 	int pos = 0;
 	int row = 0;
 	int printed = 0;
@@ -272,7 +272,11 @@ static long int ILI9341_Driver_Ioctl(struct file *file, unsigned cmd, unsigned l
 	if (cmd == IOCTL_SET_WINDOW)
 	{
 		pos = kmalloc(sizeof(PositionType), GFP_KERNEL);
-		copy_from_user(pos, argp, sizeof(PositionType));
+		if (copy_from_user(pos, argp, sizeof(PositionType)))
+		{
+			printk("ILI9341_Driver_Ioctl: Error setting window\n");
+			return -1;
+		}
 		ILI9341_SetWindow(&ili9341, pos->startRow, pos->startCol, pos->endRow, pos->endCol);
 	}
 	else if (cmd == IOCTL_CLEAR)
@@ -283,7 +287,6 @@ static long int ILI9341_Driver_Ioctl(struct file *file, unsigned cmd, unsigned l
 	{
 		ILI9341_Reset(&ili9341);
 	}
-	
 	return 0;
 }
 
