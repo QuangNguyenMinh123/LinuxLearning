@@ -167,7 +167,6 @@ void ILI9341_print1Line(ILI9341Type *device, int RowToPrint, int Row)
 		}
 		row++;
 	}
-	device->row += device->fontRowSize;
 }
 
 void ILI9341_printCharOverlay(ILI9341Type *device, char ch, u16 color, u16 bgColor)
@@ -483,12 +482,17 @@ void ILI9341_ScrollUp(ILI9341Type *device)
 	ILI9341_CmdMulBytes(device, bufferReady, 7);
 	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
 	if (firstScrollUp == false)
+	{
 		device->row -= 2 *device->fontRowSize;
+	}
+		
 	if (device->row < 0)
 		device->row = device->maxRow - device->fontRowSize;
 	ILI9341_print1Line(device, device->displayRow/device->fontRowSize, device->row);
 	device->displayRow -= device->fontRowSize;
+	device->row += device->fontRowSize;
 	firstScrollUp = false;
+	printk("device->displayRow = %d, device->row = %d, totalRow = %d\n",device->displayRow,device->row,device->totalRow);
 }
 
 void ILI9341_ScrollDown(ILI9341Type *device)
@@ -529,10 +533,12 @@ void ILI9341_ScrollDown(ILI9341Type *device)
 
 	
 	ILI9341_print1Line(device, (device->displayRow + device->maxRow)/device->fontRowSize +1,
-						 (device->displayRow % device->maxRow));
+						 (device->displayRow % device->maxRow) + device->fontRowSize);
 	device->displayRow += device->fontRowSize;
-	printk("device->displayRow = %d, device->row = %d, totalRow = %d\n",device->displayRow,device->row,device->totalRow);
+	device->row += device->fontRowSize;
+	
 	firstScrollDown = false;
+	printk("device->displayRow = %d, device->row = %d, totalRow = %d\n",device->displayRow,device->row,device->totalRow);
 }
 
 void ILI9341_ScrollDownToPrint(ILI9341Type *device, u16 val)
