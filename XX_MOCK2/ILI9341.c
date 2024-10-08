@@ -3,8 +3,7 @@
 #include <linux/delay.h>
 #include <linux/fs.h>
 /*******************************************************************************/
-bool firstScrollUp = true;
-bool firstScrollDown = true;
+
 /*******************************************************************************/
 u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
 u8 ILI9341_Font1208_Buffer[8*12*2] = {0};
@@ -496,22 +495,12 @@ void ILI9341_ScrollUp(ILI9341Type *device)
 	ILI9341_CmdMulBytes(device, bufferSetCrollUp, 2);
 	ILI9341_CmdMulBytes(device, bufferReady, 7);
 	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
-	// if (firstScrollUp == false)
-	// {
-	// 	device->row -= 2 *device->fontRowSize;
-	// }
-		
-	// if (device->row < 0)
-	// 	device->row = device->maxRow - device->fontRowSize;
-	printk("UP: device->displayRow/device->fontRowSize = %d, device->displayRow / device->maxRow = %d\n",device->displayRow/device->fontRowSize, device->displayRow % device->maxRow);
+	/* Start here */
 	ILI9341_print1Line(device, device->displayRow/device->fontRowSize, 
 							(device->displayRow % device->maxRow));
-	printk("UP:scroll_val = %d,device->displayRow = %d, device->row = %d, totalRow = %d\n",
-							scroll_val,device->displayRow,device->row,device->totalRow);
+
 	device->displayRow -= device->fontRowSize;
 	device->row += device->fontRowSize;
-	firstScrollUp = false;
-	
 }
 
 void ILI9341_ScrollDown(ILI9341Type *device)
@@ -537,8 +526,6 @@ void ILI9341_ScrollDown(ILI9341Type *device)
 	};
 	if (device->displayRow + device->maxRow >= device->totalRow)
 		return;
-	
-	firstScrollUp = true;
 	scroll_val += device->fontRowSize;
 	scroll_val = scroll_val % device->maxRow;
 	bufferStartScroll[1] = scroll_val >> 8,
@@ -548,19 +535,12 @@ void ILI9341_ScrollDown(ILI9341Type *device)
 	ILI9341_CmdMulBytes(device, bufferSetCrollDown, 2);
 	ILI9341_CmdMulBytes(device, bufferReady, 7);
 	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
-	// if (firstScrollDown == false)
+	/* Start here */
+	ILI9341_print1Line(device, (device->displayRow + device->maxRow)/device->fontRowSize + 1,
+								(device->displayRow % device->maxRow) + device->fontRowSize);
 	
-	if (device->displayRow < 0)
-		device->displayRow = 0;
-	
-	ILI9341_print1Line(device, (device->displayRow + device->maxRow)/device->fontRowSize,
-						 (device->displayRow % device->maxRow));
-	printk("DOWN: printCnt = %d, scroll_val = %d,device->displayRow = %d, device->row = %d, totalRow = %d\n",
-							scroll_val,device->displayRow,device->row,device->totalRow);
 	device->displayRow += device->fontRowSize;
 	device->row += device->fontRowSize;
-	// firstScrollDown = false;
-	
 }
 
 void ILI9341_ScrollDownToPrint(ILI9341Type *device, u16 val)
@@ -958,7 +938,7 @@ void ILI9341_Init(ILI9341Type *device)
 	device->fontRowSize = fontInfo[0].RowSize;
 	device->fontColSize = fontInfo[0].ColSize;
 	device->totalRow = 0;
-	device->displayRow = -device->fontRowSize;
+	device->displayRow = 8;
 	/* Print something */
 	/* Set cursor to beginning of the screen */
 	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
