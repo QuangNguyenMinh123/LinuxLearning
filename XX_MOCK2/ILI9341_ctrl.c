@@ -290,11 +290,11 @@ static irqreturn_t gpio_irq_handler0(int irq, void *dev_id)
 		memset(&info, 0, sizeof(info));
 		info.si_signo = SIGNR0;
 		info.si_code = SI_QUEUE;
-
 		/* Send the signal */
 		if(send_sig_info(SIGNR0, (struct kernel_siginfo *) &info, task) < 0)
 			printk("gpio_irq_signal: Error sending signal\n");
 	}
+	printk("This is IRQ 0\n");
 	return IRQ_HANDLED;
 }
 
@@ -305,41 +305,25 @@ static irqreturn_t gpio_irq_handler1(int irq, void *dev_id)
 		memset(&info, 0, sizeof(info));
 		info.si_signo = SIGNR1;
 		info.si_code = SI_QUEUE;
-
 		/* Send the signal */
 		if(send_sig_info(SIGNR1, (struct kernel_siginfo *) &info, task) < 0)
 			printk("gpio_irq_signal: Error sending signal\n");
 	}
+	printk("This is IRQ 1\n");
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t gpio_irq_handler2(int irq, void *dev_id)
 {
-	struct siginfo info;
-	if(task != NULL) {
-		memset(&info, 0, sizeof(info));
-		info.si_signo = SIGNR2;
-		info.si_code = SI_QUEUE;
-
-		/* Send the signal */
-		if(send_sig_info(SIGNR2, (struct kernel_siginfo *) &info, task) < 0)
-			printk("gpio_irq_signal: Error sending signal\n");
-	}
+	/* sw 1 = P9_12, down */
+	ILI9341_ScrollDown(&ili9341);
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t gpio_irq_handler3(int irq, void *dev_id)
 {
-	struct siginfo info;
-	if(task != NULL) {
-		memset(&info, 0, sizeof(info));
-		info.si_signo = SIGNR3;
-		info.si_code = SI_QUEUE;
-
-		/* Send the signal */
-		if(send_sig_info(SIGNR3, (struct kernel_siginfo *) &info, task) < 0)
-			printk("gpio_irq_signal: Error sending signal\n");
-	}
+	/* sw 1 = P9_12, up */
+	ILI9341_ScrollUp(&ili9341);
 	return IRQ_HANDLED;
 }
 
@@ -355,6 +339,7 @@ static irqreturn_t gpio_irq_handler4(int irq, void *dev_id)
 		if(send_sig_info(SIGNR4, (struct kernel_siginfo *) &info, task) < 0)
 			printk("gpio_irq_signal: Error sending signal\n");
 	}
+	printk("This is IRQ 4\n");
 	return IRQ_HANDLED;
 }
 /*******************************************************************************/
@@ -431,6 +416,11 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 			gpiod_put(descGPIO[i]);
 		}
 	}
+	/* Change pinmux to input */
+	if (IS_ERR(devm_pinctrl_get_select(&pdev->dev, "default")))
+	{
+		printk("dt_probe - Error! cannot setup the pin mux to default\n");
+	}
 	/* Change GPIO to Interrupt */
 	for (i = 0; i < noLed; i++)
 	{
@@ -441,8 +431,9 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 			return -1;
 		}
 		printk("dt_probe: irq_number %d = %d\n",i,irq_number[i]);
-		if(request_irq(irq_number[i], funcPtr[i], IRQF_TRIGGER_RISING, "my_gpio_irq", NULL) != 0){
-			printk("Error! Can not request interrupt nr.: %d\n", irq_number[i]);
+		if(request_irq(irq_number[i], funcPtr[i], IRQF_TRIGGER_RISING, "my_gpio_irq", NULL) != 0)
+		{
+			printk("Error! Can not request interrupt nr.%d\n", irq_number[i]);
 			gpiod_put(descGPIO[i]);
 			return -1;
 		}
@@ -488,6 +479,7 @@ rm_kboj:
  */
 static int ILI9341_Driver_remove(struct spi_device *pdev)
 {
+	int i = 0;
 	struct pinctrl* checkPinCtrl;
 	ILI9341_Deinit(&ili9341);
 	proc_remove(proc_file);
@@ -501,6 +493,11 @@ static int ILI9341_Driver_remove(struct spi_device *pdev)
 	if (ili9341.fileBuffer)
 	{
 		filp_close(ili9341.fileBuffer, NULL);
+	}
+	for (i = 0; i < noLed; i++)
+	{
+		free_irq(irq_number[i], NULL);
+		gpiod_put(descGPIO[i]);
 	}
 	return 0;
 }

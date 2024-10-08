@@ -430,7 +430,6 @@ void ILI9341_printStringScroll(ILI9341Type *device, char* ch, u16 charColor, u16
 		ILI9341_printCharScroll(device, *ch, charColor, bgColor);
 		ch++;
 	}
-	printk("deive->row = %d, device->totalrow = %d\n",device->row, device->totalRow);
 }
 /*******************************************************************************/
 /* Function to move cursor and set window size ILI9341 */
