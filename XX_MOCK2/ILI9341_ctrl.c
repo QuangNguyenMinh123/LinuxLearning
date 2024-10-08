@@ -221,6 +221,8 @@ static ssize_t scroll__left_store(struct kobject *kobj, struct kobj_attribute *a
 
 static ssize_t scroll__right_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
+	ILI9341_print1Line(&ili9341, ili9341.displayRow/ili9341.fontRowSize - 1, 
+							(ili9341.displayRow % ili9341.maxRow));
 	return count;
 }
 
