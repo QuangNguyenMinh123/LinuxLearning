@@ -96,9 +96,9 @@ void ILI9341_Deinit(ILI9341Type *device);
 
 void ILI9341_RotateMode(ILI9341Type *device, int mode);
 
-void ILI9341_ScrollUp(ILI9341Type *device, u16 val);
+void ILI9341_ScrollUp(ILI9341Type *device);
 
-void ILI9341_ScrollDown(ILI9341Type *device, u16 val);
+void ILI9341_ScrollDown(ILI9341Type *device);
 
 void ILI9341_ScrollDownToPrint(ILI9341Type *device, u16 val);
 
@@ -107,6 +107,8 @@ int ILI9341_FillBlankLine(ILI9341Type *device);
 ssize_t ILI9341_saveBuffer(ILI9341Type *device, u8 *buff, int size, int offset, int where);
 
 ssize_t ILI9341_readRowBuffer(ILI9341Type *device, u8 *toSaveBuff, int offset, int where);
+
+void ILI9341_print1Line(ILI9341Type *device, int RowToPrint, int Row);
 /*******************************************************************************/
 
 /*******************************************************************************/

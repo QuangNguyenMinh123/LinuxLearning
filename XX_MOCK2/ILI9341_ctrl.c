@@ -52,10 +52,10 @@ static ssize_t rotate_store(struct kobject *kobj, struct kobj_attribute *attr,co
 static ssize_t set_brightness_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t setCharColor_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t setBgColor_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
-static ssize_t scroll_vertical_up_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
-static ssize_t scroll_vertical_down_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
-static ssize_t scroll_horizontal_left_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
-static ssize_t scroll_horizontal_right_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t scroll_up_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t scroll_down_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t scroll__left_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
+static ssize_t scroll__right_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t nextline_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t init_show(struct kobject *kobj, struct kobj_attribute *attr,char *buf);
 /*******************************************************************************/
@@ -74,10 +74,10 @@ struct kobj_attribute rotate_attr = __ATTR(rotate, 0660, NULL, rotate_store);
 struct kobj_attribute set_brightness_attr = __ATTR(set_brightness, 0660, NULL, set_brightness_store);
 struct kobj_attribute setCharColor_attr = __ATTR(setCharColor, 0660, NULL, setCharColor_store);
 struct kobj_attribute setBgColor_attr = __ATTR(setBgColor, 0660, NULL, setBgColor_store);
-struct kobj_attribute scroll_up_attr = __ATTR(scroll_up, 0660, NULL, scroll_vertical_up_store);
-struct kobj_attribute scroll_down_attr = __ATTR(scroll_down, 0660, NULL, scroll_vertical_down_store);
-struct kobj_attribute scroll_left_attr = __ATTR(scroll_left, 0660, NULL, scroll_horizontal_left_store);
-struct kobj_attribute scroll_right_attr = __ATTR(scroll_right, 0660, NULL, scroll_horizontal_right_store);
+struct kobj_attribute scroll_up_attr = __ATTR(scroll_up, 0660, NULL, scroll_up_store);
+struct kobj_attribute scroll_down_attr = __ATTR(scroll_down, 0660, NULL, scroll_down_store);
+struct kobj_attribute scroll_left_attr = __ATTR(scroll_left, 0660, NULL, scroll__left_store);
+struct kobj_attribute scroll_right_attr = __ATTR(scroll_right, 0660, NULL, scroll__right_store);
 struct kobj_attribute nextline_attr = __ATTR(nextline, 0660, NULL, nextline_store); 
 struct kobj_attribute init_attr = __ATTR(init, 0660, init_show, NULL);
 /*******************************************************************************/
@@ -198,46 +198,47 @@ static ssize_t setBgColor_store(struct kobject *kobj, struct kobj_attribute *att
 	return count;
 }
 /* Screen Scroll*/
-static ssize_t scroll_vertical_up_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+static ssize_t scroll_up_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
 	// int val = 0;
 	// sscanf(buf, "%i", &val);
-	ILI9341_ScrollUp(&ili9341, ili9341.fontRowSize);
+	ILI9341_ScrollUp(&ili9341);
 	return count;
 }
 
-static ssize_t scroll_vertical_down_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+static ssize_t scroll_down_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
 	// int val = 0;
 	// sscanf(buf, "%i", &val);
-	ILI9341_ScrollDownToPrint(&ili9341, ili9341.fontRowSize);
+	ILI9341_ScrollDown(&ili9341);
 	return count;
 }
 
-static ssize_t scroll_horizontal_left_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+static ssize_t scroll__left_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
 	return count;
 }
 
-static ssize_t scroll_horizontal_right_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
+static ssize_t scroll__right_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
 	return count;
 }
 
 static ssize_t nextline_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	u8 buff[12 * 2];
-	int pos = 0;
+	int startRow;
+	u8 buff[320 * 2];
 	int row = 0;
 	int printed = 0;
 	int toprint;
-	ILI9341_ScrollUp(&ili9341,0);
+	sscanf(buf, "%i", &startRow);
 	ILI9341_SetWindow(&ili9341, 0, 0, ili9341.maxRow, ili9341.maxCol);
 	ILI9341_WriteReg(&ili9341, 0x2C);
 	gpiod_set_value(ili9341.dcPin, HIGH);
-	while (row < ili9341.maxRow)
+	
+	while (row < ili9341.fontRowSize)
 	{
-		ILI9341_readRowBuffer(&ili9341, buff, pos, SEEK_SET);
+		ILI9341_readRowBuffer(&ili9341, buff, (startRow * ili9341.fontRowSize + row) * ili9341.maxCol * 2, SEEK_SET);
 		toprint = ili9341.maxCol * 2;
 		printed = 0;
 		while (printed < toprint)
@@ -253,7 +254,6 @@ static ssize_t nextline_store(struct kobject *kobj, struct kobj_attribute *attr,
 				break;
 			}
 		}
-		pos += ili9341.maxCol * 2;
 		row++;
 	}
 	return count;

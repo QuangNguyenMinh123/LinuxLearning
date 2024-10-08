@@ -141,6 +141,37 @@ void ILI9341_printImage(ILI9341Type *device, u16* data, unsigned int size)
 	ILI9341_SetCursor(device,0,0);
 }
 
+void ILI9341_print1Line(ILI9341Type *device, int RowToPrint, int Row)
+{
+	u8 buff[320 * 2];
+	int row = 0;
+	int printed = 0;
+	int toprint;
+	ILI9341_SetWindow(&ili9341, Row, 0, ili9341.maxRow, ili9341.maxCol);
+	ILI9341_WriteReg(&ili9341, 0x2C);
+	gpiod_set_value(ili9341.dcPin, HIGH);
+	while (row < ili9341.fontRowSize)
+	{
+		ILI9341_readRowBuffer(&ili9341, buff, (RowToPrint * ili9341.fontRowSize + row) * ili9341.maxCol * 2, SEEK_SET);
+		toprint = ili9341.maxCol * 2;
+		printed = 0;
+		while (printed < toprint)
+		{
+			if (printed + SPI_MAX_TRANSFER_BYTE < toprint)
+			{
+				ILI9341_DisplayMultiPixel(&ili9341, &buff[printed], SPI_MAX_TRANSFER_BYTE);
+				printed += SPI_MAX_TRANSFER_BYTE;
+			}
+			else
+			{
+				ILI9341_DisplayMultiPixel(&ili9341, &buff[printed], toprint - printed);
+				break;
+			}
+		}
+		row++;
+	}
+}
+
 void ILI9341_printCharOverlay(ILI9341Type *device, char ch, u16 color, u16 bgColor)
 {
 	int i = 0, j = 0;
@@ -235,7 +266,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 		else
 			device->row += device->fontRowSize;
 		device->totalRow += device->fontRowSize;
-		
+		device->displayRow = device->totalRow - device->maxRow / device->fontRowSize;
 		ILI9341_SetWindow(device, device->row, 0, 
 									device->row + device->fontRowSize, device->fontColSize -1);
 	}
@@ -315,7 +346,6 @@ void ILI9341_printStringScroll(ILI9341Type *device, char* ch, u16 charColor, u16
 		i++;
 	}
 }
-
 /*******************************************************************************/
 /* Function to move cursor and set window size ILI9341 */
 void ILI9341_SetWindow(ILI9341Type *device, int StartRow, int StartCol, int EndRow, int EndCol)
@@ -397,7 +427,7 @@ void ILI9341_RotateMode(ILI9341Type *device, int mode)
 }
 /*******************************************************************************/
 /* Functions to scroll screen */
-void ILI9341_ScrollUp(ILI9341Type *device, u16 val)
+void ILI9341_ScrollUp(ILI9341Type *device)
 {
 	unsigned char bufferSetCrollUp[2] =
 	{
@@ -414,26 +444,65 @@ void ILI9341_ScrollUp(ILI9341Type *device, u16 val)
 		0,
 		0
 	};
+	
 	unsigned char bufferStartScroll[3] = 
 	{
 		0x37,
+		(scroll_val_down + 2 *device->fontRowSize) >> 8,
+		(scroll_val_down + 2 *device->fontRowSize) & 0x00ff,
 	};
-	scroll_val_up += val;
-	if (scroll_val_up >= device->maxRow)
-		scroll_val_up = 0;
-	bufferStartScroll[1] = scroll_val_up >> 8;
-	bufferStartScroll[2] = scroll_val_up & 0x00ff;
+	scroll_val_down += device->fontRowSize;
+	if (scroll_val_down >= device->maxRow)
+		scroll_val_down = 0;
+	printk("scroll_val_down = %d\n",scroll_val_down);
+
+	device->displayRow -= device->maxRow / device->fontRowSize;
+	if (device->displayRow < 0)
+	{
+		device->displayRow = 0;
+		return;
+	}
 	if ((memAccessControl & (1<<4)) == 0)
 		memAccessControl |= (1<<4);
-	device->totalRow -= device->fontRowSize;
+	
 	ILI9341_CmdMulBytes(device, bufferSetCrollUp, 2);
 	ILI9341_CmdMulBytes(device, bufferReady, 7);
 	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
+	// ILI9341_print1Line(device, device->displayRow, device->row);
 }
 
-void ILI9341_ScrollDown(ILI9341Type *device, u16 val)
+void ILI9341_ScrollDown(ILI9341Type *device)
 {
-	
+	unsigned char bufferSetCrollDown [2] =
+	{
+		0x36,
+		(1<<3) | (0<<4)
+	};
+	unsigned char bufferReady [7] = 
+	{
+		0x33,
+		0,
+		0,
+		(device->maxRow) >> 8,
+		(device->maxRow) & 0x00ff, 
+		0,
+		0
+	};
+	unsigned char bufferStartScroll [3] = 
+	{
+		0x37,
+	};
+	scroll_val_down += device->fontRowSize;
+	if (scroll_val_down >= device->maxRow)
+		scroll_val_down = 0;
+	bufferStartScroll[1] = scroll_val_down >> 8,
+	bufferStartScroll[2] = scroll_val_down & 0x00ff;
+	if ((memAccessControl & (1<<4)) == (1<<4))
+		memAccessControl ^= (1<<4);
+	ILI9341_CmdMulBytes(device, bufferSetCrollDown, 2);
+	ILI9341_CmdMulBytes(device, bufferReady, 7);
+	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
+	// ILI9341_print1Line(device, )
 }
 
 void ILI9341_ScrollDownToPrint(ILI9341Type *device, u16 val)

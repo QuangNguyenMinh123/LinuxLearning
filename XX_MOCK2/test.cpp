@@ -241,7 +241,7 @@ int main(void)
 	}
 	str[98][15] = '|';
 	MyLCD.LCDSetWindows(0,0, 320, 240);
-	for (i=0;i<99;i++)
+	for (i=0;i<10;i++)
 	{
 		MyLCD.LCDPrintString(str[i], 16);
 	}
