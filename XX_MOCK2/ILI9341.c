@@ -404,18 +404,24 @@ void ILI9341_recover(ILI9341Type *device)
 		ILI9341_print1Line(device, save + i, i * device->fontRowSize);
 		i++;
 	}
+	printk("i= %d\n",i);
 	/* Phase 2, top half*/
 	save = (device->totalRow - device->maxRow - saveRow) / device->fontRowSize;
-	while (i <= (device->maxRow - saveRow) / device->fontRowSize)
+	while (i <= (device->maxRow) / device->fontRowSize)
 	{
-		ILI9341_print1Line(device,  + i, i * device->fontRowSize);
+		ILI9341_print1Line(device, save + i, i * device->fontRowSize);
 		i++;
 	}
+	printk("i= %d\n",i);
 	/* recover */
 	Continue = true;
 	device->row = saveRow;
 	device->col = saveCol;
 	scroll_val = saveScroll;
+	device->displayRow = device->totalRow - device->maxRow;
+	printk("saveRow = %d,saveCol = %d,saveScroll = %d,device->displayRow = %d,totalRow=%d\n",
+				saveRow,saveCol,saveScroll, device->displayRow,device->totalRow);
+
 }
 
 void ILI9341_printStringScroll(ILI9341Type *device, char* ch, u16 charColor, u16 bgColor)
@@ -560,6 +566,7 @@ void ILI9341_ScrollUp(ILI9341Type *device)
 
 	device->displayRow -= device->fontRowSize;
 	device->row += device->fontRowSize;
+
 }
 
 void ILI9341_ScrollDown(ILI9341Type *device)
