@@ -3,9 +3,11 @@
 #include <linux/spi/spi.h>
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
+#include <linux/interrupt.h>
 #include <linux/pinctrl/consumer.h>
 #include "ILI9341.h"
 #include "ILI9341_GUI.h"
+#include <linux/sched/signal.h>
 /*******************************************************************************/
 /* Meta Information */
 MODULE_LICENSE("GPL");
@@ -14,7 +16,13 @@ MODULE_DESCRIPTION("A SPI driver for ILI9341 LCD");
 /*******************************************************************************/
 #define COMPATIBLE			"QuangNM13,ILI9341"
 /*******************************************************************************/
-
+/* Define for IRQ number */
+#define SIGNR0 				44
+#define SIGNR1 				45
+#define SIGNR2 				46
+#define SIGNR3 				47
+#define SIGNR4 				48
+#define noLed				5
 /*******************************************************************************/
 typedef struct PositionType {
 	int startRow;
@@ -22,14 +30,6 @@ typedef struct PositionType {
 	int endRow;
 	int endCol;
 } PositionType;
-
-typedef struct VerticalCrollType {
-	int TopFix;
-	int starty;
-	int endx;
-} VerticalCrollType;
-
-
 /*******************************************************************************/
 #define MAJIC_NO						100
 #define IOCTL_SET_WINDOW				_IOW(MAJIC_NO, 3, PositionType)
@@ -40,8 +40,7 @@ typedef struct VerticalCrollType {
 #define IOCTL_DISPLAY_ON				_IO(MAJIC_NO, 8)
 #define IOCTL_DISPLAY_OFF				_IO(MAJIC_NO, 9)
 /*******************************************************************************/
-// ILI9341Type ili9341;
-
+ILI9341Type ili9341;
 /*******************************************************************************/
 static ssize_t reset_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
 static ssize_t clear_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count);
@@ -63,6 +62,23 @@ static int ILI9341_Driver_probe(struct spi_device *pdev);
 static int ILI9341_Driver_remove(struct spi_device *pdev);
 static long int ILI9341_Driver_Ioctl(struct file *file, unsigned cmd, unsigned long arg);
 static ssize_t ILI9341_Driver_ProcWrite(struct file *File, const char *user_buffer, size_t count, loff_t *offs);
+/*******************************************************************************/
+/* Define for IRQ handler */
+static irqreturn_t gpio_irq_handler0(int irq, void *dev_id);
+static irqreturn_t gpio_irq_handler1(int irq, void *dev_id);
+static irqreturn_t gpio_irq_handler2(int irq, void *dev_id);
+static irqreturn_t gpio_irq_handler3(int irq, void *dev_id);
+static irqreturn_t gpio_irq_handler4(int irq, void *dev_id);
+static irqreturn_t (*funcPtr[noLed]) (int irq, void *dev_id) = {
+	gpio_irq_handler0,
+	gpio_irq_handler1,
+	gpio_irq_handler2,
+	gpio_irq_handler3,
+	gpio_irq_handler4
+};
+/* Data struct for device tree*/
+static struct gpio_desc *descGPIO[noLed] = {NULL};
+unsigned int irq_number[noLed] = {0};
 /*******************************************************************************/
 struct kobject *kobj = NULL;	/* pointer point to /sys/ili9341 */
 struct kobj_attribute reset_attr = __ATTR(reset, 0660, NULL, reset_store);
@@ -200,16 +216,12 @@ static ssize_t setBgColor_store(struct kobject *kobj, struct kobj_attribute *att
 /* Screen Scroll*/
 static ssize_t scroll_up_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	// int val = 0;
-	// sscanf(buf, "%i", &val);
 	ILI9341_ScrollUp(&ili9341);
 	return count;
 }
 
 static ssize_t scroll_down_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	// int val = 0;
-	// sscanf(buf, "%i", &val);
 	ILI9341_ScrollDown(&ili9341);
 	return count;
 }
@@ -267,6 +279,85 @@ static ssize_t init_show(struct kobject *kobj, struct kobj_attribute *attr,char 
 	return sprintf(buf, "%d%d", ili9341.maxRow, ili9341.maxCol);
 }
 /*******************************************************************************/
+/**
+ * @brief Interrupt service routine is called, when interrupt is triggered
+ */
+static struct task_struct *task = NULL;
+static irqreturn_t gpio_irq_handler0(int irq, void *dev_id)
+{
+	struct siginfo info;
+	if(task != NULL) {
+		memset(&info, 0, sizeof(info));
+		info.si_signo = SIGNR0;
+		info.si_code = SI_QUEUE;
+
+		/* Send the signal */
+		if(send_sig_info(SIGNR0, (struct kernel_siginfo *) &info, task) < 0)
+			printk("gpio_irq_signal: Error sending signal\n");
+	}
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t gpio_irq_handler1(int irq, void *dev_id)
+{
+	struct siginfo info;
+	if(task != NULL) {
+		memset(&info, 0, sizeof(info));
+		info.si_signo = SIGNR1;
+		info.si_code = SI_QUEUE;
+
+		/* Send the signal */
+		if(send_sig_info(SIGNR1, (struct kernel_siginfo *) &info, task) < 0)
+			printk("gpio_irq_signal: Error sending signal\n");
+	}
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t gpio_irq_handler2(int irq, void *dev_id)
+{
+	struct siginfo info;
+	if(task != NULL) {
+		memset(&info, 0, sizeof(info));
+		info.si_signo = SIGNR2;
+		info.si_code = SI_QUEUE;
+
+		/* Send the signal */
+		if(send_sig_info(SIGNR2, (struct kernel_siginfo *) &info, task) < 0)
+			printk("gpio_irq_signal: Error sending signal\n");
+	}
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t gpio_irq_handler3(int irq, void *dev_id)
+{
+	struct siginfo info;
+	if(task != NULL) {
+		memset(&info, 0, sizeof(info));
+		info.si_signo = SIGNR3;
+		info.si_code = SI_QUEUE;
+
+		/* Send the signal */
+		if(send_sig_info(SIGNR3, (struct kernel_siginfo *) &info, task) < 0)
+			printk("gpio_irq_signal: Error sending signal\n");
+	}
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t gpio_irq_handler4(int irq, void *dev_id)
+{
+	struct siginfo info;
+	if(task != NULL) {
+		memset(&info, 0, sizeof(info));
+		info.si_signo = SIGNR4;
+		info.si_code = SI_QUEUE;
+
+		/* Send the signal */
+		if(send_sig_info(SIGNR4, (struct kernel_siginfo *) &info, task) < 0)
+			printk("gpio_irq_signal: Error sending signal\n");
+	}
+	return IRQ_HANDLED;
+}
+/*******************************************************************************/
 static long int ILI9341_Driver_Ioctl(struct file *file, unsigned cmd, unsigned long arg)
 {
 	PositionType *pos = NULL;
@@ -304,6 +395,7 @@ static ssize_t ILI9341_Driver_ProcWrite(struct file *File, const char *user_buff
 
 static int ILI9341_Driver_probe(struct spi_device *pdev)
 {
+	int i = 0;
 	struct device *dev = &pdev->dev;
 	/* Check device properties */
 	if (!device_property_present(dev, "commandData-gpio"))
@@ -329,6 +421,32 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 		gpiod_put(ili9341.dcPin);
 	}
 	gpiod_set_value(ili9341.dcPin, HIGH);
+	/* Obtain IRQ */
+	for (i = 0; i < noLed; i++)
+	{
+		descGPIO[i] = gpiod_get_index(&pdev->dev, "input", i, GPIOD_IN);
+		if (IS_ERR(descGPIO[i]))
+		{
+			printk("dt_probe - Error! retrieve GPIO desc \n");
+			gpiod_put(descGPIO[i]);
+		}
+	}
+	/* Change GPIO to Interrupt */
+	for (i = 0; i < noLed; i++)
+	{
+		irq_number[i] = gpiod_to_irq(descGPIO[i]);
+		if (irq_number[i] < 0)
+		{
+			printk("dt_probe: request irq_number %d error\n", i);
+			return -1;
+		}
+		printk("dt_probe: irq_number %d = %d\n",i,irq_number[i]);
+		if(request_irq(irq_number[i], funcPtr[i], IRQF_TRIGGER_RISING, "my_gpio_irq", NULL) != 0){
+			printk("Error! Can not request interrupt nr.: %d\n", irq_number[i]);
+			gpiod_put(descGPIO[i]);
+			return -1;
+		}
+	}
 	/* Obtain SPI device */
 	ili9341.ili9341 = pdev;
 	ili9341.col = 0;

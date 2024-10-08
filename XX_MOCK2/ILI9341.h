@@ -49,7 +49,7 @@ typedef struct ILI9341VerticalScrollType{
 /*******************************************************************************/
 extern struct file *fileBuffer;
 /*******************************************************************************/
-extern ILI9341Type ili9341;
+
 /*******************************************************************************/
 void ILI9341_WriteReg(ILI9341Type *device, char buff);
 void ILI9341_DisplayMultiPixel(ILI9341Type *device, u8 *color, unsigned int size);
