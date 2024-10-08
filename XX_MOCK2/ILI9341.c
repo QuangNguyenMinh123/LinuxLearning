@@ -6,13 +6,9 @@
 bool firstScrollUp = true;
 /*******************************************************************************/
 u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
-int ramBufStart = 0;
 u8 ILI9341_Font1208_Buffer[8*12*2] = {0};
-int scroll_val_down = 0;
-int scroll_val_up = 0;
+int scroll_val = 0;
 u8 memAccessControl = 0;
-struct file *fileBuffer;
-int bufferRow = 0;
 ILI9341Type ili9341;
 /*******************************************************************************/
 /* Function to write data and cmd to ILI9341 */
@@ -475,11 +471,11 @@ void ILI9341_ScrollUp(ILI9341Type *device)
 	};
 	if (device->displayRow <= 0)
 		return;
-	scroll_val_down -= device->fontRowSize;
-	if (scroll_val_down <= 0)
-		scroll_val_down = device->maxRow;
-	bufferStartScroll[1] = scroll_val_down >> 8,
-	bufferStartScroll[2] = scroll_val_down & 0x00ff;
+	scroll_val -= device->fontRowSize;
+	if (scroll_val <= 0)
+		scroll_val = device->maxRow;
+	bufferStartScroll[1] = scroll_val >> 8,
+	bufferStartScroll[2] = scroll_val & 0x00ff;
 	if ((memAccessControl & (1<<4)) == (1<<4))
 		memAccessControl ^= (1<<4);
 	ILI9341_CmdMulBytes(device, bufferSetCrollUp, 2);
@@ -492,7 +488,6 @@ void ILI9341_ScrollUp(ILI9341Type *device)
 	ILI9341_print1Line(device, device->displayRow/device->fontRowSize, device->row);
 	device->displayRow -= device->fontRowSize;
 	firstScrollUp = false;
-	printk("device->displayRow = %d, device->row = %d, totalRow = %d\n",device->displayRow,device->row,device->totalRow);
 }
 
 void ILI9341_ScrollDown(ILI9341Type *device)
@@ -516,17 +511,24 @@ void ILI9341_ScrollDown(ILI9341Type *device)
 	{
 		0x37,
 	};
-	scroll_val_down += device->fontRowSize;
-	if (scroll_val_down >= device->maxRow)
-		scroll_val_down = 0;
-	bufferStartScroll[1] = scroll_val_down >> 8,
-	bufferStartScroll[2] = scroll_val_down & 0x00ff;
+	if (device->displayRow + device->maxRow >= device->totalRow)
+		return;
+	scroll_val += device->fontRowSize;
+	if (scroll_val >= device->maxRow)
+		scroll_val = 0;
+	bufferStartScroll[1] = scroll_val >> 8,
+	bufferStartScroll[2] = scroll_val & 0x00ff;
 	if ((memAccessControl & (1<<4)) == (1<<4))
 		memAccessControl ^= (1<<4);
 	ILI9341_CmdMulBytes(device, bufferSetCrollDown, 2);
 	ILI9341_CmdMulBytes(device, bufferReady, 7);
 	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
-	// ILI9341_print1Line(device, )
+
+
+	ILI9341_print1Line(device, (device->displayRow + device->maxRow)/device->fontRowSize , device->row);
+	device->displayRow += device->fontRowSize;
+	printk("device->displayRow = %d, device->row = %d, totalRow = %d\n",device->displayRow,device->row,device->totalRow);
+
 }
 
 void ILI9341_ScrollDownToPrint(ILI9341Type *device, u16 val)
@@ -550,11 +552,11 @@ void ILI9341_ScrollDownToPrint(ILI9341Type *device, u16 val)
 	{
 		0x37,
 	};
-	scroll_val_down += val;
-	if (scroll_val_down >= device->maxRow)
-		scroll_val_down = 0;
-	bufferStartScroll[1] = scroll_val_down >> 8,
-	bufferStartScroll[2] = scroll_val_down & 0x00ff;
+	scroll_val += val;
+	if (scroll_val >= device->maxRow)
+		scroll_val = 0;
+	bufferStartScroll[1] = scroll_val >> 8,
+	bufferStartScroll[2] = scroll_val & 0x00ff;
 	if ((memAccessControl & (1<<4)) == (1<<4))
 		memAccessControl ^= (1<<4);
 	ILI9341_CmdMulBytes(device, bufferSetCrollDown, 2);
