@@ -488,11 +488,13 @@ void ILI9341_ScrollUp(ILI9341Type *device)
 		
 	if (device->row < 0)
 		device->row = device->maxRow - device->fontRowSize;
-	ILI9341_print1Line(device, device->displayRow/device->fontRowSize, device->row);
+	ILI9341_print1Line(device, device->displayRow/device->fontRowSize, 
+							(device->displayRow % device->maxRow) );
+
 	device->displayRow -= device->fontRowSize;
 	device->row += device->fontRowSize;
 	firstScrollUp = false;
-	printk("device->displayRow = %d, device->row = %d, totalRow = %d\n",device->displayRow,device->row,device->totalRow);
+	printk("UP: scroll_val = %d,device->displayRow = %d, device->row = %d, totalRow = %d\n",scroll_val,device->displayRow,device->row,device->totalRow);
 }
 
 void ILI9341_ScrollDown(ILI9341Type *device)
@@ -516,12 +518,13 @@ void ILI9341_ScrollDown(ILI9341Type *device)
 	{
 		0x37,
 	};
+	
 	if (device->displayRow + device->maxRow >= device->totalRow)
 		return;
+	
 	firstScrollUp = true;
 	scroll_val += device->fontRowSize;
-	if (scroll_val >= device->maxRow)
-		scroll_val = 0;
+	scroll_val = scroll_val % device->maxRow;
 	bufferStartScroll[1] = scroll_val >> 8,
 	bufferStartScroll[2] = scroll_val & 0x00ff;
 	if ((memAccessControl & (1<<4)) == (1<<4))
@@ -530,15 +533,17 @@ void ILI9341_ScrollDown(ILI9341Type *device)
 	ILI9341_CmdMulBytes(device, bufferReady, 7);
 	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
 	// if (firstScrollDown == false)
-
+	
+	if (device->displayRow < 0)
+		device->displayRow = 0;
 	
 	ILI9341_print1Line(device, (device->displayRow + device->maxRow)/device->fontRowSize +1,
-						 (device->displayRow % device->maxRow) + device->fontRowSize);
+						 (device->displayRow % device->maxRow));
 	device->displayRow += device->fontRowSize;
 	device->row += device->fontRowSize;
 	
-	firstScrollDown = false;
-	printk("device->displayRow = %d, device->row = %d, totalRow = %d\n",device->displayRow,device->row,device->totalRow);
+	// firstScrollDown = false;
+	printk("DOWN: scroll_val = %d,device->displayRow = %d, device->row = %d, totalRow = %d\n",scroll_val,device->displayRow,device->row,device->totalRow);
 }
 
 void ILI9341_ScrollDownToPrint(ILI9341Type *device, u16 val)
