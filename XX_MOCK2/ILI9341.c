@@ -481,14 +481,15 @@ void ILI9341_ScrollUp(ILI9341Type *device)
 	ILI9341_CmdMulBytes(device, bufferSetCrollUp, 2);
 	ILI9341_CmdMulBytes(device, bufferReady, 7);
 	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
-	if (firstScrollUp == false)
-	{
-		device->row -= 2 *device->fontRowSize;
-	}
+	// if (firstScrollUp == false)
+	// {
+	// 	device->row -= 2 *device->fontRowSize;
+	// }
 		
-	if (device->row < 0)
-		device->row = device->maxRow - device->fontRowSize;
-	ILI9341_print1Line(device, device->displayRow/device->fontRowSize, device->row);
+	// if (device->row < 0)
+	// 	device->row = device->maxRow - device->fontRowSize;
+	ILI9341_print1Line(device, device->displayRow/device->fontRowSize - 1, 
+						(device->displayRow % device->maxRow) + device->fontRowSize);
 	device->displayRow -= device->fontRowSize;
 	device->row += device->fontRowSize;
 	firstScrollUp = false;
