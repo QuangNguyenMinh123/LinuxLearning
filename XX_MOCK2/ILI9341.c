@@ -2,6 +2,18 @@
 #include "ILI9341_GUI.h"
 #include <linux/delay.h>
 #include <linux/fs.h>
+#include "/usr/src/linux-headers-5.15.0-122-generic/include/linux/types.h"
+#include <linux/dirent.h>
+#include <linux/fs.h>
+#include <linux/fcntl.h>
+/*******************************************************************************/
+/* Struct for scanning folder */
+typedef int (*readdir_t)(void *, const char *, int, loff_t, u64, unsigned);
+struct callback_context {
+    struct dir_context ctx;
+    readdir_t filler;
+    void* context;
+};
 /*******************************************************************************/
 int saveRow;
 int saveCol;
@@ -13,6 +25,52 @@ u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
 u8 ILI9341_Font1208_Buffer[8*12*2] = {0};
 int scroll_val = 0;
 u8 memAccessControl = 0;
+/*******************************************************************************/
+/* Call back for scanning folder */
+bool CompareString(const char *str1, const char *str2)
+{
+	while (*str1 != 0 && *str2 != 0)
+	{
+		str1++;
+		str2++;
+	}
+	if (*str1 == 0 && *str2 == 0)
+		return true;
+	return false;
+}
+
+bool readable(const char *name, int namelen)
+{
+	char *ptr = name;
+	int i = 0;
+	while (*ptr != '.')
+	{
+		i ++;
+		ptr ++;
+		if (i >= namelen)
+			return false;
+	}
+	return CompareString(ptr, ".c") | CompareString(ptr, ".h") | CompareString(ptr, ".txt") |
+			CompareString(ptr, ".sh") | CompareString(ptr, ".cpp");
+}
+
+int filldir_callback(void* data, const char *name, int namlen,
+        loff_t offset, u64 ino, unsigned int d_type)
+{
+    // printk(KERN_NOTICE "file: %.*s type: %d ino=%d\n", namlen, name, d_type,ino); /* Print data of file */
+    // if (d_type == DT_DIR)  /* do sth with your subdirs */
+	// 	printk("file: %.*s is Dir", namlen, name);
+	if (readable(name, namlen) && d_type == DT_REG)
+		printk("Readable File: %.*s\n", namlen, name);
+    return 0;
+}
+
+int iterate_dir_callback(struct dir_context *ctx, const char *name, int namlen,
+        loff_t offset, u64 ino, unsigned int d_type)
+{
+    struct callback_context *buf = container_of(ctx, struct callback_context, ctx);
+    return buf->filler(buf->context, name, namlen, offset, ino, d_type);
+}
 /*******************************************************************************/
 /* Function to write data and cmd to ILI9341 */
 void ILI9341_WriteReg(ILI9341Type *device, char buff)
@@ -290,13 +348,14 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 	{
 		if (device->totalRow + device->fontRowSize >= device->maxRow)
 		{
+			
+			ILI9341_SetCursor(device, device->row, device->col);
+			blankCnt = ILI9341_FillBlankLine(device);
+			ILI9341_ScrollDownToPrint(device, device->fontSize);
 			if (device->row + device->fontRowSize >= device->maxRow)
 				device->row = 0;
 			else
 				device->row += device->fontRowSize;
-			ILI9341_SetCursor(device, device->row, device->col);
-			blankCnt = ILI9341_FillBlankLine(device);
-			ILI9341_ScrollDownToPrint(device, device->fontSize);
 		}
 		else
 		{
@@ -995,6 +1054,25 @@ void ILI9341_PowerInit(ILI9341Type *device)
 	ILI9341_WriteData(device, (1<<3)|(0<<6)|(0<<7));
 }
 
+
+int ILI9341_readdir(const char* path, readdir_t filler, void* context)
+{
+    int res;
+    struct callback_context buf = {
+        .ctx.actor = (filldir_t)iterate_dir_callback,
+        .context = context,
+        .filler = filler
+    };
+    struct file* dir  = filp_open(path, O_DIRECTORY, S_IRWXU | S_IRWXG | S_IRWXO);
+    if(!IS_ERR(dir))
+    {
+        res = iterate_dir(dir, &buf.ctx);
+        filp_close(dir, NULL);
+    } 
+    else res = (int)PTR_ERR(dir);
+    return res;
+}
+
 void ILI9341_Init(ILI9341Type *device)
 {
 	ILI9341_Reset(device);
@@ -1024,6 +1102,8 @@ void ILI9341_Init(ILI9341Type *device)
 	ILI9341_SetCursor(device,0,0);
 	/* Print something */
 	// ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
+	// ILI9341_scanFolder();
+	ILI9341_readdir("/home/debian/", filldir_callback, (void*)123);
 }
 
 void ILI9341_Deinit(ILI9341Type *device)

@@ -11,6 +11,7 @@
 #include <linux/kthread.h>
 #include <linux/sched.h>
 #include <linux/delay.h>
+
 /*******************************************************************************/
 /* Meta Information */
 MODULE_LICENSE("GPL");
@@ -40,7 +41,7 @@ typedef enum ButtonType{
 /*******************************************************************************/
 #define UP_BUTTON						3
 #define DOWN_BUTTON						2
-#define MAX_TIMEOUT						30		/* Scan every 50ms -> timeout = 1.5 */
+#define MAX_TIMEOUT						25		/* Scan every 50ms -> timeout = 1.5 */
 /*******************************************************************************/
 #define MAJIC_NO						100
 #define IOCTL_SET_WINDOW				_IOW(MAJIC_NO, 3, PositionType)
@@ -301,7 +302,6 @@ static ssize_t init_show(struct kobject *kobj, struct kobj_attribute *attr,char 
 int threadFunc(void *args)
 {
 	int i = 0;
-	printk("This is threadFunc\n");
 	while (!(kthread_should_stop()))
 	{
 		for (i=0; i < noLed; i ++)
@@ -342,7 +342,7 @@ int threadFunc(void *args)
 			}
 			buttonPreState[i] = buttonCurState[i];
 		}
-		msleep(50); /* scan every 50ms */
+		msleep(25); /* scan every 50ms */
 	}
 	return 0;
 }
@@ -560,7 +560,6 @@ static int ILI9341_Driver_remove(struct spi_device *pdev)
 	}
 	for (i = 0; i < noLed; i++)
 	{
-		free_irq(irq_number[i], NULL);
 		gpiod_put(descGPIO[i]);
 	}
 	return 0;
