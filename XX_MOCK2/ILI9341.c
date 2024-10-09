@@ -305,6 +305,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 									device->row + device->fontRowSize, device->fontColSize -1);
 		if (blankCnt > 0)
 			ILI9341_saveSpaceScroll(device, blankCnt, color, bgColor);
+		blankCnt = 0;
 	}
 	else
 	{
@@ -320,19 +321,22 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 				ILI9341_SetCursor(device, device->row,0);
 				blankCnt = ILI9341_FillBlankLine(device);
 				ILI9341_ScrollDownToPrint(device, device->fontSize);
-				ILI9341_saveSpaceScroll(device, blankCnt, color, bgColor);
+				if (blankCnt > 0)
+				{
+					ILI9341_saveSpaceScroll(device, blankCnt, color, bgColor);
+				}
+				printk("blankCnt = %d,device->col=%d,device->row=%d\n",blankCnt,device->col,device->row);
 				ILI9341_SetWindow(device, device->row, 0, 
 									device->row + device->fontRowSize, device->fontColSize -1);
-				device->col += device->fontColSize;
 			}
 			else													/* Move to next line and print */
 			{
 				ILI9341_SetWindow(device, device->row + device->fontRowSize, 0, 
 										device->row + 2 * device->fontRowSize, device->fontColSize -1);
-				device->col = device->fontColSize;
 			}
 			device->totalRow += device->fontRowSize;
 			device->displayRow = device->totalRow - device->maxRow;
+			device->col = device->fontColSize;
 		}
 		else														/* Keep printing*/
 		{
@@ -367,7 +371,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 		ILI9341_DisplayMultiPixel(device, buffer, cnt);
 		ILI9341_DisplayMultiPixel(device, &buffer[cnt], cnt);
 	}
-	// printk("char = %c, device->row = %d, device->col = %d, totalRow = %d\n",ch,device->row,device->col,device->totalRow);
+	printk("char = %c, device->row = %d, device->col = %d, totalRow = %d\n",ch,device->row,device->col,device->totalRow);
 }
 
 void ILI9341_recover(ILI9341Type *device)

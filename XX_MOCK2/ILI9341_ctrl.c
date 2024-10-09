@@ -430,7 +430,6 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 			printk("dt_probe: request irq_number %d error\n", i);
 			return -1;
 		}
-		printk("dt_probe: irq_number %d = %d\n",i,irq_number[i]);
 		if(request_irq(irq_number[i], funcPtr[i], IRQF_TRIGGER_RISING, "my_gpio_irq", NULL) != 0)
 		{
 			printk("Error! Can not request interrupt nr.%d\n", irq_number[i]);
