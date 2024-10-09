@@ -22,6 +22,7 @@ typedef struct FontInfoType
 #define GREY_16                     0x7bef
 #define RED_16                      0xf800
 #define GREEN_16                    0x07e0
+#define DARK_GREEN_16               0x0300
 #define BLUE_16                     0x001f
 #define PURPLE_16                   0xf81f
 #define YELLOW_16                   0xffe0

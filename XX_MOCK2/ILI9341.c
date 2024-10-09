@@ -7,6 +7,7 @@ int saveRow;
 int saveCol;
 int saveScroll;
 bool Continue = true;			/* Set to false when scrolling, set to true when typing */
+u16 backGround = DARK_GREEN_16;
 /*******************************************************************************/
 u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
 u8 ILI9341_Font1208_Buffer[8*12*2] = {0};
@@ -246,22 +247,22 @@ void ILI9341_saveSpaceScroll(ILI9341Type *device, int size, u16 color, u16 bgCol
 	int i;
 	int blankCnt = 0;
 	u8 buffer[16] = {
-		BLACK_16 >> 8,
-		BLACK_16 & 0xff,
-		BLACK_16 >> 8, 
-		BLACK_16 & 0xff,
-		BLACK_16 >> 8, 
-		BLACK_16 & 0xff,
-		BLACK_16 >> 8, 
-		BLACK_16 & 0xff,
-		BLACK_16 >> 8, 
-		BLACK_16 & 0xff,
-		BLACK_16 >> 8, 
-		BLACK_16 & 0xff,
-		BLACK_16 >> 8, 
-		BLACK_16 & 0xff,
-		BLACK_16 >> 8, 
-		BLACK_16 & 0xff
+		backGround >> 8,
+		backGround & 0xff,
+		backGround >> 8, 
+		backGround & 0xff,
+		backGround >> 8, 
+		backGround & 0xff,
+		backGround >> 8, 
+		backGround & 0xff,
+		backGround >> 8, 
+		backGround & 0xff,
+		backGround >> 8, 
+		backGround & 0xff,
+		backGround >> 8, 
+		backGround & 0xff,
+		backGround >> 8, 
+		backGround & 0xff
 	};
 
 	while (blankCnt < size)
@@ -812,6 +813,7 @@ void ILI9341_FillColor(ILI9341Type *device, u16 color)
 		ILI9341_DisplayPixel(device, color);
 		i++;
 	}
+	ILI9341_SetCursor(device,0,0);
 }
 
 void ILI9341_CreateWindowAndFill(ILI9341Type *device, u16 color, int StartRow, int StartCol, int EndRow, int EndCol)
@@ -850,8 +852,8 @@ int ILI9341_FillBlankLine(ILI9341Type *device)
 	int i = 0;
 	for (i=0;i<64;i++)
 	{
-		buff[i*2] = BLACK_16;
-		buff[i*2 + 1] = BLACK_16;
+		buff[i*2] = backGround >> 8;
+		buff[i*2 + 1] = backGround & 0xff;
 	}
 	i = 0;
 	ILI9341_SetWindow(device, device->row, device->col, 
@@ -1013,7 +1015,7 @@ void ILI9341_Init(ILI9341Type *device)
 	device->displayRow = 8;
 	Continue = true;
 	/* Set cursor to beginning of the screen */
-	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
+	ILI9341_FillColor(device,DARK_GREEN_16);
 	/* Print something */
 	// ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
 }

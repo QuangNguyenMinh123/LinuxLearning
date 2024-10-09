@@ -155,7 +155,7 @@ static ssize_t reset_store(struct kobject *kobj, struct kobj_attribute *attr,con
 static ssize_t clear_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
 	if (*buf == '1')
-		ILI9341_FillColor(&ili9341, BLACK_16);
+		ILI9341_FillColor(&ili9341, DARK_GREEN_16);
 	return count;
 }
 
@@ -359,7 +359,7 @@ static long int ILI9341_Driver_Ioctl(struct file *file, unsigned cmd, unsigned l
 	}
 	else if (cmd == IOCTL_CLEAR)
 	{
-		ILI9341_FillColor(&ili9341, BLACK_16);
+		ILI9341_FillColor(&ili9341, DARK_GREEN_16);
 	}
 	else if (cmd == IOCTL_RESET)
 	{
@@ -374,7 +374,7 @@ static ssize_t ILI9341_Driver_ProcWrite(struct file *File, const char *user_buff
 	int cnt;
 	memset(buffer, 0 , sizeof(buffer));
 	cnt = copy_from_user(buffer, user_buffer, count - 1);
-	ILI9341_printStringScroll(&ili9341, buffer, WHITE_16, BLACK_16);
+	ILI9341_printStringScroll(&ili9341, buffer, WHITE_16, DARK_GREEN_16);
 	return count;
 }
 
