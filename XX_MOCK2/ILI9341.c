@@ -318,8 +318,9 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 					device->row += device->fontRowSize;
 				// printk("device->row = %d\n",device->row);
 				ILI9341_SetCursor(device, device->row,0);
-				ILI9341_FillBlankLine(device);
+				blankCnt = ILI9341_FillBlankLine(device);
 				ILI9341_ScrollDownToPrint(device, device->fontSize);
+				ILI9341_saveSpaceScroll(device, blankCnt, color, bgColor);
 				ILI9341_SetWindow(device, device->row, 0, 
 									device->row + device->fontRowSize, device->fontColSize -1);
 				device->col += device->fontColSize;
@@ -331,6 +332,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 				device->col = device->fontColSize;
 			}
 			device->totalRow += device->fontRowSize;
+			device->displayRow = device->totalRow - device->maxRow;
 		}
 		else														/* Keep printing*/
 		{
@@ -407,7 +409,7 @@ void ILI9341_recover(ILI9341Type *device)
 	printk("i= %d\n",i);
 	/* Phase 2, top half*/
 	save = (device->totalRow - device->maxRow - saveRow) / device->fontRowSize;
-	while (i <= (device->maxRow) / device->fontRowSize)
+	while (i < (device->maxRow) / device->fontRowSize)
 	{
 		ILI9341_print1Line(device, save + i, i * device->fontRowSize);
 		i++;
