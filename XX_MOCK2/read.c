@@ -5,7 +5,7 @@
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <time.h>
-char buffer[50];
+char buffer[10000];
 int main()
 {
     // file pointer variable to store the value returned by
@@ -32,12 +32,10 @@ int main()
         printf("/proc/ili9341 is opened Successfully.\n");
     }
 
-    while (read(fptr, &buffer[0], 50) != 0) {
+    while (read(fptr, &buffer[0], 10000) != 0) {
         
-        write(procfile, buffer, 50);
+        write(procfile, buffer, 10000);
     }
-    printf("/proc/ili9341 is not opened. The program will now exit.\n");
-    write(procfile, "123456\n", 6);
     close(fptr);
     close(procfile);
     return 0;
