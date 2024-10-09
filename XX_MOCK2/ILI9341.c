@@ -311,31 +311,24 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 	{
 		if (device->col + device->fontColSize > device->maxCol)		/* Move to next line and print*/
 		{
-			if (device->totalRow + device->fontRowSize >= device->maxRow)	/* Move to beginning of the screen */
+			if (device->totalRow + device->fontRowSize >= device->maxRow)
 			{
 				if (device->row + device->fontRowSize >= device->maxRow)
 					device->row = 0;
 				else
 					device->row += device->fontRowSize;
-				// printk("device->row = %d\n",device->row);
 				ILI9341_SetCursor(device, device->row,0);
 				blankCnt = ILI9341_FillBlankLine(device);
 				ILI9341_ScrollDownToPrint(device, device->fontSize);
-				if (blankCnt > 0)
-				{
-					ILI9341_saveSpaceScroll(device, blankCnt, color, bgColor);
-				}
-				printk("blankCnt = %d,device->col=%d,device->row=%d\n",blankCnt,device->col,device->row);
-				ILI9341_SetWindow(device, device->row, 0, 
-									device->row + device->fontRowSize, device->fontColSize -1);
 			}
-			else													/* Move to next line and print */
-			{
-				ILI9341_SetWindow(device, device->row + device->fontRowSize, 0, 
-										device->row + 2 * device->fontRowSize, device->fontColSize -1);
-			}
+			else
+				device->row += device->fontRowSize;
 			device->totalRow += device->fontRowSize;
 			device->displayRow = device->totalRow - device->maxRow;
+			ILI9341_SetWindow(device, device->row, 0, 
+										device->row + device->fontRowSize, device->fontColSize -1);
+			if (blankCnt > 0)
+				ILI9341_saveSpaceScroll(device, blankCnt, color, bgColor);
 			device->col = device->fontColSize;
 		}
 		else														/* Keep printing*/
