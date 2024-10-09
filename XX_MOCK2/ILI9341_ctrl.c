@@ -8,6 +8,8 @@
 #include "ILI9341.h"
 #include "ILI9341_GUI.h"
 #include <linux/sched/signal.h>
+#include <linux/kthread.h>
+#include <linux/sched.h>
 /*******************************************************************************/
 /* Meta Information */
 MODULE_LICENSE("GPL");
@@ -30,6 +32,13 @@ typedef struct PositionType {
 	int endRow;
 	int endCol;
 } PositionType;
+typedef enum ButtonType{
+	RELEASE, 
+	PRESS
+}ButtonType;
+/*******************************************************************************/
+#define UP_BUTTON						
+#define DOWN_BUTTON						
 /*******************************************************************************/
 #define MAJIC_NO						100
 #define IOCTL_SET_WINDOW				_IOW(MAJIC_NO, 3, PositionType)
@@ -97,6 +106,13 @@ struct kobj_attribute scroll_right_attr = __ATTR(scroll_right, 0660, NULL, scrol
 struct kobj_attribute nextline_attr = __ATTR(nextline, 0660, NULL, nextline_store); 
 struct kobj_attribute init_attr = __ATTR(init, 0660, init_show, NULL);
 /*******************************************************************************/
+/* Global variable for thread */
+static struct task_struct *kthread;
+ButtonType buttonPreState[5] = {RELEASE};
+ButtonType buttonCurState[5] = {RELEASE};
+int threadFunc(void *args);
+/*******************************************************************************/
+
 static struct of_device_id ili9341_id[] = {
 	{
 		.compatible = COMPATIBLE,
@@ -279,6 +295,15 @@ static ssize_t init_show(struct kobject *kobj, struct kobj_attribute *attr,char 
 	return sprintf(buf, "%d%d", ili9341.maxRow, ili9341.maxCol);
 }
 /*******************************************************************************/
+int threadFunc(void *args)
+{
+	while (!(kthread_should_stop()))
+	{
+
+	}
+	return 0;
+}
+/*******************************************************************************/
 /**
  * @brief Interrupt service routine is called, when interrupt is triggered
  */
@@ -437,6 +462,17 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 			return -1;
 		}
 	}
+	/* Create thread for reading button */
+	kthread = kthread_create(threadFunc, NULL, "kthread_1");
+	if (kthread)
+	{
+		wake_up_process(kthread);
+	}
+	else
+	{
+		printk("kthread is not created, terminate program\n");
+		return -1;
+	}
 	/* Obtain SPI device */
 	ili9341.ili9341 = pdev;
 	ili9341.col = 0;
@@ -483,6 +519,7 @@ static int ILI9341_Driver_remove(struct spi_device *pdev)
 	ILI9341_Deinit(&ili9341);
 	proc_remove(proc_file);
 	checkPinCtrl = devm_pinctrl_get_select(&pdev->dev, "spi0_pinmux_default");
+	kthread_stop(kthread);
 	if (IS_ERR(checkPinCtrl))
 	{
 		printk("ILI9341_Driver_remove: - Error! cannot reset spi0 pinmux to default\n");
