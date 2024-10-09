@@ -10,6 +10,7 @@
 #include <linux/sched/signal.h>
 #include <linux/kthread.h>
 #include <linux/sched.h>
+#include <linux/delay.h>
 /*******************************************************************************/
 /* Meta Information */
 MODULE_LICENSE("GPL");
@@ -37,8 +38,9 @@ typedef enum ButtonType{
 	PRESS
 }ButtonType;
 /*******************************************************************************/
-#define UP_BUTTON						
-#define DOWN_BUTTON						
+#define UP_BUTTON						3
+#define DOWN_BUTTON						2
+#define MAX_TIMEOUT						30		/* Scan every 50ms -> timeout = 1.5 */
 /*******************************************************************************/
 #define MAJIC_NO						100
 #define IOCTL_SET_WINDOW				_IOW(MAJIC_NO, 3, PositionType)
@@ -108,9 +110,10 @@ struct kobj_attribute init_attr = __ATTR(init, 0660, init_show, NULL);
 /*******************************************************************************/
 /* Global variable for thread */
 static struct task_struct *kthread;
-ButtonType buttonPreState[5] = {RELEASE};
-ButtonType buttonCurState[5] = {RELEASE};
+ButtonType buttonPreState[noLed] = {RELEASE};
+ButtonType buttonCurState[noLed] = {RELEASE};
 int threadFunc(void *args);
+int timeout[noLed] = {0};
 /*******************************************************************************/
 
 static struct of_device_id ili9341_id[] = {
@@ -297,9 +300,49 @@ static ssize_t init_show(struct kobject *kobj, struct kobj_attribute *attr,char 
 /*******************************************************************************/
 int threadFunc(void *args)
 {
+	int i = 0;
+	printk("This is threadFunc\n");
 	while (!(kthread_should_stop()))
 	{
-
+		for (i=0; i < noLed; i ++)
+		{
+			buttonCurState[i] = gpiod_get_value(descGPIO[i]);
+			if (buttonCurState[i] == LOW)
+			{
+				timeout[i] = 0;
+			}
+			else
+			{
+				timeout[i] ++;
+				if ((timeout[i] == 15) || (timeout[i] == 1))
+				{
+					if (i == UP_BUTTON)
+					{
+						ILI9341_ScrollUp(&ili9341);
+					}
+					else if (i == DOWN_BUTTON)
+					{
+						ILI9341_ScrollDown(&ili9341);
+					}
+				}
+				else if (timeout[i] >= MAX_TIMEOUT)
+				{
+					if (timeout[i] % 1 == 0)
+					{
+						if (i == UP_BUTTON)
+						{
+							ILI9341_ScrollUp(&ili9341);
+						}
+						else if (i == DOWN_BUTTON)
+						{
+							ILI9341_ScrollDown(&ili9341);
+						}
+					}
+				}
+			}
+			buttonPreState[i] = buttonCurState[i];
+		}
+		msleep(50); /* scan every 50ms */
 	}
 	return 0;
 }
@@ -440,31 +483,16 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 			printk("dt_probe - Error! retrieve GPIO desc \n");
 			gpiod_put(descGPIO[i]);
 		}
+		gpiod_direction_input(descGPIO[i]);
 	}
 	/* Change pinmux to input */
 	if (IS_ERR(devm_pinctrl_get_select(&pdev->dev, "default")))
 	{
 		printk("dt_probe - Error! cannot setup the pin mux to default\n");
 	}
-	/* Change GPIO to Interrupt */
-	for (i = 0; i < noLed; i++)
-	{
-		irq_number[i] = gpiod_to_irq(descGPIO[i]);
-		if (irq_number[i] < 0)
-		{
-			printk("dt_probe: request irq_number %d error\n", i);
-			return -1;
-		}
-		if(request_irq(irq_number[i], funcPtr[i], IRQF_TRIGGER_RISING, "my_gpio_irq", NULL) != 0)
-		{
-			printk("Error! Can not request interrupt nr.%d\n", irq_number[i]);
-			gpiod_put(descGPIO[i]);
-			return -1;
-		}
-	}
 	/* Create thread for reading button */
-	kthread = kthread_create(threadFunc, NULL, "kthread_1");
-	if (kthread)
+	kthread = kthread_create(threadFunc, NULL, "ili9341_Thread");
+	if (kthread != NULL)
 	{
 		wake_up_process(kthread);
 	}

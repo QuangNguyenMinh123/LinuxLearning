@@ -46,6 +46,7 @@
         "utility": "cpp",
         "vector": "cpp",
         "iostream": "cpp",
-        "fcntl.h": "c"
+        "fcntl.h": "c",
+        "sched.h": "c"
     }
 }

@@ -242,7 +242,7 @@ void ILI9341_printStringOverlay(ILI9341Type *device, char* ch, u16 charColor, u1
 	}
 }
 
-void ILI9341_saveSpaceScroll(ILI9341Type *device, int size, u16 color, u16 bgColor )
+void ILI9341_saveSpaceScroll(ILI9341Type *device, int size)
 {
 	int i;
 	int blankCnt = 0;
@@ -305,7 +305,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 		ILI9341_SetWindow(device, device->row, 0, 
 									device->row + device->fontRowSize, device->fontColSize -1);
 		if (blankCnt > 0)
-			ILI9341_saveSpaceScroll(device, blankCnt, color, bgColor);
+			ILI9341_saveSpaceScroll(device, blankCnt);
 		blankCnt = 0;
 	}
 	else
@@ -329,7 +329,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 			ILI9341_SetWindow(device, device->row, 0, 
 										device->row + device->fontRowSize, device->fontColSize -1);
 			if (blankCnt > 0)
-				ILI9341_saveSpaceScroll(device, blankCnt, color, bgColor);
+				ILI9341_saveSpaceScroll(device, blankCnt);
 			device->col = device->fontColSize;
 		}
 		else														/* Keep printing*/
@@ -1015,7 +1015,7 @@ void ILI9341_Init(ILI9341Type *device)
 	device->displayRow = 8;
 	Continue = true;
 	/* Set cursor to beginning of the screen */
-	ILI9341_FillColor(device,DARK_GREEN_16);
+	ILI9341_SetCursor(device,0,0);
 	/* Print something */
 	// ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
 }
