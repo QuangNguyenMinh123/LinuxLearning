@@ -483,11 +483,12 @@ void ILI9341_Nextline(ILI9341Type *device)
 void ILI9341_RotateMode(ILI9341Type *device, int mode)
 {
 	unsigned char buffer[2] = {
-		0x36
+		0x36,
 
 	};
 	device->col = ILI9341_DEF_COL;
 	device->row = ILI9341_DEF_ROW;
+	// memAccessControl = 1 << 3;
 	switch (mode)
 	{
 	case 0:				/* No rotattion */
@@ -495,9 +496,16 @@ void ILI9341_RotateMode(ILI9341Type *device, int mode)
 		device->row = ILI9341_DEF_ROW;
 		device->maxCol = ILI9341_DEF_COL;
 		device->maxRow = ILI9341_DEF_ROW;
+		memAccessControl |= MADCTL_ML | MADCTL_BGR;
+		buffer[1] = memAccessControl;
 		break;
 	case 1:				/* Rotate 90 */
-
+		device->col = ILI9341_DEF_ROW;
+		device->row = ILI9341_DEF_COL;
+		device->maxCol = ILI9341_DEF_ROW;
+		device->maxRow = ILI9341_DEF_COL;
+		memAccessControl |= MADCTL_MX |  MADCTL_MV | MADCTL_BGR ;
+		buffer[1] = memAccessControl;
 		break;
 	case 2:				/* Rotate 180 */
 
@@ -508,6 +516,7 @@ void ILI9341_RotateMode(ILI9341Type *device, int mode)
 	default:
 		break;
 	}
+	ILI9341_CmdMulBytes(device, buffer, 2);
 }
 /*******************************************************************************/
 /* Functions to scroll screen */
@@ -528,7 +537,6 @@ void ILI9341_ScrollUp(ILI9341Type *device)
 		0,
 		0
 	};
-	
 	unsigned char bufferStartScroll [3] = 
 	{
 		0x37,
@@ -541,15 +549,12 @@ void ILI9341_ScrollUp(ILI9341Type *device)
 		saveRow = device->row;
 		saveCol = device->col;
 		saveScroll = scroll_val;
-
 	}
 	scroll_val -= device->fontRowSize;
 	if (scroll_val <= 0)
 		scroll_val = device->maxRow;
 	bufferStartScroll[1] = scroll_val >> 8,
 	bufferStartScroll[2] = scroll_val & 0x00ff;
-	if ((memAccessControl & (1<<4)) == (1<<4))
-		memAccessControl ^= (1<<4);
 	ILI9341_CmdMulBytes(device, bufferSetCrollUp, 2);
 	ILI9341_CmdMulBytes(device, bufferReady, 7);
 	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
