@@ -246,22 +246,22 @@ void ILI9341_saveSpaceScroll(ILI9341Type *device, int size, u16 color, u16 bgCol
 	int i;
 	int blankCnt = 0;
 	u8 buffer[16] = {
-		RED_16 >> 8,
-		RED_16 & 0xff,
-		RED_16 >> 8, 
-		RED_16 & 0xff,
-		RED_16 >> 8, 
-		RED_16 & 0xff,
-		RED_16 >> 8, 
-		RED_16 & 0xff,
-		RED_16 >> 8, 
-		RED_16 & 0xff,
-		RED_16 >> 8, 
-		RED_16 & 0xff,
-		RED_16 >> 8, 
-		RED_16 & 0xff,
-		RED_16 >> 8, 
-		RED_16 & 0xff
+		BLACK_16 >> 8,
+		BLACK_16 & 0xff,
+		BLACK_16 >> 8, 
+		BLACK_16 & 0xff,
+		BLACK_16 >> 8, 
+		BLACK_16 & 0xff,
+		BLACK_16 >> 8, 
+		BLACK_16 & 0xff,
+		BLACK_16 >> 8, 
+		BLACK_16 & 0xff,
+		BLACK_16 >> 8, 
+		BLACK_16 & 0xff,
+		BLACK_16 >> 8, 
+		BLACK_16 & 0xff,
+		BLACK_16 >> 8, 
+		BLACK_16 & 0xff
 	};
 
 	while (blankCnt < size)
@@ -364,7 +364,6 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 		ILI9341_DisplayMultiPixel(device, buffer, cnt);
 		ILI9341_DisplayMultiPixel(device, &buffer[cnt], cnt);
 	}
-	printk("char = %c, device->row = %d, device->col = %d, totalRow = %d\n",ch,device->row,device->col,device->totalRow);
 }
 
 void ILI9341_recover(ILI9341Type *device)
@@ -403,7 +402,6 @@ void ILI9341_recover(ILI9341Type *device)
 		ILI9341_print1Line(device, save + i, i * device->fontRowSize);
 		i++;
 	}
-	printk("i= %d\n",i);
 	/* Phase 2, top half*/
 	save = (device->totalRow - device->maxRow - saveRow) / device->fontRowSize;
 	while (i < (device->maxRow) / device->fontRowSize)
@@ -411,16 +409,12 @@ void ILI9341_recover(ILI9341Type *device)
 		ILI9341_print1Line(device, save + i, i * device->fontRowSize);
 		i++;
 	}
-	printk("i= %d\n",i);
 	/* recover */
 	Continue = true;
 	device->row = saveRow;
 	device->col = saveCol;
 	scroll_val = saveScroll;
 	device->displayRow = device->totalRow - device->maxRow;
-	printk("saveRow = %d,saveCol = %d,saveScroll = %d,device->displayRow = %d,totalRow=%d\n",
-				saveRow,saveCol,saveScroll, device->displayRow,device->totalRow);
-
 }
 
 void ILI9341_printStringScroll(ILI9341Type *device, char* ch, u16 charColor, u16 bgColor)
@@ -851,8 +845,8 @@ int ILI9341_FillBlankLine(ILI9341Type *device)
 	int i = 0;
 	for (i=0;i<64;i++)
 	{
-		buff[i*2] = RED_16;
-		buff[i*2 + 1] = RED_16;
+		buff[i*2] = BLACK_16;
+		buff[i*2 + 1] = BLACK_16;
 	}
 	i = 0;
 	ILI9341_SetWindow(device, device->row, device->col, 
@@ -1016,7 +1010,7 @@ void ILI9341_Init(ILI9341Type *device)
 	/* Set cursor to beginning of the screen */
 	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
 	/* Print something */
-	ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
+	// ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
 }
 
 void ILI9341_Deinit(ILI9341Type *device)
