@@ -41,6 +41,9 @@ typedef enum ButtonType{
 /*******************************************************************************/
 #define UP_BUTTON						3
 #define DOWN_BUTTON						2
+#define LEFT_BUTTON						1
+#define RIGHT_BUTTON					0
+#define SELECT_BUTTON					4
 #define MAX_TIMEOUT						25		/* Scan every 50ms -> timeout = 1.5 */
 /*******************************************************************************/
 #define MAJIC_NO						100
@@ -260,36 +263,7 @@ static ssize_t scroll__right_store(struct kobject *kobj, struct kobj_attribute *
 
 static ssize_t nextline_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	int startRow;
-	u8 buff[320 * 2];
-	int row = 0;
-	int printed = 0;
-	int toprint;
-	sscanf(buf, "%i", &startRow);
-	ILI9341_SetWindow(&ili9341, 0, 0, ili9341.maxRow, ili9341.maxCol);
-	ILI9341_WriteReg(&ili9341, 0x2C);
-	gpiod_set_value(ili9341.dcPin, HIGH);
-	
-	while (row < ili9341.fontRowSize)
-	{
-		ILI9341_readRowBuffer(&ili9341, buff, (startRow * ili9341.fontRowSize + row) * ili9341.maxCol * 2, SEEK_SET);
-		toprint = ili9341.maxCol * 2;
-		printed = 0;
-		while (printed < toprint)
-		{
-			if (printed + SPI_MAX_TRANSFER_BYTE < toprint)
-			{
-				ILI9341_DisplayMultiPixel(&ili9341, &buff[printed], SPI_MAX_TRANSFER_BYTE);
-				printed += SPI_MAX_TRANSFER_BYTE;
-			}
-			else
-			{
-				ILI9341_DisplayMultiPixel(&ili9341, &buff[printed], toprint - printed);
-				break;
-			}
-		}
-		row++;
-	}
+	ILI9341_print1Line(&ili9341, 80, 0);
 	return count;
 }
 

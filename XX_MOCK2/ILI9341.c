@@ -204,6 +204,8 @@ void ILI9341_print1Line(ILI9341Type *device, int RowToPrint, int Row)
 	int row = 0;
 	int printed = 0;
 	int toprint;
+	if (Row >= 320)
+		Row = 0;
 	ILI9341_SetWindow(device, Row, 0, device->maxRow, device->maxCol);
 	ILI9341_WriteReg(device, 0x2C);
 	gpiod_set_value(device->dcPin, HIGH);
@@ -348,27 +350,27 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 	{
 		if (device->totalRow + device->fontRowSize >= device->maxRow)
 		{
-			
-			ILI9341_SetCursor(device, device->row, device->col);
-			blankCnt = ILI9341_FillBlankLine(device);
-			ILI9341_ScrollDownToPrint(device, device->fontSize);
 			if (device->row + device->fontRowSize >= device->maxRow)
 				device->row = 0;
 			else
 				device->row += device->fontRowSize;
+			blankCnt = ILI9341_FillBlankLine(device);
+			ILI9341_ScrollDownToPrint(device, device->fontSize);
 		}
 		else
 		{
-			ILI9341_SetCursor(device, device->row, device->col);
+			
 			blankCnt = ILI9341_FillBlankLine(device);
 			device->row += device->fontRowSize;
 		}
+		device->col = 0;
 		device->totalRow += device->fontRowSize;
 		device->displayRow = device->totalRow - device->maxRow;
 		ILI9341_SetWindow(device, device->row, 0, 
 									device->row + device->fontRowSize, device->fontColSize -1);
 		if (blankCnt > 0)
 			ILI9341_saveSpaceScroll(device, blankCnt);
+		blankCnt = 0;
 	}
 	else
 	{
@@ -385,10 +387,7 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 				ILI9341_ScrollDownToPrint(device, device->fontSize);
 			}
 			else
-			{
 				device->row += device->fontRowSize;
-				blankCnt = ILI9341_FillBlankLine(device);
-			}
 			device->totalRow += device->fontRowSize;
 			device->displayRow = device->totalRow - device->maxRow;
 			ILI9341_SetWindow(device, device->row, 0, 
@@ -630,7 +629,6 @@ void ILI9341_ScrollUp(ILI9341Type *device)
 
 	device->displayRow -= device->fontRowSize;
 	device->row += device->fontRowSize;
-
 }
 
 void ILI9341_ScrollDown(ILI9341Type *device)
@@ -1096,7 +1094,7 @@ void ILI9341_Init(ILI9341Type *device)
 	device->fontRowSize = fontInfo[0].RowSize;
 	device->fontColSize = fontInfo[0].ColSize;
 	device->totalRow = 0;
-	device->displayRow = 8;
+	device->displayRow = 0;
 	Continue = true;
 	/* Set cursor to beginning of the screen */
 	ILI9341_SetCursor(device,0,0);
