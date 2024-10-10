@@ -263,7 +263,7 @@ static ssize_t scroll__right_store(struct kobject *kobj, struct kobj_attribute *
 
 static ssize_t nextline_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
 {
-	ILI9341_print1Line(&ili9341, 80, 0);
+	ILI9341_print1Line(&ili9341, 1, 0);
 	return count;
 }
 
