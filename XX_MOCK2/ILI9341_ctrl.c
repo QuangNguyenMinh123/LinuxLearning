@@ -39,8 +39,8 @@ typedef enum ButtonType{
 	PRESS
 }ButtonType;
 /*******************************************************************************/
-#define UP_BUTTON						3
-#define DOWN_BUTTON						2
+#define UP_BUTTON						1
+#define DOWN_BUTTON						0
 #define LEFT_BUTTON						1
 #define RIGHT_BUTTON					0
 #define SELECT_BUTTON					4
@@ -288,20 +288,17 @@ int threadFunc(void *args)
 			else
 			{
 				timeout[i] ++;
-				if ((timeout[i] == 15) || (timeout[i] == 1))
+				if (Screen == SCREEN_READ)		/* If in reading mode */
 				{
-					if (i == UP_BUTTON)
+					if (timeout[i] == 1)
 					{
-						ILI9341_ScrollUp(&ili9341);
+						if (i == SELECT_BUTTON)
+						{
+							Screen = SCREEN_MENU;
+							ILI9341_Menu(&ili9341);
+						}
 					}
-					else if (i == DOWN_BUTTON)
-					{
-						ILI9341_ScrollDown(&ili9341);
-					}
-				}
-				else if (timeout[i] >= MAX_TIMEOUT)
-				{
-					if (timeout[i] % 1 == 0)
+					if ((timeout[i] == 15) || (timeout[i] == 1))
 					{
 						if (i == UP_BUTTON)
 						{
@@ -312,7 +309,41 @@ int threadFunc(void *args)
 							ILI9341_ScrollDown(&ili9341);
 						}
 					}
+					else if (timeout[i] >= MAX_TIMEOUT)
+					{
+						if (timeout[i] % 1 == 0)
+						{
+							if (i == UP_BUTTON)
+							{
+								ILI9341_ScrollUp(&ili9341);
+							}
+							else if (i == DOWN_BUTTON)
+							{
+								ILI9341_ScrollDown(&ili9341);
+							}
+						}
+					}
 				}
+				else				/* If in menu */
+				{
+					if (timeout[i] == 1)
+					{
+						if (i == UP_BUTTON)
+						{
+							ILI9341_DecreateFileIndex(&ili9341);
+						}
+						else if (i == DOWN_BUTTON)
+						{
+							ILI9341_IncreateFileIndex(&ili9341);
+						}
+						if (i == SELECT_BUTTON)
+						{
+							Screen = SCREEN_READ;
+							ILI9341_OpenFile(&ili9341);
+						}
+					}
+				}
+				
 			}
 			buttonPreState[i] = buttonCurState[i];
 		}
@@ -505,7 +536,7 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 		goto rm_kboj;
 	}
 	/* Initialize device */
-	ILI9341_Init(&ili9341);
+	ILI9341_Menu(&ili9341);
 	return 0;
 rm_kboj:
 	kobject_put(kobj);

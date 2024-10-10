@@ -14,12 +14,17 @@ struct callback_context {
     readdir_t filler;
     void* context;
 };
+int FileCnt = 0;
+int chooseCnt = 0;
+char FileName[100];
+ScreenType Screen = SCREEN_MENU;
 /*******************************************************************************/
 int saveRow;
 int saveCol;
 int saveScroll;
 bool Continue = true;			/* Set to false when scrolling, set to true when typing */
 u16 backGround = DARK_GREEN_16;
+ILI9341Type *devicePtr;
 /*******************************************************************************/
 u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
 u8 ILI9341_Font1208_Buffer[8*12*2] = {0};
@@ -27,6 +32,18 @@ int scroll_val = 0;
 u8 memAccessControl = 0;
 /*******************************************************************************/
 /* Call back for scanning folder */
+void pasterStr(const char *From, char *To, int size)
+{
+	int i = 0;
+	while (i < size)
+	{
+		*To = *From;
+		To++; From++;
+		i++;
+	}
+	*To = 0;
+}
+
 bool CompareString(const char *str1, const char *str2)
 {
 	while (*str1 != 0 && *str2 != 0)
@@ -41,7 +58,7 @@ bool CompareString(const char *str1, const char *str2)
 
 bool readable(const char *name, int namelen)
 {
-	char *ptr = name;
+	const char *ptr = name;
 	int i = 0;
 	while (*ptr != '.')
 	{
@@ -61,7 +78,12 @@ int filldir_callback(void* data, const char *name, int namlen,
     // if (d_type == DT_DIR)  /* do sth with your subdirs */
 	// 	printk("file: %.*s is Dir", namlen, name);
 	if (readable(name, namlen) && d_type == DT_REG)
-		printk("Readable File: %.*s\n", namlen, name);
+	{
+		pasterStr(name, FileName, namlen);
+		ILI9341_SetWindow(devicePtr, FileCnt * devicePtr->fontRowSize, devicePtr->fontColSize, devicePtr->maxRow, devicePtr->maxCol);
+		ILI9341_printStringOverlay(devicePtr, FileName, WHITE_16, backGround);
+		FileCnt ++;
+	}
     return 0;
 }
 
@@ -299,6 +321,35 @@ void ILI9341_printStringOverlay(ILI9341Type *device, char* ch, u16 charColor, u1
 	{
 		ILI9341_printCharOverlay(device, *ch, charColor, bgColor);
 		ch++;
+	}
+}
+
+void ILI9341_printIntOverlay(ILI9341Type *device, int val, u16 charColor, u16 bgColor)
+{
+	char buff[100] = {0};
+	char *ptr = buff;
+	int i = 0;
+	int len, saveVal;
+	saveVal = val;
+	len = 0;
+	if (val == 0)
+		ILI9341_printCharOverlay(device, '0', charColor, bgColor);
+	while (saveVal > 0)
+	{
+		saveVal /= 10;
+		len ++;
+	}
+	while(len >= 0 )
+	{
+		buff[len -1] = val % 10 + '0';
+		len --;
+		val = val >> 8;
+	}
+	buff[len] = 0;
+	while (*ptr != 0)
+	{
+		ILI9341_printCharOverlay(device, *ptr, charColor, bgColor);
+		ptr++;
 	}
 }
 
@@ -874,14 +925,21 @@ void ILI9341_SetFrameRate(ILI9341Type *device)
 
 void ILI9341_FillColor(ILI9341Type *device, u16 color)
 {
-	int i = 0;
+	u8 buff[64*2];
+	int i;
+	for (i=0;i<64;i++)
+	{
+		buff[i*2] = backGround >> 8;
+		buff[i*2 + 1] = backGround & 0xff;
+	}
+	i = 0;
 	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->maxCol);
 	ILI9341_WriteReg(device, 0x2C);
 	gpiod_set_value(device->dcPin, HIGH);
-	while (i < ILI9341_DEF_COL * ILI9341_DEF_ROW)
+	while (i < device->maxRow * device->maxCol * 2)
 	{
-		ILI9341_DisplayPixel(device, color);
-		i++;
+		ILI9341_DisplayMultiPixel(device, buff,64*2);
+		i += 64 *2;
 	}
 	ILI9341_SetCursor(device,0,0);
 }
@@ -1079,14 +1137,49 @@ int ILI9341_readdir(const char* path, readdir_t filler, void* context)
 
 void ILI9341_Menu(ILI9341Type *device)
 {
-	
 	ILI9341_Init(device);
-	ILI9341_FillColor()
+	ILI9341_FillColor(device, backGround);
+	ILI9341_readdir("/home/debian/", filldir_callback, (void*)123);
+
+	ILI9341_SetWindow(device, device->row + 5 * device->fontRowSize, device->fontColSize, device->maxRow, device->maxCol);
+	ILI9341_printStringOverlay(device, "THIS IS MENU", WHITE_16, backGround);
+
+	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->fontColSize);
+	if (FileCnt > 0)
+		ILI9341_printCharOverlay(device, '>', WHITE_16, backGround);
 }
 
-void ILI9341_OpenFile(ILI9341Type *device, char* directory)
+void ILI9341_IncreateFileIndex(ILI9341Type *device)		/* Function is called when press down button */
 {
+	if (FileCnt == 0)
+		return;
+	chooseCnt ++;
+	if (chooseCnt > FileCnt - 1)
+		chooseCnt = FileCnt - 1;
+	ILI9341_SetWindow(device, (chooseCnt - 1) * device->fontRowSize, 0, device->maxRow, device->fontColSize);
+	ILI9341_printCharOverlay(device, ' ', WHITE_16, backGround);
+	ILI9341_SetWindow(device, (chooseCnt) * device->fontRowSize, 0, device->maxRow, device->fontColSize);
+	ILI9341_printCharOverlay(device, '>', WHITE_16, backGround);
+}
 
+void ILI9341_DecreateFileIndex(ILI9341Type *device)		/* Function is called when press up button */
+{
+	if (FileCnt == 0)
+		return;
+	chooseCnt --;
+	if (chooseCnt < 0)
+		chooseCnt = 0;
+	ILI9341_SetWindow(device, (chooseCnt + 1) * device->fontRowSize, 0, device->maxRow, device->fontColSize);
+	ILI9341_printCharOverlay(device, ' ', WHITE_16, backGround);
+	ILI9341_SetWindow(device, (chooseCnt) * device->fontRowSize, 0, device->maxRow, device->fontColSize);
+	ILI9341_printCharOverlay(device, '>', WHITE_16, backGround);
+}
+
+void ILI9341_OpenFile(ILI9341Type *device)
+{
+	printk("chooseCnt = %d", chooseCnt);
+	ILI9341_SetWindow(device, 15 * device->fontRowSize, device->fontColSize, device->maxRow, device->maxCol);
+	ILI9341_printIntOverlay(device, chooseCnt, WHITE_16, backGround);
 }
 
 void ILI9341_Init(ILI9341Type *device)
@@ -1121,11 +1214,12 @@ void ILI9341_Init(ILI9341Type *device)
 	backGround = DARK_GREEN_16;
 	scroll_val = 0;
 	memAccessControl = 0;
+	FileCnt = 0;
+	chooseCnt = 0;
+	devicePtr = device;
 	/* Set cursor to beginning of the screen */
 	ILI9341_SetCursor(device,0,0);
-	/* Print something */
-	ILI9341_Menu(device);
-	ILI9341_readdir("/home/debian/", filldir_callback, (void*)123);
+	
 }
 
 void ILI9341_Deinit(ILI9341Type *device)
