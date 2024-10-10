@@ -12,12 +12,19 @@
 	};
 	spi0_pinmux_default: spi0_pinmux_default{ 	/* Convert SPI0 to GPIO*/
 		pinctrl-single,pins = <
+			/* pinmux for spi */
 			AM33XX_IOPAD(0x095c, PIN_OUTPUT_PULLUP | INPUT_EN | MUX_MODE7)
 			AM33XX_IOPAD(0x0958, PIN_OUTPUT_PULLUP | INPUT_EN | MUX_MODE7)
 			AM33XX_IOPAD(0x0954, PIN_OUTPUT_PULLUP | INPUT_EN | MUX_MODE7)
 			AM33XX_IOPAD(0x0950, PIN_OUTPUT_PULLUP | INPUT_EN | MUX_MODE7)
 			AM33XX_IOPAD(0x089c, PIN_OUTPUT_PULLUP | INPUT_EN | MUX_MODE7)
 			AM33XX_IOPAD(0x0834, PIN_OUTPUT_PULLDOWN | INPUT_EN | MUX_MODE7)
+			/* pinmux for gpio */
+			0x78  (1 << 3 | 1 << 5 | 7)         /* P9_12 GPIO_60 */
+			0x48  (1 << 3 | 1 << 5 | 7)         /* P9_14 GPIO_50 */
+			0x184 (1 << 3 | 1 << 5 | 7)         /* P9_24 GPIO_15 */
+			0x180 (1 << 3 | 1 << 5 | 7)         /* P9_26 GPIO_14 */
+			0x198 (1 << 3 | 1 << 5 | 7)         /* P9_30 GPIO_112 */
 		>;
 	};
 };
@@ -43,10 +50,20 @@
 		pinctrl-names = "default","spi0_pinmux_default";
 		pinctrl-0 = <&spi0_pinmux>;
 		pinctrl-1 = <&spi0_pinmux_default>;
-        spi-max-frequency = <12000000>;
+        spi-max-frequency = <30000000>;
 		reset-gpio = <&gpio2 5 0>;
 		commandData-gpio = <&gpio1 13 0>;
 		reg = <0>;
 		status = "okay";
+		input-gpios =   <&gpio0 14 0>,      /* P9_26 GPIO_14 */
+						<&gpio0 15 0>,      /* P9_24 GPIO_15 */
+						<&gpio1 18 0>,      /* P9_14 GPIO_50 */
+						<&gpio1 28 0>,      /* P9_12 GPIO_60 */
+						<&gpio3 16 0>;      /* P9_30 GPIO_112 */
+		interrupts-extended =   <&gpio0 14 0x1>,
+								<&gpio0 15 0x1>,
+								<&gpio1 18 0x1>,
+								<&gpio1 28 0x1>,
+								<&gpio3 16 0x1>;
 	};
 };

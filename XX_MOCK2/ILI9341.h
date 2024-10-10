@@ -36,11 +36,15 @@ typedef struct ILI9341Type{
 	int fontRowSize;
 	/* Display pointer which points to row is being display */
 	int displayRow;
-	int currentRow;
 	int totalRow;
 	/* Variable for saving data */
 	struct file *fileBuffer;
 } ILI9341Type;
+
+typedef enum ScreenType{
+	SCREEN_MENU,
+	SCREEN_READ
+}ScreenType;
 
 typedef struct ILI9341VerticalScrollType{
 	int Topfix;
@@ -48,6 +52,7 @@ typedef struct ILI9341VerticalScrollType{
 } ILI9341VerticalScrollType;
 /*******************************************************************************/
 extern struct file *fileBuffer;
+extern ScreenType Screen;
 /*******************************************************************************/
 
 /*******************************************************************************/
@@ -112,7 +117,11 @@ void ILI9341_print1Line(ILI9341Type *device, int RowToPrint, int Row);
 
 void ILI9341_Menu(ILI9341Type *device);
 
-void ILI9341_OpenFile(ILI9341Type *device, char* directory);
+void ILI9341_OpenFile(ILI9341Type *device);
+
+void ILI9341_IncreateFileIndex(ILI9341Type *device);
+
+void ILI9341_DecreateFileIndex(ILI9341Type *device);
 /*******************************************************************************/
 
 /*******************************************************************************/

@@ -328,6 +328,14 @@ int threadFunc(void *args)
 				{
 					if (timeout[i] == 1)
 					{
+						if (i == SELECT_BUTTON)
+						{
+							Screen = SCREEN_READ;
+							ILI9341_OpenFile(&ili9341);
+						}
+					}
+					if ((timeout[i] == 15) || (timeout[i] == 1))
+					{
 						if (i == UP_BUTTON)
 						{
 							ILI9341_DecreateFileIndex(&ili9341);
@@ -336,10 +344,19 @@ int threadFunc(void *args)
 						{
 							ILI9341_IncreateFileIndex(&ili9341);
 						}
-						if (i == SELECT_BUTTON)
+					}
+					else if (timeout[i] >= MAX_TIMEOUT)
+					{
+						if (timeout[i] % 2 == 0)
 						{
-							Screen = SCREEN_READ;
-							ILI9341_OpenFile(&ili9341);
+							if (i == UP_BUTTON)
+							{
+								ILI9341_DecreateFileIndex(&ili9341);
+							}
+							else if (i == DOWN_BUTTON)
+							{
+								ILI9341_IncreateFileIndex(&ili9341);
+							}
 						}
 					}
 				}
@@ -447,6 +464,9 @@ static ssize_t ILI9341_Driver_ProcWrite(struct file *File, const char *user_buff
 	int cnt;
 	memset(buffer, 0 , sizeof(buffer));
 	cnt = copy_from_user(buffer, user_buffer, count - 1);
+	if (Screen == SCREEN_MENU)
+		ILI9341_Init(&ili9341);
+	Screen = SCREEN_READ;
 	ILI9341_printStringScroll(&ili9341, buffer, WHITE_16, DARK_GREEN_16);
 	return count;
 }
@@ -458,11 +478,11 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 	/* Check device properties */
 	if (!device_property_present(dev, "commandData-gpio"))
 	{
-		printk("dt_probe - Error! Device property 'commandData-gpio' not found\n");
+		printk("ILI9341_Driver_probe - Error! Device property 'commandData-gpio' not found\n");
 	}
 	if (!device_property_present(dev, "reset-gpio"))
 	{
-		printk("dt_probe - Error! Device property 'reset-gpio' not found\n");
+		printk("ILI9341_Driver_probe - Error! Device property 'reset-gpio' not found\n");
 	}
 	/* Obtain GPIO */
 	ili9341.resetPin = gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
@@ -485,7 +505,7 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 		descGPIO[i] = gpiod_get_index(&pdev->dev, "input", i, GPIOD_IN);
 		if (IS_ERR(descGPIO[i]))
 		{
-			printk("dt_probe - Error! retrieve GPIO desc \n");
+			printk("ILI9341_Driver_probe - Error! retrieve GPIO desc \n");
 			gpiod_put(descGPIO[i]);
 		}
 		gpiod_direction_input(descGPIO[i]);
@@ -493,7 +513,7 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 	/* Change pinmux to input */
 	if (IS_ERR(devm_pinctrl_get_select(&pdev->dev, "default")))
 	{
-		printk("dt_probe - Error! cannot setup the pin mux to default\n");
+		printk("ILI9341_Driver_probe - Error! cannot setup the pin mux to default\n");
 	}
 	/* Create thread for reading button */
 	kthread = kthread_create(threadFunc, NULL, "ili9341_Thread");
@@ -513,7 +533,6 @@ static int ILI9341_Driver_probe(struct spi_device *pdev)
 	ili9341.maxCol = MAX_COL;
 	ili9341.maxRow = MAX_ROW;
 	ili9341.displayRow = 0;
-	ili9341.currentRow = 0;
 	ili9341.totalRow = 0;
 	/* Create proc */
 	proc_file = proc_create("ili9341", 0666, NULL, &fops);

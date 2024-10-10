@@ -7,6 +7,8 @@
 #include <linux/fs.h>
 #include <linux/fcntl.h>
 /*******************************************************************************/
+#define BUFFER_SIZE				1000
+/*******************************************************************************/
 /* Struct for scanning folder */
 typedef int (*readdir_t)(void *, const char *, int, loff_t, u64, unsigned);
 struct callback_context {
@@ -15,6 +17,7 @@ struct callback_context {
     void* context;
 };
 int FileCnt = 0;
+int FileNameLen = 0;
 int chooseCnt = 0;
 char FileName[100];
 ScreenType Screen = SCREEN_MENU;
@@ -28,10 +31,23 @@ ILI9341Type *devicePtr;
 /*******************************************************************************/
 u8 ILI9341_RamBuffer[ILI9341_DEF_ROW * ILI9341_DEF_COL * 2] = { 0 };
 u8 ILI9341_Font1208_Buffer[8*12*2] = {0};
+u8 generalBuffer[BUFFER_SIZE];
 int scroll_val = 0;
 u8 memAccessControl = 0;
 /*******************************************************************************/
 /* Call back for scanning folder */
+void clearProcContent(ILI9341Type *device)
+{
+	int WriteCnt = 0;
+	int saveSize = device->fileBuffer->f_pos;
+	memset(generalBuffer, 0 , BUFFER_SIZE);
+	device->fileBuffer->f_pos = 0;
+	while (WriteCnt <= saveSize)
+	{
+		kernel_write(device->fileBuffer, generalBuffer, BUFFER_SIZE, &device->fileBuffer->f_pos);
+		WriteCnt += BUFFER_SIZE;
+	}
+}
 void pasterStr(const char *From, char *To, int size)
 {
 	int i = 0;
@@ -77,13 +93,29 @@ int filldir_callback(void* data, const char *name, int namlen,
     // printk(KERN_NOTICE "file: %.*s type: %d ino=%d\n", namlen, name, d_type,ino); /* Print data of file */
     // if (d_type == DT_DIR)  /* do sth with your subdirs */
 	// 	printk("file: %.*s is Dir", namlen, name);
+	
 	if (readable(name, namlen) && d_type == DT_REG)
 	{
-		pasterStr(name, FileName, namlen);
-		ILI9341_SetWindow(devicePtr, FileCnt * devicePtr->fontRowSize, devicePtr->fontColSize, devicePtr->maxRow, devicePtr->maxCol);
-		ILI9341_printStringOverlay(devicePtr, FileName, WHITE_16, backGround);
+		
+		if (Screen == SCREEN_MENU)
+		{
+			pasterStr(name, FileName, namlen);
+			ILI9341_SetWindow(devicePtr, FileCnt * devicePtr->fontRowSize, devicePtr->fontColSize, devicePtr->maxRow, devicePtr->maxCol);
+			ILI9341_printStringOverlay(devicePtr, FileName, WHITE_16, backGround);
+		}
+		else	/* Screen = SCREEN_READ */
+		{
+			if (FileCnt == chooseCnt)
+			{
+				FileNameLen = namlen;
+				pasterStr(name, FileName, namlen);
+			}
+				
+		}
 		FileCnt ++;
 	}
+	
+	
     return 0;
 }
 
@@ -328,7 +360,6 @@ void ILI9341_printIntOverlay(ILI9341Type *device, int val, u16 charColor, u16 bg
 {
 	char buff[100] = {0};
 	char *ptr = buff;
-	int i = 0;
 	int len, saveVal;
 	saveVal = val;
 	len = 0;
@@ -1137,11 +1168,12 @@ int ILI9341_readdir(const char* path, readdir_t filler, void* context)
 
 void ILI9341_Menu(ILI9341Type *device)
 {
+	Screen = SCREEN_MENU;
 	ILI9341_Init(device);
 	ILI9341_FillColor(device, backGround);
 	ILI9341_readdir("/home/debian/", filldir_callback, (void*)123);
 
-	ILI9341_SetWindow(device, device->row + 5 * device->fontRowSize, device->fontColSize, device->maxRow, device->maxCol);
+	ILI9341_SetWindow(device, 20 * device->fontRowSize, device->fontColSize, device->maxRow, device->maxCol);
 	ILI9341_printStringOverlay(device, "THIS IS MENU", WHITE_16, backGround);
 
 	ILI9341_SetWindow(device, 0, 0, device->maxRow, device->fontColSize);
@@ -1177,13 +1209,75 @@ void ILI9341_DecreateFileIndex(ILI9341Type *device)		/* Function is called when 
 
 void ILI9341_OpenFile(ILI9341Type *device)
 {
-	printk("chooseCnt = %d", chooseCnt);
-	ILI9341_SetWindow(device, 15 * device->fontRowSize, device->fontColSize, device->maxRow, device->maxCol);
-	ILI9341_printIntOverlay(device, chooseCnt, WHITE_16, backGround);
+	struct file *fileToOpen;
+	char FileDir[100] = {0};
+	int cntDown = 5;
+	/* Obtain file name */
+	FileCnt = 0;
+	ILI9341_readdir("/home/debian/", filldir_callback, (void*)123);
+	/* Create Directory */
+	pasterStr("/home/debian/", FileDir, sizeof("/home/debian/"));
+	pasterStr(FileName, &FileDir[sizeof("/home/debian/") - 1], FileNameLen);
+	/* Print file idx */
+	// ILI9341_SetWindow(device, 15 * device->fontRowSize, device->fontColSize, device->maxRow, device->maxCol);
+	// ILI9341_printIntOverlay(device, chooseCnt, WHITE_16, backGround);
+	/* Open file */
+	fileToOpen = filp_open(FileDir, O_RDWR, 0666);
+	if (!fileToOpen)
+	{
+		ILI9341_SetWindow(device, 22 * device->fontRowSize, device->fontColSize, device->maxRow, device->maxCol);
+		ILI9341_printStringOverlay(device, "CANNOT OPEN FILE", WHITE_16, backGround);
+		return;
+	}
+	ILI9341_SetWindow(device, 22 * device->fontRowSize, device->fontColSize, device->maxRow, device->maxCol);
+	ILI9341_printStringOverlay(device, "FILE: ", WHITE_16, backGround);
+	ILI9341_printStringOverlay(device, FileDir, WHITE_16, backGround);
+	/* count down */
+	ILI9341_SetWindow(device, 24 * device->fontRowSize, device->fontColSize, device->maxRow, device->maxCol);
+	ILI9341_printStringOverlay(device, "Open in: ", WHITE_16, backGround);
+	while (cntDown > 0)
+	{
+		ILI9341_SetWindow(device, 24 * device->fontRowSize, 10 * device->fontColSize, device->maxRow, device->maxCol);
+		ILI9341_printIntOverlay(device, cntDown, WHITE_16, backGround);
+		mdelay(1000);
+		cntDown -- ;
+	}
+	ILI9341_Init(device);
+	while (kernel_read(fileToOpen, generalBuffer, BUFFER_SIZE, &fileToOpen->f_pos) > 0)
+	{
+		ILI9341_printStringScroll(device, generalBuffer, WHITE_16, DARK_GREEN_16);
+	}
+	filp_close(fileToOpen, NULL);
 }
 
 void ILI9341_Init(ILI9341Type *device)
 {
+	unsigned char bufferSetCrollDown [2] =
+	{
+		0x36,
+		(1<<3) | (0<<4)
+	};
+	unsigned char bufferReady [7] = 
+	{
+		0x33,
+		0,
+		0,
+		(device->maxRow) >> 8,
+		(device->maxRow) & 0x00ff, 
+		0,
+		0
+	};
+	unsigned char bufferStartScroll [3] = 
+	{
+		0x37,
+		0,
+		0
+	};
+	ILI9341_CmdMulBytes(device, bufferSetCrollDown, 2);
+	ILI9341_CmdMulBytes(device, bufferReady, 7);
+	ILI9341_CmdMulBytes(device, bufferStartScroll, 3);
+	clearProcContent(device);
+	/* Reset */
 	ILI9341_Reset(device);
 	/* Power setting */
 	ILI9341_PowerInit(device);
@@ -1210,16 +1304,14 @@ void ILI9341_Init(ILI9341Type *device)
 	saveRow = 0;
 	saveCol = 0;
 	saveScroll = 0;
-	Continue = true;			/* Set to false when scrolling, set to true when typing */
 	backGround = DARK_GREEN_16;
 	scroll_val = 0;
-	memAccessControl = 0;
 	FileCnt = 0;
 	chooseCnt = 0;
 	devicePtr = device;
+	FileNameLen = 0;
 	/* Set cursor to beginning of the screen */
 	ILI9341_SetCursor(device,0,0);
-	
 }
 
 void ILI9341_Deinit(ILI9341Type *device)
