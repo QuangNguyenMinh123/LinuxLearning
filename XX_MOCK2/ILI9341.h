@@ -109,6 +109,10 @@ ssize_t ILI9341_saveBuffer(ILI9341Type *device, u8 *buff, int size, int offset, 
 ssize_t ILI9341_readRowBuffer(ILI9341Type *device, u8 *toSaveBuff, int offset, int where);
 
 void ILI9341_print1Line(ILI9341Type *device, int RowToPrint, int Row);
+
+void ILI9341_Menu(ILI9341Type *device);
+
+void ILI9341_OpenFile(ILI9341Type *device, char* directory);
 /*******************************************************************************/
 
 /*******************************************************************************/

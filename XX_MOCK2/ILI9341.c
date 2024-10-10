@@ -324,14 +324,13 @@ void ILI9341_saveSpaceScroll(ILI9341Type *device, int size)
 		backGround >> 8, 
 		backGround & 0xff
 	};
-
 	while (blankCnt < size)
 	{
 		for (i = 0; i < device->fontRowSize; i ++)
 		{
 			ILI9341_saveBuffer(device, buffer, device->fontColSize * 2, 
 						blankCnt * device->fontColSize *2 +
-						(device->totalRow + i) * device->maxCol * 2 + (device->col - device->fontColSize) * 2, SEEK_SET);
+						(device->totalRow + i) * device->maxCol * 2 + (device->col) * 2, SEEK_SET);
 		}
 		blankCnt ++;
 	}
@@ -348,25 +347,37 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 	ptr = ascii_0808[(int)ch];
 	if (ch == '\n')
 	{
+		j = device->col;
 		if (device->totalRow + device->fontRowSize >= device->maxRow)
 		{
 			if (device->row + device->fontRowSize >= device->maxRow)
 				device->row = 0;
 			else
 				device->row += device->fontRowSize;
-			ILI9341_SetCursor(device, device->row,0);
 			blankCnt = ILI9341_FillBlankLine(device);
 			ILI9341_ScrollDownToPrint(device, device->fontSize);
+			device->col = j;
+			ILI9341_SetWindow(device, device->row, device->col, 
+									device->row + device->fontRowSize, device->fontColSize -1);
+			if (blankCnt > 0)
+				ILI9341_saveSpaceScroll(device, blankCnt);
 		}
 		else
+		{
+			blankCnt = ILI9341_FillBlankLine(device);
+			device->col = j;
+			ILI9341_SetWindow(device, device->row, device->col, 
+									device->row + device->fontRowSize, device->fontColSize -1);
+			if (blankCnt > 0)
+				ILI9341_saveSpaceScroll(device, blankCnt);
 			device->row += device->fontRowSize;
+		}
+		device->col = 0;
 		device->totalRow += device->fontRowSize;
 		device->displayRow = device->totalRow - device->maxRow;
-		ILI9341_SetWindow(device, device->row, 0, 
-									device->row + device->fontRowSize, device->fontColSize -1);
-		if (blankCnt > 0)
-			ILI9341_saveSpaceScroll(device, blankCnt);
-		blankCnt = 0;
+		if (device->displayRow < 0)
+			device->displayRow = 0;
+		
 	}
 	else
 	{
@@ -379,22 +390,17 @@ void ILI9341_printCharScroll(ILI9341Type *device, char ch, u16 color, u16 bgColo
 				else
 					device->row += device->fontRowSize;
 				ILI9341_SetCursor(device, device->row,0);
-				blankCnt = ILI9341_FillBlankLine(device);
 				ILI9341_ScrollDownToPrint(device, device->fontSize);
 			}
 			else
 			{
 				device->row += device->fontRowSize;
-				blankCnt = ILI9341_FillBlankLine(device);
-				
 			}
 				
 			device->totalRow += device->fontRowSize;
 			device->displayRow = device->totalRow - device->maxRow;
 			ILI9341_SetWindow(device, device->row, 0, 
 										device->row + device->fontRowSize, device->fontColSize -1);
-			if (blankCnt > 0)
-				ILI9341_saveSpaceScroll(device, blankCnt);
 			device->col = device->fontColSize;
 		}
 		else														/* Keep printing*/
@@ -920,8 +926,7 @@ int ILI9341_FillBlankLine(ILI9341Type *device)
 		buff[i*2 + 1] = backGround & 0xff;
 	}
 	i = 0;
-	ILI9341_SetWindow(device, device->row, device->col, 
-				device->row + device->fontRowSize, device->maxCol);
+	ILI9341_SetWindow(device, device->row, device->col, device->row + device->fontRowSize, device->maxCol);
 	ILI9341_WriteReg(device, 0x2C);
 	gpiod_set_value(device->dcPin, HIGH);
 	while (device->col < device->maxCol)
@@ -1072,6 +1077,18 @@ int ILI9341_readdir(const char* path, readdir_t filler, void* context)
     return res;
 }
 
+void ILI9341_Menu(ILI9341Type *device)
+{
+	
+	ILI9341_Init(device);
+	ILI9341_FillColor()
+}
+
+void ILI9341_OpenFile(ILI9341Type *device, char* directory)
+{
+
+}
+
 void ILI9341_Init(ILI9341Type *device)
 {
 	ILI9341_Reset(device);
@@ -1097,11 +1114,17 @@ void ILI9341_Init(ILI9341Type *device)
 	device->totalRow = 0;
 	device->displayRow = 0;
 	Continue = true;
+	saveRow = 0;
+	saveCol = 0;
+	saveScroll = 0;
+	Continue = true;			/* Set to false when scrolling, set to true when typing */
+	backGround = DARK_GREEN_16;
+	scroll_val = 0;
+	memAccessControl = 0;
 	/* Set cursor to beginning of the screen */
 	ILI9341_SetCursor(device,0,0);
 	/* Print something */
-	// ILI9341_printImage(device, LinuxLogo, ILI9341_DEF_COL * ILI9341_DEF_ROW);
-	// ILI9341_scanFolder();
+	ILI9341_Menu(device);
 	ILI9341_readdir("/home/debian/", filldir_callback, (void*)123);
 }
 
