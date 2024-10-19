@@ -1,0 +1,19 @@
+This is the first booting stage of BBB, code will be run straight from ROM. THis stage is called RBL
+ROM code is loaded from manufaturer and cannot be 
+
++----------+    +------+    +--------------------------+    +--------+    +----------------+    +------------+    +---------+
+| Start up | -> | Init | -> | __main() - (stack setup) | -> | main() | -> | MPU WDT1 setup | -> | Clock Init | -> | Booting |
++----------+    +------+    +--------------------------+    +--------+    +----------------+    +------------+    +---------+
+
+MPU WDT1 setup:
+    WDT1 is init for 3 mins, this means if the RBL could not be able to load the 2nd stage bootloader within 3 mins, then
+    WDT will expire and reset the MPU
+
+Clock Init:
+    Check the value of SYSBOOT[15:14] (table 26-5, page 4102) to decide the value of external crystal value connected to SOC.
+
+RBL will config SOC to run at 500Mhz and this cannot be changed during this stage. But SOC freq can be changed during 2nd stage
+
+/** Load process **/
+When SOC finds the 2nd stage boot loader on the eMMC then the ROM code copies the MLO/SPL to the internal RAM of the SOC.
+MLO or SPL has its own image header contains some infos like load address, size of image to follow, etc.

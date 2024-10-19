@@ -1,0 +1,35 @@
+/** What do we need to successfully boot linux on BBB? **/
+
++-----------------------+     +---------------------------------------+     +---------------+     +---------------+     +------------------+
+| RBL = ROM boot loader | --> | SPL/MLO = Secondary Program Loader,   | --> | U-boot        | --> | Linux kernel  | --> | Root file system |
+| Run out of ROM        |     | Memory LOader (run from internal sram)|     | run from DDRAM|     | run from DDRAM|     | SD/Flash/eMMC    |
++-----------------------+     +---------------------------------------+     +---------------+     +---------------+     +------------------+
+- ROM boot loader:
+    Very first piece of code to run on SOC when power is supplied to the board.
+    Written by vendor and stored in ROM of the SOC during production of the chip, an cannot be changed.
+    Major job is to load and run the Second Stage boot loader: SPL and MLO
+- SPL/MLP:
+    The job of the Second stage bootloader is to load and execute the 3rd stage bootloader such as U-boot
+- U-boot:
+    The job of 3rd stage is to load and run the Linux kernel
+/** Boot option **/
+BBB can boot from: NAND Flash, NOR Flash, USB, eMMC, SD card, Ethernet, UART, SPI
+That means, you can keep the boot images in any of the above memory or peripheral and you can able to boot this SOC.
+Please go to the page number 4106 of the RM and check. 
+
+Let’s take an example. When SYSBOOT [4:0] = 00001b. After the RESET if SYSBOOT [4:0] = 00001b , then SOC will try to boot
+ from UART0 first , if fails, then it tries to boot from XIP(XIP stands for eXutable In Place memory like NOR Flash), if 
+ that also fails, then it will try to boot from MMC0, if no success, finally it tries to boot from SPI0, if that also fails, 
+ then SOC outputs the error message and stops. 
+
+In BBB, normally SYSBOOT[4:0] = 11100, when you press the button S2, SYS_BOOT2 will be grounded thus SYSBOOT[4:0]= 11000
+1. S2 Released (SYSBOOT[4:0] = 11100). The boot order will be
+    MMC1 (eMMC)
+    MMC0 (SD card)
+    UART0
+    USB0
+2. S2 pressed (SYSBOOT[4:0] = 11000). The boot order will be
+    SPI0
+    MMC0 (SD card)
+    USB0
+    UART0
