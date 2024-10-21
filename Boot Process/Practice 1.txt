@@ -1,0 +1,62 @@
+Practice 1: Booting RBL and MLO
+Use pre-built images of Angstrom: https://github.com/niekiran/EmbeddedLinuxBBB/tree/master
+cd: pre-built-images/Angstrom_Demo/
+use MLO_beaglebone_2013.04 as MLO
+
+Format uSD card partitions:
+            +---------------------------------------------------------------------------------------+
+Partition   | Partition 1   |                            Partition 2                                |
+            +---------------------------------------------------------------------------------------+
+Name        | BOOT          |                           ROOTFS                                      |
+            +---------------------------------------------------------------------------------------+
+Type        | Format        |                           EXT3/EXT4                                   |
+            +---------------------------------------------------------------------------------------+
+
+EXT3/EXT4 is linux native file systems.
+
+install GParted from Ubuntu software
+plugin your uSD card
+Open cmd terminal to check microsd number (sda or sdb, sdc ...)
+open GParted and select microSD card
+Device -> Create Partition Table -> Apply to erase uSD
+
+Create FAT16 Boot partition:
+    Right clock on device -> New -> create FAT16 partitions and change label to "BOOT", change size to 1GB -> Add
+Create EXT3/EXT4 partition:
+    Right clock on device -> New -> create EXT3 partitions and label "ROOTFS" -> Add
+-> Click Apply button
+
+Create flag for partitions:
+    Right click on parition -> Manage flag
+    check "boot" for BOOT partition
+    Close program
+
+Create folder and mount uSD to folder:
+    mkdir /media/<username>/BOOT
+    mkdir /media/<username>/ROOTFS
+    mount /dev/sdc1 /media/<username>/BOOT
+    mount /dev/sdc2 /media/<username>/ROOTFS
+
+Copy MLO: MLO_beaglebone_2013.04 to BOOT: using cmd: sudo cp <MLO_beaglebone_2013.04> /media/<user>/BOOT/MLO
+
+take out uSD, plug it into BBB and boot
+
+Log:
+U-Boot SPL 2013.04-dirty (Jun 19 2013 - 09:57:14)
+musb-hdrc: ConfigData=0xde (UTMI-8, dyn FIFOs, HB-ISO Rx, HB-ISO Tx, SoftConn)
+musb-hdrc: MHDRC RTL version 2.0 
+musb-hdrc: setup fifo_mode 4
+musb-hdrc: 28/31 max ep, 16384/16384 memory
+USB Peripheral mode controller at 47401000 using PIO, IRQ 0
+musb-hdrc: ConfigData=0xde (UTMI-8, dyn FIFOs, HB-ISO Rx, HB-ISO Tx, SoftConn)
+musb-hdrc: MHDRC RTL version 2.0 
+musb-hdrc: setup fifo_mode 4
+musb-hdrc: 28/31 max ep, 16384/16384 memory
+USB Host mode controller at 47401800 using PIO, IRQ 0
+OMAP SD/MMC: 0
+reading u-boot.img
+spl: error reading image u-boot.img, err - -1
+### ERROR ### Please RESET the board ###
+
+U-Boot SPL orcurs because MLO is part of UBOOT
+u-boot.img is not existed so boot got errors

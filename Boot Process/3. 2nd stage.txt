@@ -1,0 +1,34 @@
+/* SPL and MLO jobs */
+MLO or SPL initializes the SOC to a point that, Uboot can be loaded into the external RAM - DDRAM
+1. It does UART console initialization to print out the debug msg
+2. Recongifures the PLL to desired value.
+3. Initializes the DDR registers to use the DDR memory.
+4. Does muxing pins because the next job is to load the u-boot to the boot peripherals.
+5. If MLO is going to get the u-boot from the MMC0 or MMC1 interfaces, then it will do the mux configurations
+to bring out the MMC0 or MMC1 functionalities on the pins.
+6. Copies the u-boot image into the DDR memory and passes control to it.
+    U-boot also has its own image header which indicates the load address and the size of the image to follow
+    So MLO loads the U-boot to the address as indicated by the U-boot imgae header
+
+?? Question: Can we use RBL to load Uboot directly in to DDR of the Board and skip using MLO or SPL?
+             or Why AM335x ROM Code cannot load the Uboot directly to DDR RAM?
+=>  ROM code won’t be having any idea about what kind of DDR RAM being used in the product to initialize it.
+    DDR RAM is purely product/ board specific.
+    Let’s say there are 3 board/product manufacturing companies X,Y,Z
+    X may design a product using AM335x SOC with DDR3. In which lets say DDR3 RAM is produced by microchip.
+    Y may design its product using AM335x SOC with DDR2 produced by Transcend and Z may not use DDR memory at all for its product.
+    So, RBL has no idea in which product this chip will be used and what kind of DDR will be used, and what are DDR tuning parameters
+     like speed, bandwidth, clock augments, size, etc. 
+    Because to read ( or write) anything from/to DDR RAM , first, the tuning parameters must be set properly and DDR registers
+     must be initialized properly.
+    Every different manufacture will have different parameters for their RAM. So, that’s the reason RBL never care about
+     initializing DDR controller of the chip and DDR RAM which is connected to chip.
+    RBL just tries to fetch the SPL found in memory devices such as eMMC and SD card or peripherals like UART,EMAC,etc.
+    And in the SPL/MLO, you should know, what kind of DDR is connected to your product and based on that you have to 
+    change the SPL code , rebuild it and generate the binary to use it as the second stage boot loader.
+
+
+
+
+
+

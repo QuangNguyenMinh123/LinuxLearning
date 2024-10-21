@@ -1,0 +1,6 @@
+## Process
+1. Run eMMC flasher script from uSD
+2. Partition the eMMC memory in to FAT and EXT4
+3. Format and create file systems (FAT and ext4)
+4. Copy all contents of SD card on to newly created partitions
+5. Power down when done

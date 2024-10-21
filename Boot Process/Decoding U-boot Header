@@ -1,0 +1,65 @@
+When Uboot try to load the uImage, it first fetches header information and displays on the console.
+/*********************************************************************************/
+## Booting kernel from Legacy Image at 80007fc0 ...
+   Image Name:   Angstrom/3.8.10/beaglebone
+   Image Type:   ARM Linux Kernel Image (uncompressed)
+   Data Size:    4002016 Bytes = 3.8 MiB
+   Load Address: 80008000
+   Entry Point:  80008000
+   Verifying Checksum ... OK
+## Flattened Device Tree blob at 80f80000
+   Booting using the fdt blob at 0x80f80000
+   XIP Kernel Image ... OK
+OK
+   Using Device Tree in place at 80f80000, end 80f88b25
+/*********************************************************************************/
+This lecture teches you how to read uBoot header information of the uImage manually by using Uboot cmd
+
+1. Load the uImage from Memory device (uSD, eMMC) into the DDR memory
+2. Use the memory dump command of U-boot to dump header information.
+
+typedef struct image_header {
+	uint32_t	ih_magic;	/* Image Header Magic Number	*/
+	uint32_t	ih_hcrc;	/* Image Header CRC Checksum	*/
+	uint32_t	ih_time;	/* Image Creation Timestamp	*/
+	uint32_t	ih_size;	/* Image Data Size		*/
+	uint32_t	ih_load;	/* Data	 Load  Address		*/
+	uint32_t	ih_ep;		/* Entry Point Address		*/
+	uint32_t	ih_dcrc;	/* Image Data CRC Checksum	*/
+	uint8_t		ih_os;		/* Operating System		*/
+	uint8_t		ih_arch;	/* CPU architecture		*/
+	uint8_t		ih_type;	/* Image Type			*/
+	uint8_t		ih_comp;	/* Compression Type		*/
+	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
+} image_header_t;
+
+make sure that ROOTFS is empty so that command can be taken by Uboot
+run "load mmc <x>:<partition> <DDR address>   "          x = 0 -> uSD; x = 1 -> eMMC; partition = 2
+    load mmc 0:2 0x82000000 /boot/uImage
+run: "md 0x82000000 4" : display 4 word from address 0x82000000, which is adress of uboot header
+
+U-Boot# load mmc 0:2 0x82000000 /boot/uImage
+4002080 bytes read in 484 ms (7.9 MiB/s)
+U-Boot# md 0x82000000 10
+82000000: 56190527 62153da1 50d07e51 e0103d00    '..V.=.bQ~.P.=..
+82000010: 00800080 00800080 d58b5329 00020205    ........)S......
+82000020: 73676e41 6d6f7274 382e332f 2f30312e    Angstrom/3.8.10/
+82000030: 67616562 6f62656c 0000656e 00000000    beaglebone......
+
+ih_size = e0103d00;
+4002080 bytes read = e0103d00(hex, little endian) + 64
+f
+ih_load = 00800080
+ih_ep = 00800080
+ih_dcrc = d58b5329
+ih_name[IH_NMLEN] = Angstrom/3.8.10/beaglebone
+
+U-Boot# imi 0x82000000
+## Checking Image at 82000000 ...
+   Legacy image found
+   Image Name:   Angstrom/3.8.10/beaglebone
+   Image Type:   ARM Linux Kernel Image (uncompressed)
+   Data Size:    4002016 Bytes = 3.8 MiB
+   Load Address: 80008000
+   Entry Point:  80008000
+   Verifying Checksum ... OK

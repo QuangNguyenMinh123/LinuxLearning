@@ -1,0 +1,71 @@
+What is Yocto Project
+----------------------
+Yocto project provides open source, high quality infrastructure and tools to help developers create their own custom Linux distributions for any hardware architecture.
+
+History
+------------
+Founded in 2010,  in an effort to reduce work duplication, provide resources and information catering to both new and experienced users.
+
+collaboration of
+	many hardware manufacturers
+	open source operating systems vendors and
+	electronics companies
+
+Yocto is also a project working group of the Linux Foundation
+----------------------------
+Advantages of Yocto Project
+
+1. Widely Adopted Across the Industry
+	Semiconductor, operating system, software, and service vendors exist whose products and services adopt and support the Yocto Project.
+	Eg. Intel, Facebook, arm, Juniper Networks, LG, AMD, NXP, DELL
+
+2. Architecture Agnostic
+	supports Intel, ARM, MIPS, AMD, PPC and other architectures
+	chip vendors create and supply BSPs that support their hardware
+	if you have custom silicon, you can create a BSP that supports that architecture
+	the Yocto Project fully supports a wide range of device emulation through the Quick EMUlator (QEMU)
+
+3. Images and Code Transfer Easily
+	Yocto Project output can easily move between architectures without moving to new development environments.
+
+4. Flexibility
+	Through customization and layering, a project group can leverage the base Linux distribution to create a distribution that works for their product needs.
+
+5. Ideal for Constrained Embedded and IoT devices
+	Unlike a full Linux distribution, you can use the Yocto Project to create exactly what you need for embedded devices
+	You only add the feature support or packages that you absolutely need for the device
+
+6. Uses a Layer Model
+	The Yocto Project layer infrastructure groups related functionality into separate bundles.
+	You can incrementally add these grouped functionalities to your project as needed
+	Allows you to easily extend the system, make customizations, and keep functionality organized.
+----------------------------
+Input and output
+To understand the outcome provided by the Yocto Project, we can use the analogy of the computing machine
+
+Input: Set of data that describes what we want, that is our specification 
+		(Kernel Configuration, Hardware Name, Packages/Binaries to be installed)
+
+Output: Linux Based Embedded Product 
+		(Linux Kernel, Root File System, Bootloader, Device Tree, Toolchain)
+----------------------------
+Requirements:
+1. 50Gbytes of free disk space
+2. Run Linux distribution
+3.  Git 1.8.3.1 or greater
+	tar 1.27 or greater
+	Python 3.4.0 or greater.
+
+Packages and package installation vary depending on your development system.
+
+(*) Install the required packages for Yocto to Work from
+        https://www.yoctoproject.org/docs/latest/ref-manual/ref-manual.html#ubuntu-packages
+
+$ sudo apt-get install gawk wget git-core diffstat unzip texinfo gcc-multilib \
+    build-essential chrpath socat cpio python python3 python3-pip python3-pexpect \
+    xz-utils debianutils iputils-ping python3-git python3-jinja2 libegl1-mesa libsdl1.2-dev \
+    pylint3 xterm
+
+git clone git://git.yoctoproject.org/poky -b kirkstone
+
+command "source" is used to create build environment: source oe-init-build-env

@@ -15,5 +15,16 @@ Clock Init:
 RBL will config SOC to run at 500Mhz and this cannot be changed during this stage. But SOC freq can be changed during 2nd stage
 
 /** Load process **/
+RBL searches for MLO or SPL
 When SOC finds the 2nd stage boot loader on the eMMC then the ROM code copies the MLO/SPL to the internal RAM of the SOC.
 MLO or SPL has its own image header contains some infos like load address, size of image to follow, etc.
+RBL load MLO to the internal RAM address indicated by image header of the MLO
+After loading, RBL kickstarts the execution of the MLO
+
+/* Sumary */
+1. Stack setup
+2. WDT T1 configuration - 3 mins
+3. System clock config
+4. Search for MLO or SPL
+5. Copy MLO/SPL to the internal SRAM of the chip
+6. Execute MLO/SPL

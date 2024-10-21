@@ -1,0 +1,37 @@
+## Prepare
+Download and compile the U-boot source code: https://openbeagle.org/beagleboard/u-boot/-/tree/v2022.04-bbb.io-am335x-am57xx
+Uboot support various architechture: ARM, AVR...
+File arch/arm/cpu/armv7/start.S is file which handoff control SPL, or 2nd stage boot loader
+File /config contains various configuration files for different boards. Every files end with defconfig, which is abrbeviation
+for default configuration.
+
+Download arm cross toolchain for Host machine: https://releases.linaro.org/components/toolchain/binaries/latest-5/
+Click on arm-linux-gnueabihf and select
+
+export path of the cross compilation toolchain
+export PATH=$PATH:/home/quangnm/Downloads/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabi/bin
+
+## Compile U-boot source tree
+2 method:
+1. Execute the script
+2. Execute commands manually
+
+STEP 1:
+    Method 1: 2 scripts are available in u-boot source tree
+    Locate these files in https://openbeagle.org/beagleboard/u-boot/-/tree/v2022.04-bbb.io-am335x-am57xx, don't forget to download zip
+    1. build-am335x.sh
+    2. build-am57xx.sh
+    chmod 0777 build-am335x.sh
+    ./build-am335x.sh
+    After compilation, MLO file will be generated
+
+Step 2:
+1. distclean : deletes all the previously compiled/generated object files.
+make CROSS_COMPILE=arm-linux-gnueabihf- distclean
+2. apply board default configuration for uboot
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- am335x_evm_defconfig
+3. run menuconfig, if you want to do any settings other than default configuration . 
+make CROSS_COMPILE=arm-linux-gnueabihf-  menuconfig
+4. compile 
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4  // -j4(4 core machine) will instruct the make tool to spawn 4 threads
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j8  // -j8(8 core machine) will instruct the make tool to spawn 8 threads
