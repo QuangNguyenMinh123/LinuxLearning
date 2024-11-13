@@ -6,54 +6,49 @@ Window {
     height: 480
     visible: true
     title: qsTr("Custom Components in Place")
+    property var aFont: Qt.font({family: "ubuntu", pointSize: 30, bold: true})
 
-    Component {
-        id: mButtonComponent
-        Rectangle {
-            id: mButtonId
-            property alias buttonText: buttonTextId.text
-            signal buttonClicked
+    component MButton: Rectangle{
+        id: mButtonId
+        property alias buttonText: buttonTextId.text
+        signal buttonClicked
+        width: buttonTextId.implicitWidth + 20
+        height: buttonTextId.implicitHeight + 20
+        color: "red"
+        border {color: "blue"; width: 3}
 
-            width: buttonTextId.implicitWidth + 20
-            height: buttonTextId.implicitHeight + 20
-            color: "red"
-            border {
-                color: "blue"
-                width: 3
+        Text {
+            id: buttonTextId
+            text: "Button"
+            anchors.centerIn: parent
+            font: aFont
+            onTextChanged: {
+                console.log("Text changed to " + buttonTextId.text);
             }
-            Text {
-                id: buttonTextId
-                text: "Button"
-                anchors.centerIn: parent
-                onTextChanged: {
-                    console.log("Text changed to " + buttonTextId.text);
-                }
-            }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    mButtonId.buttonClicked();
-                }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                mButtonId.buttonClicked();
             }
         }
     }
+
+
     Column {
-    spacing: 20
-    width: parent.width
-        Component.onCompleted: {
-            var button1 = mButtonComponent.createObject(parent);
-            button1.buttonText = "Button 3";
-            button1.onButtonClicked.connect(function() {
-                console.log("Clicked on button 3");
-            });
-            button1.parent = parent;
-
-            var button2 = mButtonComponent.createObject(parent);
-            button2.buttonText = "Button 4";
-            button2.onButtonClicked.connect(function() {
-                console.log("Clicked on button 4");
-            });
-            button2.parent = parent;
+        MButton {
+            buttonText: "234"
+            onButtonClicked: {
+                console.log("Clicked on inlined component button3");
+            }
+        }
+        MButton {
+            buttonText: "123"
+            onButtonClicked: {
+                console.log("clicked on inlined component button4");
+            }
         }
     }
+
 }
