@@ -39,7 +39,6 @@ Window {
             onClicked:
                 Qt.quit()
         }
-
     }
     Rectangle{
         id: greenId
