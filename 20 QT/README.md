@@ -10,6 +10,8 @@ sudo apt-get install qtbase5-dev
 sudo apt-get install qtdeclarative5-dev
 sudo apt-get install qtmultimedia5-dev
 sudo apt-get install qtquickcontrols2-5-dev
+# Link
+https://github.com/rutura/Qt6QMLForBeginnersVideo/tree/main
 # Issues
 1.1 No valid Kits found: QT 5
     `sudo apt-get install qt5-default`
@@ -21,3 +23,4 @@ Then apply all. Check your compiler and debugger and it's ok.
 1.2 Cannot find fonts: QT
     install QT 6 by https://wiki.qt.io/Building_Qt_6_from_Git
     install common (use GPT) and copy all of them from /usr/share/fonts/ with postfix .ttf to /opt/qt6/lib/fonts/
+
