@@ -11,7 +11,8 @@ sudo apt-get install qtdeclarative5-dev
 sudo apt-get install qtmultimedia5-dev
 sudo apt-get install qtquickcontrols2-5-dev
 # Link
-https://github.com/rutura/Qt6QMLForBeginnersVideo/tree/main
+https://github.com/rutura/Qt6QMLForBeginnersVideo/tree/
+QT 5.14: https://download.qt.io/new_archive/qt/5.14/5.14.0/
 # Issues
 1.1 No valid Kits found: QT 5
     `sudo apt-get install qt5-default`
