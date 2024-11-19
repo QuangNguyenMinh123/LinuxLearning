@@ -9,13 +9,13 @@ import QtGraphicalEffects 1.0
 CircularGauge {
     id: fuelGauge
     property string speedColor: "#32D74B"
-    function speedColorProvider(value){
-        if(value < 60 ){
-            return "#32D74B"
-        } else if(value > 60 && value < 150){
+    function fuelLevelProvider(value){
+        if(value < 20 ){
+            return "red"
+        } else if(value > 20 && value < 50){
             return "yellow"
         }else{
-            return "Red"
+            return "#32D74B"
         }
     }
     style: CircularGaugeStyle {
@@ -23,19 +23,19 @@ CircularGauge {
         labelInset: outerRadius / 2.2
         tickmarkInset: outerRadius / 4.2
         minorTickmarkInset: outerRadius / 4.2
-        minimumValueAngle: -150
-        maximumValueAngle: 150
+        minimumValueAngle: -60
+        maximumValueAngle: 60
 
         background: Rectangle {
-            implicitHeight: gauge.height
-            implicitWidth: gauge.width
+            implicitHeight: fuelGauge.height
+            implicitWidth: fuelGauge.width
             color: "#1E1E1E"
             anchors.centerIn: parent
             radius: 360
             opacity: 1
 
             Canvas {
-                property int value: gauge.value
+                property int value: fuelGauge.value
 
                 anchors.fill: parent
                 onValueChanged: requestPaint()
@@ -56,12 +56,12 @@ CircularGauge {
                     ];
 
                     // Calculate the start and end angles for the filled arc
-                    var startAngle = valueToAngle(gauge.minimumValue) - 90;
-                    var endAngle = valueToAngle(gauge.value) - 90;
+                    var startAngle = valueToAngle(fuelGauge.minimumValue) - 90;
+                    var endAngle = valueToAngle(fuelGauge.value) - 90;
 
                     // Loop through the gradient colors and fill the arc segment with each color
                     for (var i = 0; i < gradientColors.length; i++) {
-                        var gradientColor = speedColorProvider(gauge.value)
+                        var gradientColor = fuelLevelProvider(fuelGauge.value)
                         speedColor = gradientColor
                         var angle = startAngle + (endAngle - startAngle) * (i / gradientColors.length);
 
@@ -81,7 +81,7 @@ CircularGauge {
         }
 
         needle: Item {
-            visible: gauge.value.toFixed(0) > 0
+            visible: fuelGauge.value.toFixed(0) > 0
             y: -outerRadius * 0.78
             height: outerRadius * 0.27
             Image {
@@ -103,23 +103,22 @@ CircularGauge {
         }
 
         foreground: Item {
-            ColumnLayout{
+            RowLayout{
                 anchors.centerIn: parent
+                Image {
+                    id: fuelSymbol
+                    x: parent.implicitHeight / 5 + 100
+                    y: parent.implicitWidth / 5 + 100
+                    width: 72
+                    height: 72
+                    source: "qrc:/assets/fuel.svg"
+                }
                 Label{
-                    text: gauge.value.toFixed(0)
+                    text: fuelGauge.value.toFixed(0) + '%'
                     font.pixelSize: 85
                     font.family: "Inter"
-                    color: "#01E6DE"
+                    color: fuelLevelProvider(fuelGauge.value)
                     font.bold: Font.DemiBold
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-                Label{
-                    text: "MPH"
-                    font.pixelSize: 46
-                    font.family: "Inter"
-                    color: "#01E6DE"
-                    font.bold: Font.Normal
                     Layout.alignment: Qt.AlignHCenter
                 }
             }
@@ -128,7 +127,7 @@ CircularGauge {
         tickmarkLabel:  Text {
             font.pixelSize: Math.max(6, outerRadius * 0.05)
             text: styleData.value
-            color: styleData.value <= gauge.value ? "white" : "#777776"
+            color: styleData.value <= fuelGauge.value ? "white" : "#777776"
             antialiasing: true
         }
 
@@ -146,7 +145,7 @@ CircularGauge {
 
             antialiasing: true
             smooth: true
-            color: styleData.value <= gauge.value ? "white" : "darkGray"
+            color: styleData.value <= fuelGauge.value ? "white" : "darkGray"
         }
     }
 }

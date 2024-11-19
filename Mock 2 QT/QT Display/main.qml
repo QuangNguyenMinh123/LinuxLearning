@@ -543,157 +543,32 @@ ApplicationWindow {
             }
         }
 
-        // Progress Bar
-        RadialBar {
-            id:radialBar
-            anchors{
-                verticalCenter: parent.verticalCenter
-                left: parent.left
-                leftMargin: parent.width / 6
-            }
-
-            width: 338
-            height: 338
-            penStyle: Qt.RoundCap
-            dialType: RadialBar.NoDial
-            progressColor: "#01E4E0"
-            backgroundColor: "transparent"
-            dialWidth: 17
-            startAngle: 270
-            spanAngle: 3.6 * value
-            minValue: 0
-            maxValue: 100
-            value: accelerating ? maxValue : 65
-            textFont {
-                family: "inter"
-                italic: false
-                bold: Font.Medium
-                pixelSize: 60
-            }
-            showText: false
-            suffixText: ""
-            textColor: "#FFFFFF"
-
-            property bool accelerating
-            Behavior on value { NumberAnimation { duration: 1000 }}
-
-            ColumnLayout{
-                anchors.centerIn: parent
-                Label{
-                    text: radialBar.value.toFixed(0) + "%"
-                    font.pixelSize: 65
-                    font.family: "Inter"
-                    font.bold: Font.Normal
-                    color: "#FFFFFF"
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-                Label{
-                    text: "Battery charge"
-                    font.pixelSize: 28
-                    font.family: "Inter"
-                    font.bold: Font.Normal
-                    opacity: 0.8
-                    color: "#FFFFFF"
-                    Layout.alignment: Qt.AlignHCenter
-                }
-            }
-        }
-
-        ColumnLayout{
-            spacing: 40
-
+        /* Fuel Gauge */
+        FuelGauge
+        {
+            id: fuelGauge
+            width: 450
+            height: 450
+            value: 100
+            minimumValue: 0
+            maximumValue: 100
             anchors{
                 verticalCenter: parent.verticalCenter
                 right: parent.right
-                rightMargin: parent.width / 6
+                rightMargin: parent.width / 10
             }
-         FuelGauge
-         {
+            focus: true
+            Component.onCompleted: forceActiveFocus()
 
-         }
-//            RowLayout{
-//                spacing: 30
-//                Image {
-//                    width: 72
-//                    height: 50
-//                    source: "qrc:/assets/road.svg"
-//                }
+            Behavior on value { NumberAnimation { duration: 1000 }}
 
-//                ColumnLayout{
-//                    Label{
-//                        text: "188 KM"
-//                        font.pixelSize: 30
-//                        font.family: "Inter"
-//                        font.bold: Font.Normal
-//                        opacity: 0.8
-//                        color: "#FFFFFF"
-//                    }
-//                    Label{
-//                        text: "Distance"
-//                        font.pixelSize: 20
-//                        font.family: "Inter"
-//                        font.bold: Font.Normal
-//                        opacity: 0.8
-//                        color: "#FFFFFF"
-//                    }
-//                }
-//            }
-            /* Average Fuel */
-//            RowLayout{
-//                spacing: 30
-//                Image {
-//                    width: 72
-//                    height: 78
-//                    source: "qrc:/assets/fuel.svg"
-//                }
+            Keys.onSpacePressed: {
+                fuelGauge.value--;
+            }
+            Keys.onDigit1Pressed: {
+                fuelGauge.value++;
+            }
 
-//                ColumnLayout{
-//                    Label{
-//                        text: "34 mpg"
-//                        font.pixelSize: 30
-//                        font.family: "Inter"
-//                        font.bold: Font.Normal
-//                        opacity: 0.8
-//                        color: "#FFFFFF"
-//                    }
-//                    Label{
-//                        text: "Avg. Fuel Usage"
-//                        font.pixelSize: 20
-//                        font.family: "Inter"
-//                        font.bold: Font.Normal
-//                        opacity: 0.8
-//                        color: "#FFFFFF"
-//                    }
-//                }
-//            }
-//            RowLayout{
-//                spacing: 30
-//                Image {
-//                    width: 72
-//                    height: 72
-//                    source: "qrc:/assets/speedometer.svg"
-//                }
-
-//                ColumnLayout{
-//                    Label{
-//                        text: "78 mph"
-//                        font.pixelSize: 30
-//                        font.family: "Inter"
-//                        font.bold: Font.Normal
-//                        opacity: 0.8
-//                        color: "#FFFFFF"
-//                    }
-//                    Label{
-//                        text: "Avg. Speed"
-//                        font.pixelSize: 20
-//                        font.family: "Inter"
-//                        font.bold: Font.Normal
-//                        opacity: 0.8
-//                        color: "#FFFFFF"
-//                    }
-//                }
-//            }
         }
     }
 }

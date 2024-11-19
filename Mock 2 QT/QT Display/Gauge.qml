@@ -8,6 +8,9 @@ import QtGraphicalEffects 1.0
 
 CircularGauge {
     id: gauge
+    width: 450
+    height: 450
+    property bool accelerating
     property string speedColor: "#32D74B"
     function speedColorProvider(value){
         if(value < 60 ){
