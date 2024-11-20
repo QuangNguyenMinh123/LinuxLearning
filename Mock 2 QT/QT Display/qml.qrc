@@ -35,5 +35,6 @@
         <file>assets/thirdRightIcon_red.svg</file>
         <file>assets/FourthRightIcon_red.svg</file>
         <file>FuelGauge.qml</file>
+        <file>EngineGauge.qml</file>
     </qresource>
 </RCC>

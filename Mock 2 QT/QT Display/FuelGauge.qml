@@ -10,7 +10,7 @@ CircularGauge {
     id: fuelGauge
     property string speedColor: "#32D74B"
     function fuelLevelProvider(value){
-        if(value <= 20 ){
+        if(value <= 10 ){
             return "red"
         } else
         if(value > 20 && value <= 50){
@@ -37,7 +37,6 @@ CircularGauge {
             anchors.centerIn: parent
             radius: 360
             opacity: 1
-
             Canvas {
                 property int value: fuelGauge.value
 

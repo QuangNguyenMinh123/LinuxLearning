@@ -9,8 +9,8 @@ import QtGraphicalEffects 1.0
 CircularGauge {
     id: gauge
     width: 450
-    height: 450
-    property bool accelerating
+    height: width
+    property real outerRadius: 450
     property string speedColor: "#32D74B"
     function speedColorProvider(value){
         if(value < 60 ){
@@ -21,22 +21,22 @@ CircularGauge {
             return "Red"
         }
     }
-    Behavior on value { NumberAnimation { duration: 100 }}
+    Behavior on value { NumberAnimation { duration: 50 }}
     style: CircularGaugeStyle {
         labelStepSize: 10
-        labelInset: outerRadius / 2.2
-        tickmarkInset: outerRadius / 4.2
-        minorTickmarkInset: outerRadius / 4.2
+        labelInset: outerRadius / 4
+        tickmarkInset: outerRadius / 20
+        minorTickmarkInset: outerRadius / 20
         minimumValueAngle: -150
         maximumValueAngle: 150
 
         background: Rectangle {
-            implicitHeight: gauge.height
-            implicitWidth: gauge.width
+            height: gauge.height + 200
+            width: gauge.width + 200
             color: "#1E1E1E"
             anchors.centerIn: parent
             radius: 360
-            opacity: 1
+            opacity: 0.5
 
             Canvas {
                 property int value: gauge.value
@@ -45,7 +45,7 @@ CircularGauge {
                 onValueChanged: requestPaint()
 
                 function degreesToRadians(degrees) {
-                  return degrees * (Math.PI / 180);
+                  return (degrees + 1) * (Math.PI / 180)
                 }
 
                 onPaint: {
@@ -70,11 +70,11 @@ CircularGauge {
                         var angle = startAngle + (endAngle - startAngle) * (i / gradientColors.length);
 
                         ctx.beginPath();
-                        ctx.lineWidth = outerRadius * 0.225;
+                        ctx.lineWidth = outerRadius * 0.15;
                         ctx.strokeStyle = gradientColor;
                         ctx.arc(outerRadius,
                                 outerRadius,
-                                outerRadius - ctx.lineWidth / 2,
+                                outerRadius - ctx.lineWidth / 2 + 25,
                                 degreesToRadians(angle),
                                 degreesToRadians(endAngle));
                         ctx.stroke();
@@ -83,11 +83,11 @@ CircularGauge {
 
             }
         }
-
+        /* Display needle */
         needle: Item {
-            visible: gauge.value.toFixed(0) > 0
-            y: -outerRadius * 0.78
-            height: outerRadius * 0.27
+            visible: true
+            y: -outerRadius * 0.95
+            height: outerRadius * 0.25
             Image {
                 id: needle
                 source: "qrc:/assets/needle.svg"
@@ -105,7 +105,7 @@ CircularGauge {
               source: needle
           }
         }
-
+        /* Display speed */
         foreground: Item {
             ColumnLayout{
                 anchors.centerIn: parent
@@ -128,11 +128,12 @@ CircularGauge {
                 }
             }
         }
-
+        /* Display static speed */
         tickmarkLabel:  Text {
-            font.pixelSize: Math.max(6, outerRadius * 0.05)
+            font.pixelSize: Math.max(6, outerRadius * 0.07)
+            font.bold: true
             text: styleData.value
-            color: styleData.value <= gauge.value ? "white" : "darkGray"
+            color: styleData.value <= gauge.value ? "yellow" : "darkGray"
             antialiasing: true
         }
         /* Big tick */

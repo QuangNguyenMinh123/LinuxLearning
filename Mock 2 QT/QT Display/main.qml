@@ -110,22 +110,7 @@ ApplicationWindow {
                 anchors.topMargin: 25
             }
         }
-        /* Speedometer */
-        Gauge {
-            id: speedGauge
-            width: 450
-            height: 450
-            property int accelerating: 0
-            value : 0
-            maximumValue: 250
 
-            anchors.top: parent.top
-            anchors.topMargin:Math.floor(parent.height * 0.25)
-            anchors.horizontalCenter: parent.horizontalCenter
-
-            //Component.onCompleted: forceActiveFocus()
-            focus: true
-        }
 
         //        Label{
         //            text: "MPH"
@@ -529,7 +514,18 @@ ApplicationWindow {
                 }
             }
         }
+        /* Speedometer */
+        Gauge {
+            id: speedGauge
+            property int accelerating: 0
+            value : 0
+            maximumValue: 250
 
+            anchors.top: parent.top
+            anchors.topMargin:Math.floor(parent.height * 0.25) - 75
+            anchors.horizontalCenter: parent.horizontalCenter
+            focus: true
+        }
         /* Fuel Gauge */
         FuelGauge {
             id: fuelGauge
