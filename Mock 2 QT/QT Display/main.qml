@@ -168,14 +168,12 @@ ApplicationWindow {
             source: "qrc:/assets/Vector 2.svg"
         }
 
-        RowLayout{
-            spacing: 20
-
+        Item{
             anchors{
-                left: parent.left
-                leftMargin: 250
-                bottom: parent.bottom
-                bottomMargin: 26.50 + 65
+                left: topBar.left
+                leftMargin: 300
+                top: topBar.top
+                topMargin: 25
             }
 
             RowLayout{
@@ -198,55 +196,6 @@ ApplicationWindow {
                     opacity: 0.2
                     color: "#FFFFFF"
                 }
-            }
-
-            RowLayout{
-                spacing: 1
-                Layout.topMargin: 10
-                Rectangle{
-                    width: 20
-                    height: 15
-                    color: speedGauge.value.toFixed(0) > 31.25 ? speedGauge.speedColor : "#01E6DC"
-                }
-                Rectangle{
-                    width: 20
-                    height: 15
-                    color: speedGauge.value.toFixed(0) > 62.5 ? speedGauge.speedColor : "#01E6DC"
-                }
-                Rectangle{
-                    width: 20
-                    height: 15
-                    color: speedGauge.value.toFixed(0) > 93.75 ? speedGauge.speedColor : "#01E6DC"
-                }
-                Rectangle{
-                    width: 20
-                    height: 15
-                    color: speedGauge.value.toFixed(0) > 125.25 ? speedGauge.speedColor : "#01E6DC"
-                }
-                Rectangle{
-                    width: 20
-                    height: 15
-                    color: speedGauge.value.toFixed(0) > 156.5 ? speedGauge.speedColor : "#01E6DC"
-                }
-                Rectangle{
-                    width: 20
-                    height: 15
-                    color: speedGauge.value.toFixed(0) > 187.75 ? speedGauge.speedColor : "#01E6DC"
-                }
-                Rectangle{
-                    width: 20
-                    height: 15
-                    color: speedGauge.value.toFixed(0) > 219 ? speedGauge.speedColor : "#01E6DC"
-                }
-            }
-
-            Label{
-                text: speedGauge.value.toFixed(0) + " MPH "
-                font.pixelSize: 32
-                font.family: "Inter"
-                font.bold: Font.Normal
-                font.capitalization: Font.AllUppercase
-                color: "#FFFFFF"
             }
         }
 
@@ -499,7 +448,7 @@ ApplicationWindow {
             maximumValue: 250
 
             anchors.top: parent.top
-            anchors.topMargin:Math.floor(parent.height * 0.25) - 75
+            anchors.topMargin:Math.floor(parent.height * 0.25) - 50
             anchors.horizontalCenter: parent.horizontalCenter
             focus: true
         }

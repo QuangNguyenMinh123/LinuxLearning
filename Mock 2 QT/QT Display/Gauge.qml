@@ -21,14 +21,14 @@ CircularGauge {
             return "Red"
         }
     }
-    Behavior on value { NumberAnimation { duration: 50 }}
+    Behavior on value { NumberAnimation { duration: 1 }}
     style: CircularGaugeStyle {
         labelStepSize: 10
         labelInset: outerRadius / 3.5
         tickmarkInset: outerRadius / 10
         minorTickmarkInset: outerRadius / 10
-        minimumValueAngle: -150
-        maximumValueAngle: 150
+        minimumValueAngle: -130
+        maximumValueAngle: 130
 
         background: Rectangle
         {
@@ -38,69 +38,6 @@ CircularGauge {
             anchors.centerIn: parent
             radius: 360
             opacity: 1
-
-            Canvas {
-                property int value: gauge.value
-                anchors.fill: parent
-                onValueChanged: requestPaint()
-                function degreesToRadians(degrees) {
-                  return (degrees + 1) * (Math.PI / 180)
-                }
-
-                onPaint: {
-                    var ctx = getContext("2d");
-                    ctx.reset();
-
-                    // Define the gradient colors for the filled arc
-                    var gradientColors = [
-                        "#32D74B",     // Start color
-                        "yellow",  // Middle color (you can add more colors for more segments)
-                        "red"    // End color
-                    ];
-
-                    // Calculate the start and end angles for the filled arc
-                    var startAngle = valueToAngle(gauge.minimumValue) - 90;
-                    var endAngle = valueToAngle(gauge.value) - 90;
-
-                    // Loop through the gradient colors and fill the arc segment with each color
-                    for (var i = 0; i < gradientColors.length; i++) {
-                        var gradientColor = speedColorProvider(gauge.value)
-                        speedColor = gradientColor
-                        var angle = startAngle + (endAngle - startAngle) * (i / gradientColors.length);
-                        ctx.beginPath();
-                        ctx.lineWidth = outerRadius * 0.08;
-                        ctx.strokeStyle = gradientColor;
-                        ctx.arc(outerRadius,
-                                outerRadius,
-                                outerRadius - ctx.lineWidth / 2,
-                                degreesToRadians(angle),
-                                degreesToRadians(endAngle));
-                        ctx.stroke();
-                    }
-                }
-            }
-        }
-        /* Display needle */
-        needle: Item {
-            visible: true
-            y: -outerRadius * 0.9
-            height: outerRadius * 0.25
-            Image {
-                id: needle
-                source: "qrc:/assets/needle.svg"
-                height: parent.height
-                width: height * 0.1
-                asynchronous: true
-                antialiasing: true
-            }
-
-            Glow {
-              anchors.fill: needle
-              radius: 5
-              samples: 10
-              color: "white"
-              source: needle
-          }
         }
         /* Display speed */
         foreground: Item {

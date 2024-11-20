@@ -9,6 +9,8 @@ import QtGraphicalEffects 1.0
 CircularGauge {
     id: fuelGauge
     property string speedColor: "#32D74B"
+    property alias fuelIcon: fuelSymbol.opacity
+
     function fuelLevelProvider(value){
         var redIdx = 255;
         var greenIdx = 255;
@@ -46,7 +48,17 @@ CircularGauge {
                 property int value: fuelGauge.value
 
                 anchors.fill: parent
-                onValueChanged: requestPaint()
+                onValueChanged:
+                {
+                    requestPaint()
+                    if (fuelGauge.value <= 10)
+                    {
+                        blinkTimer.running = true
+                        console.log("fuel < 10")
+                    }
+                    else
+                        blinkTimer.running = false
+                }
 
                 function degreesToRadians(degrees) {
                   return degrees * (Math.PI / 180);
@@ -119,6 +131,7 @@ CircularGauge {
                     width: 72
                     height: 72
                     source: "qrc:/assets/fuel.svg"
+                    opacity: 1
                 }
                 Label{
                     text: fuelGauge.value.toFixed(0) + '%'
@@ -154,6 +167,5 @@ CircularGauge {
             smooth: true
             color: styleData.value <= fuelGauge.value ? "white" : "darkGray"
         }
-
     }
 }
