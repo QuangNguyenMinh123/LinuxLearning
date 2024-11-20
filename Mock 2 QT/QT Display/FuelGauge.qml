@@ -10,11 +10,14 @@ CircularGauge {
     id: fuelGauge
     property string speedColor: "#32D74B"
     function fuelLevelProvider(value){
-        if(value < 20 ){
+        if(value <= 20 ){
             return "red"
-        } else if(value > 20 && value < 50){
+        } else
+        if(value > 20 && value <= 50){
             return "yellow"
-        }else{
+        }
+        else
+        {
             return "#32D74B"
         }
     }
@@ -76,7 +79,6 @@ CircularGauge {
                         ctx.stroke();
                     }
                 }
-
             }
         }
 
@@ -147,5 +149,6 @@ CircularGauge {
             smooth: true
             color: styleData.value <= fuelGauge.value ? "white" : "darkGray"
         }
+
     }
 }

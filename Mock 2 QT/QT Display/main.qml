@@ -113,7 +113,7 @@ ApplicationWindow {
             id: speedLabel
             width: 450
             height: 450
-            property bool accelerating
+            property int accelerating: 0
             value: accelerating ? maximumValue : 0
             maximumValue: 250
 
@@ -125,9 +125,9 @@ ApplicationWindow {
 
             Behavior on value { NumberAnimation { duration: 1000 }}
 
-            Keys.onSpacePressed: accelerating = true
+            Keys.onUpPressed: accelerating = true
             Keys.onReleased: {
-                if (event.key === Qt.Key_Space) {
+                if (event.key === Qt.Key_Down) {
                     accelerating = false;
                     event.accepted = true;
                 }else if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
@@ -549,7 +549,7 @@ ApplicationWindow {
             id: fuelGauge
             width: 450
             height: 450
-            value: 100
+            value: 20
             minimumValue: 0
             maximumValue: 100
             anchors{
@@ -558,17 +558,19 @@ ApplicationWindow {
                 rightMargin: parent.width / 10
             }
             focus: true
-            Component.onCompleted: forceActiveFocus()
+//            Component.onCompleted: forceActiveFocus()
 
-            Behavior on value { NumberAnimation { duration: 1000 }}
+//            Behavior on value { NumberAnimation { duration: 1000 }}
 
-            Keys.onSpacePressed: {
-                fuelGauge.value--;
+            Keys.onPressed: {
+                if (event.key === Qt.Key_Left) {
+                    // Decrease the value
+                    value = Math.max(0, value - 5)
+                } else if (event.key === Qt.Key_Right) {
+                    // Increase the value
+                    value = Math.min(maxValue, value + 5)
+                }
             }
-            Keys.onDigit1Pressed: {
-                fuelGauge.value++;
-            }
-
         }
     }
 }
