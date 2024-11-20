@@ -36,5 +36,16 @@
         <file>assets/FourthRightIcon_red.svg</file>
         <file>FuelGauge.qml</file>
         <file>EngineGauge.qml</file>
+        <file>assets/Subtract.svg</file>
+        <file>assets/sub.svg</file>
+        <file>assets/ring.svg</file>
+        <file>assets/Rectangle 4.svg</file>
+        <file>assets/maxLimit.svg</file>
+        <file>assets/Info.txt</file>
+        <file>assets/img.txt</file>
+        <file>assets/Ellipse 6.svg</file>
+        <file>assets/Ellipse 5.svg</file>
+        <file>assets/Ellipse 1.svg</file>
+        <file>assets/cirlcle.svg</file>
     </qresource>
 </RCC>

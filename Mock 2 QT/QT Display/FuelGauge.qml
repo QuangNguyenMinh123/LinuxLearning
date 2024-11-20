@@ -28,7 +28,6 @@ CircularGauge {
     }
 
     Behavior on value { NumberAnimation { duration: 50 }}
-
     style: CircularGaugeStyle {
         labelStepSize: 10
         labelInset: outerRadius / 2.2
@@ -45,20 +44,11 @@ CircularGauge {
             radius: 360
             opacity: 1
             Canvas {
+                anchors.fill: parent
                 property int value: fuelGauge.value
 
-                anchors.fill: parent
-                onValueChanged:
-                {
-                    requestPaint()
-                    if (fuelGauge.value <= 10)
-                    {
-                        blinkTimer.running = true
-                        console.log("fuel < 10")
-                    }
-                    else
-                        blinkTimer.running = false
-                }
+
+                onValueChanged:requestPaint()
                 function degreesToRadians(degrees) {
                   return degrees * (Math.PI / 180);
                 }
@@ -121,6 +111,7 @@ CircularGauge {
         }
         /* Fuel image */
         foreground: Item {
+            id: foreground
             RowLayout{
                 anchors.centerIn: parent
                 Image {
@@ -142,18 +133,21 @@ CircularGauge {
                     font.bold: Font.DemiBold
                     Layout.alignment: Qt.AlignHCenter
                 }
+                Timer {
+                    id: blinkTimer
+                        interval: 750
+                        running: true
+                        repeat: true
+                        onTriggered:{
+                            if (fuelGauge.value <= 10)
+                                fuelSymbol.opacity = fuelSymbol.opacity === 1 ? 0 : 1;
+                            else
+                                fuelSymbol.opacity = 1 
+                        }
+                    }
             }
         }
-        Timer {
-            id: blinkTimer
-                interval: 1000
-                running: false
-                repeat: true
-                property alias fuelOpacity: fuelSymbol.opacity
-                onTriggered:{
-                    fuelOpacity = fuelOpacity === 1 ? 0 : 1;
-                }
-            }
+
 
         tickmarkLabel:  Text {
             font.pixelSize: Math.max(6, outerRadius * 0.05)

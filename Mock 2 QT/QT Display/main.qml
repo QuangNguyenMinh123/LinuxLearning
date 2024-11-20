@@ -4,6 +4,7 @@ import QtQuick.Window 2.12
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.5
 import "./"
+
 ApplicationWindow {
     width: 1600
     height: 1080
@@ -11,6 +12,11 @@ ApplicationWindow {
     title: qsTr("Car DashBoard")
     color: "#1E1E1E"
     visibility: "FullScreen"
+    enum EngineStatus{
+        Braking = 0,
+        NoChange = 1,
+        Speeding = 2
+    }
 
     /* Display speed color */
     function speedColor(value){
@@ -143,7 +149,7 @@ ApplicationWindow {
         }
 
         Image {
-            id:car
+            id: car
             anchors{
                 bottom: speedLimit.top
                 bottomMargin: 30
@@ -179,7 +185,7 @@ ApplicationWindow {
             RowLayout{
                 spacing: 3
                 Label{
-                    text: "100.6"
+                    text: "30.6"
                     font.pixelSize: 32
                     font.family: "Inter"
                     font.bold: Font.Normal
@@ -188,12 +194,12 @@ ApplicationWindow {
                 }
 
                 Label{
-                    text: "°F"
+                    text: "°C"
                     font.pixelSize: 32
                     font.family: "Inter"
                     font.bold: Font.Normal
                     font.capitalization: Font.AllUppercase
-                    opacity: 0.2
+                    opacity: 0.6
                     color: "#FFFFFF"
                 }
             }
@@ -440,17 +446,44 @@ ApplicationWindow {
                 }
             }
         }
+        /* Engine Gauge */
+        EngineGauge {
+            id: engineGauge
+            anchors{
+                verticalCenter: parent.verticalCenter
+                left: parent.left
+                leftMargin: parent.width / 5
+            }
+            property bool accelerating
+            width: 400
+            height: 400
+            value: accelerating ? maximumValue : 0
+            property bool status: speedGauge.EngineStatus
+            maximumValue: 250
+            Behavior on value { NumberAnimation { duration: 1000 }}
+            onStatusChanged: {
+
+            }
+        }
+
         /* Speedometer */
         Gauge {
             id: speedGauge
-            property int accelerating: 0
-            value : 0
+            value: 0
+            property int preValue: 0
+            property bool engineStatus: NoChange
             maximumValue: 250
-
             anchors.top: parent.top
-            anchors.topMargin:Math.floor(parent.height * 0.25) - 50
+            anchors.topMargin:Math.floor(parent.height * 0.25) - 100
             anchors.horizontalCenter: parent.horizontalCenter
             focus: true
+            onValueChanged: {
+                if (value - preValue > 0)
+                    engineStatus = Speeding
+                else if (value - preValue < 0)
+                    engineStatus = Braking
+                preValue = value
+            }
         }
         /* Fuel Gauge */
         FuelGauge {
@@ -489,4 +522,5 @@ ApplicationWindow {
 
 
     }
+
 }
