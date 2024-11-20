@@ -44,7 +44,7 @@ ApplicationWindow {
         context: Qt.ApplicationShortcut
         onActivated: Qt.quit()
     }
-    /* Display suround oval */
+    /* Display surounding oval */
     Image {
         id: dashboard
         width: parent.width

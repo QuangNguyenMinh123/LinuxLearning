@@ -31,19 +31,17 @@ CircularGauge {
         maximumValueAngle: 150
 
         background: Rectangle {
-            height: gauge.height + 200
-            width: gauge.width + 200
+            height: gauge.height
+            width: gauge.width
             color: "#1E1E1E"
             anchors.centerIn: parent
             radius: 360
-            opacity: 0.5
+            opacity: 1
 
             Canvas {
                 property int value: gauge.value
-
                 anchors.fill: parent
                 onValueChanged: requestPaint()
-
                 function degreesToRadians(degrees) {
                   return (degrees + 1) * (Math.PI / 180)
                 }
@@ -68,7 +66,6 @@ CircularGauge {
                         var gradientColor = speedColorProvider(gauge.value)
                         speedColor = gradientColor
                         var angle = startAngle + (endAngle - startAngle) * (i / gradientColors.length);
-
                         ctx.beginPath();
                         ctx.lineWidth = outerRadius * 0.15;
                         ctx.strokeStyle = gradientColor;

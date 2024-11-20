@@ -13,7 +13,7 @@ CircularGauge {
         if(value <= 10 ){
             return "red"
         } else
-        if(value > 20 && value <= 50){
+        if(value > 10 && value <= 50){
             return "yellow"
         }
         else
