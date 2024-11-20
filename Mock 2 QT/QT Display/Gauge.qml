@@ -21,6 +21,7 @@ CircularGauge {
             return "Red"
         }
     }
+    Behavior on value { NumberAnimation { duration: 100 }}
     style: CircularGaugeStyle {
         labelStepSize: 10
         labelInset: outerRadius / 2.2
@@ -118,7 +119,7 @@ CircularGauge {
                 }
 
                 Label{
-                    text: "MPH"
+                    text: "KPH"
                     font.pixelSize: 46
                     font.family: "Inter"
                     color: "#01E6DE"
@@ -131,10 +132,10 @@ CircularGauge {
         tickmarkLabel:  Text {
             font.pixelSize: Math.max(6, outerRadius * 0.05)
             text: styleData.value
-            color: styleData.value <= gauge.value ? "white" : "#777776"
+            color: styleData.value <= gauge.value ? "white" : "darkGray"
             antialiasing: true
         }
-
+        /* Big tick */
         tickmark: Image {
             source: "qrc:/assets/tickmark.svg"
             width: outerRadius * 0.018
@@ -142,7 +143,7 @@ CircularGauge {
             antialiasing: true
             asynchronous: true
         }
-
+        /* Small Tick */
         minorTickmark: Rectangle {
             implicitWidth: outerRadius * 0.01
             implicitHeight: outerRadius * 0.03

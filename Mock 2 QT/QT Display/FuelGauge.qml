@@ -21,6 +21,7 @@ CircularGauge {
             return "#32D74B"
         }
     }
+    Behavior on value { NumberAnimation { duration: 100 }}
     style: CircularGaugeStyle {
         labelStepSize: 10
         labelInset: outerRadius / 2.2

@@ -125,7 +125,6 @@ ApplicationWindow {
 
             //Component.onCompleted: forceActiveFocus()
             focus: true
-            Behavior on value { NumberAnimation { duration: 1000 }}
         }
 
         //        Label{
