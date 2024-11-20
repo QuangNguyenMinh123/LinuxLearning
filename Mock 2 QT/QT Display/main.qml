@@ -12,13 +12,6 @@ ApplicationWindow {
     color: "#1E1E1E"
     visibility: "FullScreen"
 
-    
-
-    function generateRandom(maxLimit = 70){
-        let rand = Math.random() * maxLimit;
-        rand = Math.floor(rand);
-        return rand;
-    }
     /* Display speed color */
     function speedColor(value){
         if(value < 60 ){
@@ -111,22 +104,7 @@ ApplicationWindow {
             }
         }
 
-
-        //        Label{
-        //            text: "MPH"
-        //            font.pixelSize: 46
-        //            font.family: "Inter"
-        //            color: "#01E6DE"
-        //            font.bold: Font.Normal
-        //            anchors.top:speedGauge.bottom
-        //            anchors.horizontalCenter: parent.horizontalCenter
-        //        }
-
-
-        /*
-          Speed Limit Label
-        */
-
+        /*  Speed Limit Label */
         Rectangle{
             id:speedLimit
             width: 130
@@ -163,7 +141,6 @@ ApplicationWindow {
             }
             source: "qrc:/assets/Model 3.png"
         }
-
 
         Image {
             id:car
