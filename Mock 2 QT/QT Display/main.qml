@@ -457,12 +457,10 @@ ApplicationWindow {
             width: 450
             height: 450
             value: 0
-            property int animationSpeed: 1
             property int curSpeed: speedGauge.value
             property int preSpeed: speedGauge.preValue
             minimumValue: 0
-            maximumValue: 7
-            Behavior on value { NumberAnimation { duration: animationSpeed }}
+            maximumValue: 10
             onCurSpeedChanged: {
                 /* Speeding */
                 if (curSpeed - preSpeed > 0)
@@ -501,7 +499,6 @@ ApplicationWindow {
             maximumValue: 100
             Component.onCompleted: forceActiveFocus()
             focus: true
-
         }
         /* Keyboard handler */
         Keys.onPressed: {
