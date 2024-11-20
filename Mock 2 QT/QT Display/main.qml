@@ -452,17 +452,25 @@ ApplicationWindow {
             anchors{
                 verticalCenter: parent.verticalCenter
                 left: parent.left
-                leftMargin: parent.width / 5
+                leftMargin: parent.width / 7
             }
-            property bool accelerating
-            width: 400
-            height: 400
-            value: accelerating ? maximumValue : 0
-            property bool status: speedGauge.EngineStatus
-            maximumValue: 250
-            Behavior on value { NumberAnimation { duration: 1000 }}
-            onStatusChanged: {
-
+            width: 450
+            height: 450
+            value: 0
+            property int animationSpeed: 1
+            property int curSpeed: speedGauge.value
+            property int preSpeed: speedGauge.preValue
+            minimumValue: 0
+            maximumValue: 7
+            Behavior on value { NumberAnimation { duration: animationSpeed }}
+            onCurSpeedChanged: {
+                /* Speeding */
+                if (curSpeed - preSpeed > 0)
+                    value ++
+                else /* Braking */
+                if (curSpeed - preSpeed < 0)
+                    value --
+                speedGauge.preValue = speedGauge.value
             }
         }
 
@@ -471,23 +479,21 @@ ApplicationWindow {
             id: speedGauge
             value: 0
             property int preValue: 0
-            property bool engineStatus: NoChange
+            property int engineStatus: 0
             maximumValue: 250
             anchors.top: parent.top
             anchors.topMargin:Math.floor(parent.height * 0.25) - 100
             anchors.horizontalCenter: parent.horizontalCenter
             focus: true
-            onValueChanged: {
-                if (value - preValue > 0)
-                    engineStatus = Speeding
-                else if (value - preValue < 0)
-                    engineStatus = Braking
-                preValue = value
-            }
         }
         /* Fuel Gauge */
         FuelGauge {
             id: fuelGauge
+            anchors {
+                verticalCenter: parent.verticalCenter
+                right: parent.right
+                rightMargin: parent.width / 10
+            }
             width: 450
             height: 450
             value: 20
@@ -495,11 +501,7 @@ ApplicationWindow {
             maximumValue: 100
             Component.onCompleted: forceActiveFocus()
             focus: true
-            anchors {
-                verticalCenter: parent.verticalCenter
-                right: parent.right
-                rightMargin: parent.width / 10
-            }
+
         }
         /* Keyboard handler */
         Keys.onPressed: {

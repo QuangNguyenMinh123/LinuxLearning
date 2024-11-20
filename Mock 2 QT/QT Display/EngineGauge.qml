@@ -7,59 +7,50 @@ import QtQuick.Extras.Private 1.0
 import QtGraphicalEffects 1.0
 
 CircularGauge {
-    id: engineGauge
-    property string speedColor: "yellow"
-    property real arcAngle: 180  // Angle in degrees
-    property real arcRadius: 90
+    id: fuelGauge
+    property string speedColor: "#32D74B"
+    function fuelLevelProvider(value){
+        var redIdx = 255;
+        var greenIdx = 255;
+        if(value < 50 ){
+            greenIdx = value / 50
+            redIdx = 1
+        } else
+        if(value > 50 ){
+            greenIdx = 1
+            redIdx =(100 - value) / 50
+        } else
+        {
+            redIdx = 1
+            greenIdx= 1
+        }
+        return Qt.rgba(redIdx, greenIdx, 0, 1);
+    }
 
+    Behavior on value { NumberAnimation { duration: 50 }}
     style: CircularGaugeStyle {
         labelStepSize: 10
         labelInset: outerRadius / 2.2
         tickmarkInset: outerRadius / 4.2
-
         minorTickmarkInset: outerRadius / 4.2
-        minimumValueAngle: -155
-        maximumValueAngle: -30
+        minimumValueAngle: -60
+        maximumValueAngle: 60
 
-        background:Rectangle {
-            implicitHeight: engineGauge.height
-            implicitWidth: engineGauge.width
-            color: "transparent"
+        background: Rectangle {
+            implicitHeight: fuelGauge.height
+            implicitWidth: fuelGauge.width
+            color: "#1E1E1E"
             anchors.centerIn: parent
             radius: 360
-
-            // Create a Rotation item to move the Image along the arc
-            // Image to move along the arc
-            Image {
-                sourceSize: Qt.size(16, 17)
-                source: "qrc:/assets/maxLimit.svg"
-
-                // Translate the Image along the arc
-                x: arcRadius * Math.cos(Math.PI * arcAngle / 180)
-                y: arcRadius * Math.sin(Math.PI * arcAngle / 180)
-
-                // Set the pivot to the bottom center of the Image
-                anchors.bottom: circularCanva.top
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
+            opacity: 1
             Canvas {
-                id:circularCanva
-                property int value: engineGauge.value
-
                 anchors.fill: parent
+                property int value: fuelGauge.value
 
-                Component.onCompleted: requestPaint()
 
+                onValueChanged:requestPaint()
                 function degreesToRadians(degrees) {
-                    return degrees * (Math.PI / 180);
-                }
-
-                function createLinearGradient(ctx, start, end, colors) {
-                    var gradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
-                    for (var i = 0; i < colors.length; i++) {
-                        gradient.addColorStop(i / (colors.length - 1), colors[i]);
-                    }
-                    return gradient;
+                  return degrees * (Math.PI / 180);
                 }
 
                 onPaint: {
@@ -68,153 +59,44 @@ CircularGauge {
 
                     // Define the gradient colors for the filled arc
                     var gradientColors = [
-                                "#B8FF01",// Start color
-                                "#B8FF01",    // End color
-                            ];
+                        "#32D74B",     // Start color
+                        "yellow",  // Middle color (you can add more colors for more segments)
+                        "red"    // End color
+                    ];
 
                     // Calculate the start and end angles for the filled arc
-                    var startAngle = valueToAngle(engineGauge.minimumValue) - 90;
-                    var endAngle = valueToAngle(250) - 90;
+                    var startAngle = valueToAngle(fuelGauge.minimumValue) - 90;
+                    var endAngle = valueToAngle(fuelGauge.value) - 90;
 
-                    // Create a linear gradient
-                    var gradient = createLinearGradient(ctx, { x: 0, y: 0 }, { x: outerRadius * 2, y: 0 }, gradientColors);
                     // Loop through the gradient colors and fill the arc segment with each color
                     for (var i = 0; i < gradientColors.length; i++) {
-                        var gradientColor = gradientColors[i];
-                        var angle = startAngle + (endAngle - startAngle) * (i / (gradientColors.length - 1));
+                        var gradientColor = fuelLevelProvider(fuelGauge.value)
+                        speedColor = gradientColor
+                        var angle = startAngle + (endAngle - startAngle) * (i / gradientColors.length);
 
                         ctx.beginPath();
-                        ctx.lineWidth = 1.5;
-                        ctx.strokeStyle = gradient;
+                        ctx.lineWidth = outerRadius * 0.225;
+                        ctx.strokeStyle = gradientColor;
                         ctx.arc(outerRadius,
                                 outerRadius,
-                                outerRadius - 57,
+                                outerRadius - ctx.lineWidth / 2,
                                 degreesToRadians(angle),
                                 degreesToRadians(endAngle));
                         ctx.stroke();
                     }
                 }
             }
-
-            Canvas {
-                property int value: engineGauge.value
-
-                anchors.fill: parent
-                Component.onCompleted: requestPaint()
-
-                function degreesToRadians(degrees) {
-                    return degrees * (Math.PI / 180);
-                }
-
-                function createLinearGradient(ctx, start, end, colors) {
-                    var gradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
-                    for (var i = 0; i < colors.length; i++) {
-                        gradient.addColorStop(i / (colors.length - 1), colors[i]);
-                    }
-                    return gradient;
-                }
-
-                onPaint: {
-                    var ctx = getContext("2d");
-                    ctx.reset();
-
-                    // Define the gradient colors for the filled arc
-                    var gradientColors = [
-                                "#163546",// Start color
-                                "#163546",    // End color
-                            ];
-
-                    // Calculate the start and end angles for the filled arc
-                    var startAngle = valueToAngle(engineGauge.minimumValue) - 90;
-                    var endAngle = valueToAngle(250) - 90;
-
-                    // Create a linear gradient
-                    var gradient = createLinearGradient(ctx, { x: 0, y: 0 }, { x: outerRadius * 2, y: 0 }, gradientColors);
-
-                    // Loop through the gradient colors and fill the arc segment with each color
-                    for (var i = 0; i < gradientColors.length; i++) {
-                        var gradientColor = gradientColors[i];
-                        var angle = startAngle + (endAngle - startAngle) * (i / (gradientColors.length - 1));
-
-                        ctx.beginPath();
-                        ctx.lineWidth = outerRadius * 0.15;
-                        ctx.strokeStyle = gradient;
-                        ctx.arc(outerRadius,
-                                outerRadius,
-                                outerRadius - 75,
-                                degreesToRadians(angle),
-                                degreesToRadians(endAngle));
-                        ctx.stroke();
-                    }
-                }
-            }
-
-
-            Canvas {
-                property int value: engineGauge.value
-
-                anchors.fill: parent
-                onValueChanged: requestPaint()
-
-                function degreesToRadians(degrees) {
-                    return degrees * (Math.PI / 180);
-                }
-
-                function createLinearGradient(ctx, start, end, colors) {
-                    var gradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
-                    for (var i = 0; i < colors.length; i++) {
-                        gradient.addColorStop(i / (colors.length - 1), colors[i]);
-                    }
-                    return gradient;
-                }
-
-                onPaint: {
-                    var ctx = getContext("2d");
-                    ctx.reset();
-
-                    // Define the gradient colors for the filled arc
-                    var gradientColors = [
-                                "#6369FF",// Start color
-                                "#63FFFF",    // End color
-                                "#FFFF00",
-                                "#FF0000"
-                            ];
-
-                    // Calculate the start and end angles for the filled arc
-                    var startAngle = valueToAngle(engineGauge.minimumValue) - 90;
-                    var endAngle = valueToAngle(engineGauge.value) - 90;
-
-                    // Create a linear gradient
-                    var gradient = createLinearGradient(ctx, { x: 0, y: 0 }, { x: outerRadius * 2, y: 0 }, gradientColors);
-
-                    // Loop through the gradient colors and fill the arc segment with each color
-                    for (var i = 0; i < gradientColors.length; i++) {
-                        var gradientColor = gradientColors[i];
-                        var angle = startAngle + (endAngle - startAngle) * (i / (gradientColors.length - 1));
-
-                        ctx.beginPath();
-                        ctx.lineWidth = outerRadius * 0.15;
-                        ctx.strokeStyle = gradient;
-                        ctx.arc(outerRadius,
-                                outerRadius,
-                                outerRadius - 75,
-                                degreesToRadians(angle),
-                                degreesToRadians(endAngle));
-                        ctx.stroke();
-                    }
-                }
-            }
-
         }
 
-
         needle: Item {
-            y: -outerRadius * 0.70
-            height: outerRadius * 0.02
+            visible: true
+            y: -outerRadius * 0.78
+            height: outerRadius * 0.27
             Image {
                 id: needle
-                source: "qrc:/assets/Rectangle 4.svg"
-                width: height * 0.06
+                source: "qrc:/assets/needle.svg"
+                height: parent.height
+                width: height * 0.1
                 asynchronous: true
                 antialiasing: true
             }
@@ -227,74 +109,68 @@ CircularGauge {
               source: needle
           }
         }
-
+        /* Fuel image */
         foreground: Item {
-            anchors.centerIn: parent
-            Image{
+            id: foreground
+            RowLayout{
                 anchors.centerIn: parent
-                source: "qrc:/assets/Ellipse 1.svg"
-
                 Image {
-                    sourceSize: Qt.size(203,203)
-                    anchors.centerIn: parent
-                    source: "qrc:/assets/Subtract.svg"
+                    id: fuelSymbol
+                    x: parent.implicitHeight / 5 + 100
+                    y: parent.implicitWidth / 5 + 100
+                    width: 72
+                    height: 72
+                    source: "qrc:/assets/fuel.svg"
+                    opacity: 1
+                    property alias fuelOpacity: fuelSymbol.opacity
 
-                    Image {
-                        z:2
-                        sourceSize: Qt.size(147,147)
-                        anchors.centerIn: parent
-                        source: "qrc:/assets/Ellipse 6.svg"
-
-
-                        ColumnLayout{
-                            anchors.centerIn: parent
-                            Label{
-                                text: engineGauge.value.toFixed(0)
-                                font.pixelSize: 65
-                                font.family: "Inter"
-                                color: "#FFFFFF"
-                                font.bold: Font.DemiBold
-                                Layout.alignment: Qt.AlignHCenter
-                            }
-
-                            Label{
-                                text: "km/h"
-                                font.pixelSize: 18
-                                font.family: "Inter"
-                                color: "#FFFFFF"
-                                opacity: 0.4
-                                font.bold: Font.Normal
-                                Layout.alignment: Qt.AlignHCenter
-                            }
+                }
+                Label{
+                    text: fuelGauge.value.toFixed(0) + '%'
+                    font.pixelSize: 85
+                    font.family: "Inter"
+                    color: fuelLevelProvider(fuelGauge.value)
+                    font.bold: Font.DemiBold
+                    Layout.alignment: Qt.AlignHCenter
+                }
+                Timer {
+                    id: blinkTimer
+                        interval: 750
+                        running: true
+                        repeat: true
+                        onTriggered:{
+                            if (fuelGauge.value <= 10)
+                                fuelSymbol.opacity = fuelSymbol.opacity === 1 ? 0 : 1;
+                            else
+                                fuelSymbol.opacity = 1
                         }
                     }
-                }
             }
         }
 
+
         tickmarkLabel:  Text {
-            visible: false
             font.pixelSize: Math.max(6, outerRadius * 0.05)
             text: styleData.value
-            color: styleData.value <= engineGauge.value ? "white" : "#777776"
+            color: styleData.value <= fuelGauge.value ? "white" : "#777776"
             antialiasing: true
         }
 
-        tickmark:Rectangle {
-            implicitWidth: outerRadius * 0.008
-            implicitHeight: outerRadius * 0.05
-
+        tickmark: Image {
+            source: "qrc:/assets/tickmark.svg"
+            width: outerRadius * 0.018
+            height: outerRadius * 0.15
             antialiasing: true
-            smooth: true
-            color: styleData.value <= engineGauge.value ? "white" : "darkGray"
+            asynchronous: true
         }
+
         minorTickmark: Rectangle {
-            implicitWidth: outerRadius * 0.008
-            implicitHeight: outerRadius * 0.05
+            implicitWidth: outerRadius * 0.01
+            implicitHeight: outerRadius * 0.03
 
             antialiasing: true
             smooth: true
-            color: styleData.value <= engineGauge.value ? "white" : "darkGray"
+            color: styleData.value <= fuelGauge.value ? "white" : "darkGray"
         }
-    } 
+    }
 }
