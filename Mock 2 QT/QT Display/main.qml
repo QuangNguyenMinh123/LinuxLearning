@@ -112,11 +112,11 @@ ApplicationWindow {
         }
         /* Speedometer */
         Gauge {
-            id: speedLabel
+            id: speedGauge
             width: 450
             height: 450
             property int accelerating: 0
-            value: accelerating ? maximumValue : 0
+            value : 0
             maximumValue: 250
 
             anchors.top: parent.top
@@ -126,20 +126,6 @@ ApplicationWindow {
             //Component.onCompleted: forceActiveFocus()
             focus: true
             Behavior on value { NumberAnimation { duration: 1000 }}
-
-            Keys.onUpPressed: accelerating = true
-            Keys.onReleased: {
-                if (event.key === Qt.Key_Down) {
-                    accelerating = false;
-                    event.accepted = true;
-                }else if (event.key === Qt.Key_Enter || event.key === Qt.Key_Return) {
-                    radialBar.accelerating = false;
-                    event.accepted = true;
-                }
-            }
-
-            Keys.onEnterPressed: radialBar.accelerating = true
-            Keys.onReturnPressed: radialBar.accelerating = true
         }
 
         //        Label{
@@ -148,7 +134,7 @@ ApplicationWindow {
         //            font.family: "Inter"
         //            color: "#01E6DE"
         //            font.bold: Font.Normal
-        //            anchors.top:speedLabel.bottom
+        //            anchors.top:speedGauge.bottom
         //            anchors.horizontalCenter: parent.horizontalCenter
         //        }
 
@@ -163,7 +149,7 @@ ApplicationWindow {
             height: 130
             radius: height/2
             color: "#D9D9D9"
-            border.color: speedColor(maxSpeedlabel.text)
+            border.color: speedColor(maxspeedGauge.text)
             border.width: 10
 
             anchors.horizontalCenter: parent.horizontalCenter
@@ -171,8 +157,8 @@ ApplicationWindow {
             anchors.bottomMargin: 50
 
             Label{
-                id:maxSpeedlabel
-                text: getRandomInt(150, speedLabel.maximumValue).toFixed(0)
+                id:maxspeedGauge
+                text: getRandomInt(150, speedGauge.maximumValue).toFixed(0)
                 font.pixelSize: 45
                 font.family: "Inter"
                 font.bold: Font.Bold
@@ -259,42 +245,42 @@ ApplicationWindow {
                 Rectangle{
                     width: 20
                     height: 15
-                    color: speedLabel.value.toFixed(0) > 31.25 ? speedLabel.speedColor : "#01E6DC"
+                    color: speedGauge.value.toFixed(0) > 31.25 ? speedGauge.speedColor : "#01E6DC"
                 }
                 Rectangle{
                     width: 20
                     height: 15
-                    color: speedLabel.value.toFixed(0) > 62.5 ? speedLabel.speedColor : "#01E6DC"
+                    color: speedGauge.value.toFixed(0) > 62.5 ? speedGauge.speedColor : "#01E6DC"
                 }
                 Rectangle{
                     width: 20
                     height: 15
-                    color: speedLabel.value.toFixed(0) > 93.75 ? speedLabel.speedColor : "#01E6DC"
+                    color: speedGauge.value.toFixed(0) > 93.75 ? speedGauge.speedColor : "#01E6DC"
                 }
                 Rectangle{
                     width: 20
                     height: 15
-                    color: speedLabel.value.toFixed(0) > 125.25 ? speedLabel.speedColor : "#01E6DC"
+                    color: speedGauge.value.toFixed(0) > 125.25 ? speedGauge.speedColor : "#01E6DC"
                 }
                 Rectangle{
                     width: 20
                     height: 15
-                    color: speedLabel.value.toFixed(0) > 156.5 ? speedLabel.speedColor : "#01E6DC"
+                    color: speedGauge.value.toFixed(0) > 156.5 ? speedGauge.speedColor : "#01E6DC"
                 }
                 Rectangle{
                     width: 20
                     height: 15
-                    color: speedLabel.value.toFixed(0) > 187.75 ? speedLabel.speedColor : "#01E6DC"
+                    color: speedGauge.value.toFixed(0) > 187.75 ? speedGauge.speedColor : "#01E6DC"
                 }
                 Rectangle{
                     width: 20
                     height: 15
-                    color: speedLabel.value.toFixed(0) > 219 ? speedLabel.speedColor : "#01E6DC"
+                    color: speedGauge.value.toFixed(0) > 219 ? speedGauge.speedColor : "#01E6DC"
                 }
             }
 
             Label{
-                text: speedLabel.value.toFixed(0) + " MPH "
+                text: speedGauge.value.toFixed(0) + " MPH "
                 font.pixelSize: 32
                 font.family: "Inter"
                 font.bold: Font.Normal
@@ -448,7 +434,7 @@ ApplicationWindow {
             anchors{
                 left: parent.left
                 leftMargin: 100
-                verticalCenter: speedLabel.verticalCenter
+                verticalCenter: speedGauge.verticalCenter
             }
             source: rareLightOn ? "qrc:/assets/Rare_fog_lights_red.svg" : "qrc:/assets/Rare fog lights.svg"
             Behavior on rareLightOn { NumberAnimation { duration: 300 }}
@@ -533,7 +519,7 @@ ApplicationWindow {
             anchors{
                 right: parent.right
                 rightMargin: 100
-                verticalCenter: speedLabel.verticalCenter
+                verticalCenter: speedGauge.verticalCenter
             }
             source: sheetBelt ? "qrc:/assets/FirstRightIcon.svg" : "qrc:/assets/FirstRightIcon_grey.svg"
             Behavior on sheetBelt { NumberAnimation { duration: 300 }}
@@ -560,16 +546,26 @@ ApplicationWindow {
                 right: parent.right
                 rightMargin: parent.width / 10
             }
-
-            Keys.onPressed: {
-                if (event.key === Qt.Key_A) {
-                    value = Math.min(value - 1, value)
-                }
-                else
-                if (event.key === Qt.Key_D) {
-                    value = Math.max(0, value + 1)
-                }
+        }
+        /* Keyboard handler */
+        Keys.onPressed: {
+            /* Key A and D to decrease/increase fuel */
+            if (event.key === Qt.Key_A) {
+                fuelGauge.value = Math.min(fuelGauge.value - 1, fuelGauge.value)
+            }
+            else
+            if (event.key === Qt.Key_D) {
+                fuelGauge.value = Math.max(0, fuelGauge.value + 1)
+            } else
+            /* Key W and S to decrease/increase speed */
+            if (event.key === Qt.Key_W) {
+                speedGauge.value = Math.max(0, speedGauge.value + 1)
+            } else
+            if (event.key === Qt.Key_S) {
+                speedGauge.value = Math.min(speedGauge.value - 1, speedGauge.value)
             }
         }
+
+
     }
 }
