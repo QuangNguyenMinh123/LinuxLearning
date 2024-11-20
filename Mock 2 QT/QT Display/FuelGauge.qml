@@ -9,8 +9,6 @@ import QtGraphicalEffects 1.0
 CircularGauge {
     id: fuelGauge
     property string speedColor: "#32D74B"
-    property alias fuelIcon: fuelSymbol.opacity
-
     function fuelLevelProvider(value){
         var redIdx = 255;
         var greenIdx = 255;
@@ -28,7 +26,9 @@ CircularGauge {
         }
         return Qt.rgba(redIdx, greenIdx, 0, 1);
     }
+
     Behavior on value { NumberAnimation { duration: 50 }}
+
     style: CircularGaugeStyle {
         labelStepSize: 10
         labelInset: outerRadius / 2.2
@@ -59,7 +59,6 @@ CircularGauge {
                     else
                         blinkTimer.running = false
                 }
-
                 function degreesToRadians(degrees) {
                   return degrees * (Math.PI / 180);
                 }
@@ -120,7 +119,7 @@ CircularGauge {
               source: needle
           }
         }
-
+        /* Fuel image */
         foreground: Item {
             RowLayout{
                 anchors.centerIn: parent
@@ -132,6 +131,8 @@ CircularGauge {
                     height: 72
                     source: "qrc:/assets/fuel.svg"
                     opacity: 1
+                    property alias fuelOpacity: fuelSymbol.opacity
+
                 }
                 Label{
                     text: fuelGauge.value.toFixed(0) + '%'
@@ -143,6 +144,16 @@ CircularGauge {
                 }
             }
         }
+        Timer {
+            id: blinkTimer
+                interval: 1000
+                running: false
+                repeat: true
+                property alias fuelOpacity: fuelSymbol.opacity
+                onTriggered:{
+                    fuelOpacity = fuelOpacity === 1 ? 0 : 1;
+                }
+            }
 
         tickmarkLabel:  Text {
             font.pixelSize: Math.max(6, outerRadius * 0.05)
