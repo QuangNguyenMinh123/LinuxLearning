@@ -8,9 +8,9 @@ import QtGraphicalEffects 1.0
 
 CircularGauge {
     id: gauge
-    width: 450
+    width: 500
     height: width
-    property real outerRadius: 450
+    property real outerRadius: width
     property string speedColor: "#32D74B"
     function speedColorProvider(value){
         if(value < 60 ){
@@ -24,13 +24,14 @@ CircularGauge {
     Behavior on value { NumberAnimation { duration: 50 }}
     style: CircularGaugeStyle {
         labelStepSize: 10
-        labelInset: outerRadius / 4
-        tickmarkInset: outerRadius / 20
-        minorTickmarkInset: outerRadius / 20
+        labelInset: outerRadius / 3.5
+        tickmarkInset: outerRadius / 10
+        minorTickmarkInset: outerRadius / 10
         minimumValueAngle: -150
         maximumValueAngle: 150
 
-        background: Rectangle {
+        background: Rectangle
+        {
             height: gauge.height
             width: gauge.width
             color: "#1E1E1E"
@@ -67,23 +68,22 @@ CircularGauge {
                         speedColor = gradientColor
                         var angle = startAngle + (endAngle - startAngle) * (i / gradientColors.length);
                         ctx.beginPath();
-                        ctx.lineWidth = outerRadius * 0.15;
+                        ctx.lineWidth = outerRadius * 0.08;
                         ctx.strokeStyle = gradientColor;
                         ctx.arc(outerRadius,
                                 outerRadius,
-                                outerRadius - ctx.lineWidth / 2 + 25,
+                                outerRadius - ctx.lineWidth / 2,
                                 degreesToRadians(angle),
                                 degreesToRadians(endAngle));
                         ctx.stroke();
                     }
                 }
-
             }
         }
         /* Display needle */
         needle: Item {
             visible: true
-            y: -outerRadius * 0.95
+            y: -outerRadius * 0.9
             height: outerRadius * 0.25
             Image {
                 id: needle
@@ -127,7 +127,7 @@ CircularGauge {
         }
         /* Display static speed */
         tickmarkLabel:  Text {
-            font.pixelSize: Math.max(6, outerRadius * 0.07)
+            font.pixelSize: Math.max(6, outerRadius * 0.06)
             font.bold: true
             text: styleData.value
             color: styleData.value <= gauge.value ? "yellow" : "darkGray"
@@ -137,7 +137,7 @@ CircularGauge {
         tickmark: Image {
             source: "qrc:/assets/tickmark.svg"
             width: outerRadius * 0.018
-            height: outerRadius * 0.15
+            height: outerRadius * 0.1
             antialiasing: true
             asynchronous: true
         }

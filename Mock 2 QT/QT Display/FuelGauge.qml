@@ -10,18 +10,23 @@ CircularGauge {
     id: fuelGauge
     property string speedColor: "#32D74B"
     function fuelLevelProvider(value){
-        if(value <= 10 ){
-            return "red"
+        var redIdx = 255;
+        var greenIdx = 255;
+        if(value < 50 ){
+            greenIdx = value / 50
+            redIdx = 1
         } else
-        if(value > 10 && value <= 50){
-            return "yellow"
-        }
-        else
+        if(value > 50 ){
+            greenIdx = 1
+            redIdx =(100 - value) / 50
+        } else
         {
-            return "#32D74B"
+            redIdx = 1
+            greenIdx= 1
         }
+        return Qt.rgba(redIdx, greenIdx, 0, 1);
     }
-    Behavior on value { NumberAnimation { duration: 100 }}
+    Behavior on value { NumberAnimation { duration: 50 }}
     style: CircularGaugeStyle {
         labelStepSize: 10
         labelInset: outerRadius / 2.2
@@ -83,7 +88,7 @@ CircularGauge {
         }
 
         needle: Item {
-            visible: fuelGauge.value.toFixed(0) > 0
+            visible: true
             y: -outerRadius * 0.78
             height: outerRadius * 0.27
             Image {
