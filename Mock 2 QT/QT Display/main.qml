@@ -12,6 +12,8 @@ ApplicationWindow {
     color: "#1E1E1E"
     visibility: "FullScreen"
 
+    
+
     function generateRandom(maxLimit = 70){
         let rand = Math.random() * maxLimit;
         rand = Math.floor(rand);
@@ -121,8 +123,8 @@ ApplicationWindow {
             anchors.topMargin:Math.floor(parent.height * 0.25)
             anchors.horizontalCenter: parent.horizontalCenter
 
-            Component.onCompleted: forceActiveFocus()
-
+            //Component.onCompleted: forceActiveFocus()
+            focus: true
             Behavior on value { NumberAnimation { duration: 1000 }}
 
             Keys.onUpPressed: accelerating = true
@@ -544,31 +546,28 @@ ApplicationWindow {
         }
 
         /* Fuel Gauge */
-        FuelGauge
-        {
+        FuelGauge {
             id: fuelGauge
             width: 450
             height: 450
             value: 20
             minimumValue: 0
             maximumValue: 100
-            anchors{
+            Component.onCompleted: forceActiveFocus()
+            focus: true
+            anchors {
                 verticalCenter: parent.verticalCenter
                 right: parent.right
                 rightMargin: parent.width / 10
             }
-            focus: true
-//            Component.onCompleted: forceActiveFocus()
-
-//            Behavior on value { NumberAnimation { duration: 1000 }}
 
             Keys.onPressed: {
-                if (event.key === Qt.Key_Left) {
-                    // Decrease the value
-                    value = Math.max(0, value - 5)
-                } else if (event.key === Qt.Key_Right) {
-                    // Increase the value
-                    value = Math.min(maxValue, value + 5)
+                if (event.key === Qt.Key_A) {
+                    value = Math.min(value - 1, value)
+                }
+                else
+                if (event.key === Qt.Key_D) {
+                    value = Math.max(0, value + 1)
                 }
             }
         }
