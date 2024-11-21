@@ -109,25 +109,25 @@ ApplicationWindow {
         /*  Speed Limit Label */
         Rectangle{
             id: speedLimit
-            width: 130
-            height: 130
+            width: 175
+            height: width
             radius: height/2
             color: "#D9D9D9"
-            border.color: speedColor(maxspeedGauge.text)
+            border.color: "red"
             border.width: 10
             opacity: 1
             anchors.horizontalCenter: fuelGauge.horizontalCenter
             anchors.bottom: fuelGauge.top
-            anchors.bottomMargin: 50
+            anchors.bottomMargin: 10
 
             Label{
                 id: maxspeedGauge
-                property int maxOverSpeed: getRandomInt(50, speedGauge.maximumValue).toFixed(0)
+                property int maxOverSpeed: getRandomInt(0, speedGauge.maximumValue)
                 text: maxOverSpeed
-                font.pixelSize: 45
+                font.pixelSize: 60
                 font.family: "Inter"
                 font.bold: Font.Bold
-                color: "#01E6DE"
+                color: "red"
                 anchors.centerIn: parent
                 
                 function getRandomInt(min, max) {
@@ -137,19 +137,10 @@ ApplicationWindow {
         }
 
         Image {
-            anchors{
-                bottom: car.top
-                bottomMargin: 30
-                horizontalCenter:car.horizontalCenter
-            }
-            source: "qrc:/assets/Model 3.png"
-        }
-
-        Image {
             id: car
             anchors{
                 bottom: parent.bottom
-                bottomMargin: 30
+                bottomMargin: 60
                 horizontalCenter:parent.horizontalCenter
             }
             source: "qrc:/assets/Car.svg"
@@ -164,7 +155,7 @@ ApplicationWindow {
             anchors
             {
                 left: car.left
-                leftMargin: 100
+                leftMargin: 200
                 bottom: parent.bottom
                 bottomMargin: 26.50
             }
@@ -209,7 +200,7 @@ ApplicationWindow {
             height: 397
             anchors{
                 right: car.right
-                rightMargin: 100
+                rightMargin: 200
                 bottom: parent.bottom
                 bottomMargin: 26.50
             }
@@ -360,73 +351,123 @@ ApplicationWindow {
         }
 
         /*Right Side Icons*/
-
+        /* ABS */
         Image {
-            id:forthRightIndicator
-            property bool indicator: true
+            id:absIndicator
+            property bool blink: false
+            property int absCnt: 0
             width: 56.83
             height: 36.17
             anchors{
                 right: parent.right
                 rightMargin: 195
-                bottom: thirdRightIndicator.top
+                bottom: parkingIndicator.top
                 bottomMargin: 50
             }
-            source: indicator ? "qrc:/assets/FourthRightIcon.svg" : "qrc:/assets/FourthRightIcon_red.svg"
-            Behavior on indicator { NumberAnimation { duration: 300 }}
+            source: "qrc:/assets/ABS_grey.svg"
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
-                    forthRightIndicator.indicator = !forthRightIndicator.indicator
+                    absIndicator.blink = !absIndicator.blink
+                }
+            }
+            Timer {
+                interval: 666
+                running: true
+                repeat: true
+                onTriggered:{
+                    if (absIndicator.blink === true)
+                    {
+                        if (absIndicator.absCnt % 2 === 0)
+                        {
+                            absIndicator.source = "qrc:/assets/ABS_grey.svg"
+                        }
+                        else
+                        {
+                            absIndicator.source = "qrc:/assets/ABS_red.svg"
+                        }
+                        absIndicator.absCnt ++
+                    }
+                    else
+                    {
+                        absIndicator.source = "qrc:/assets/ABS_grey.svg"
+                        absIndicator.absCnt = 0;
+                    }
                 }
             }
         }
-
+        /* Warning parking light */
         Image {
-            id:thirdRightIndicator
+            id:parkingIndicator
             property bool indicator: true
             width: 56.83
             height: 36.17
             anchors{
                 right: parent.right
                 rightMargin: 155
-                bottom: secondRightIndicator.top
+                bottom: airbagIndicator.top
                 bottomMargin: 50
             }
-            source: indicator ? "qrc:/assets/thirdRightIcon.svg" : "qrc:/assets/thirdRightIcon_red.svg"
+            source: indicator ? "qrc:/assets/Parking_grey.svg" : "qrc:/assets/Parking_red.svg"
             Behavior on indicator { NumberAnimation { duration: 300 }}
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
-                    thirdRightIndicator.indicator = !thirdRightIndicator.indicator
+                    parkingIndicator.indicator = !parkingIndicator.indicator
                 }
             }
         }
-
+        /* Front air bag (!) */
         Image {
-            id:secondRightIndicator
-            property bool indicator: true
+            id:airbagIndicator
+            property bool blink: false
+            property int airbagCnt: 0
             width: 56.83
             height: 36.17
             anchors{
                 right: parent.right
                 rightMargin: 125
-                bottom: firstRightIndicator.top
+                bottom: seatBeltIndicator.top
                 bottomMargin: 50
             }
-            source: indicator ? "qrc:/assets/SecondRightIcon.svg" : "qrc:/assets/SecondRightIcon_red.svg"
-            Behavior on indicator { NumberAnimation { duration: 300 }}
+            source: "qrc:/assets/Airbag_grey.svg"
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
-                    secondRightIndicator.indicator = !secondRightIndicator.indicator
+                    airbagIndicator.blink = !airbagIndicator.blink
+                }
+            }
+            Timer {
+                id: airbagTimer
+                interval: 500
+                running: true
+                repeat: true
+                onTriggered:{
+                    if (airbagIndicator.blink === true)
+                    {
+                        if (airbagIndicator.airbagCnt % 2 === 0)
+                        {
+                            airbagIndicator.source = "qrc:/assets/Airbag_grey.svg"
+                        }
+                        else
+                        {
+                            airbagIndicator.source = "qrc:/assets/Airbag_red.svg"
+                        }
+                        airbagIndicator.airbagCnt ++
+                    }
+                    else
+                    {
+                        airbagIndicator.source = "qrc:/assets/Airbag_grey.svg"
+                        airbagIndicator.airbagCnt = 0;
+                    }
                 }
             }
         }
 
         Image {
-            id:firstRightIndicator
-            property bool sheetBelt: true
+            id:seatBeltIndicator
+            property bool blink: false
+            property int seatBeltCnt: 0
             width: 36
             height: 45
             anchors{
@@ -434,12 +475,36 @@ ApplicationWindow {
                 rightMargin: 100
                 verticalCenter: speedGauge.verticalCenter
             }
-            source: sheetBelt ? "qrc:/assets/FirstRightIcon.svg" : "qrc:/assets/FirstRightIcon_grey.svg"
-            Behavior on sheetBelt { NumberAnimation { duration: 300 }}
+            source: "qrc:/assets/Seatbelt_grey.svg"
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
-                    firstRightIndicator.sheetBelt = !firstRightIndicator.sheetBelt
+                    seatBeltIndicator.blink = !seatBeltIndicator.blink
+                }
+            }
+            Timer {
+                id: seatBeltTimer
+                interval: 750
+                running: true
+                repeat: true
+                onTriggered:{
+                    if (seatBeltIndicator.blink === true)
+                    {
+                        if (seatBeltIndicator.seatBeltCnt % 2 === 0)
+                        {
+                            seatBeltIndicator.source = "qrc:/assets/Seatbelt_grey.svg"
+                        }
+                        else
+                        {
+                            seatBeltIndicator.source = "qrc:/assets/Seatbelt_red.svg"
+                        }
+                        seatBeltIndicator.seatBeltCnt ++
+                    }
+                    else
+                    {
+                        seatBeltIndicator.source = "qrc:/assets/Seatbelt_grey.svg"
+                        seatBeltIndicator.seatBeltCnt = 0;
+                    }
                 }
             }
         }
@@ -491,7 +556,7 @@ ApplicationWindow {
                             else
                                 engineGauge.value = 10 - (speedGauge.maximumValue - speedGauge.value - 60)/ 25
                             if (stackTime % 20 === 0)
-                                engineGauge.value += 1
+                                engineGauge.value += 5
                         }
                     }
                     else
