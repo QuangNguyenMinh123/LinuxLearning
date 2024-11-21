@@ -555,7 +555,7 @@ ApplicationWindow {
                                 engineGauge.value = speedGauge.value / 25 + 0.7
                             else
                                 engineGauge.value = 10 - (speedGauge.maximumValue - speedGauge.value - 60)/ 25
-                            if (stackTime % 20 === 0)
+                            if (stackTime % 20 === 0 && speedGauge.value !== 0)
                                 engineGauge.value += 5
                         }
                     }
