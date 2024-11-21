@@ -12,12 +12,7 @@ ApplicationWindow {
     title: qsTr("Car DashBoard")
     color: "#1E1E1E"
     visibility: "FullScreen"
-    enum EngineStatus{
-        Braking = 0,
-        NoChange = 1,
-        Speeding = 2
-    }
-
+    property int turn: 1
     /* Display speed color */
     function speedColor(value){
         if(value < 60 ){
@@ -463,7 +458,41 @@ ApplicationWindow {
             maximumValue: 10
             onCurSpeedChanged: {
                 /* Speeding */
-                value = curSpeed / speedGauge.maximumValue * 10
+                if(speedGauge.value - speedGauge.preValue > 0)
+                {
+                    value = curSpeed / speedGauge.maximumValue * 10 + 3
+                    if (value > maximumValue)
+                        value = maximumValue
+                }
+                else
+                {
+                    value = curSpeed / speedGauge.maximumValue * 10
+                }
+                speedGauge.preValue = speedGauge.value
+            }
+            Timer {
+                id: blinkTimer
+                property int stackTime: 0
+                interval: 50
+                running: true
+                repeat: true
+                onTriggered:{
+                    if (speedGauge.value === speedGauge.preValue)
+                    {
+                        stackTime ++;
+                        if (stackTime >= 5)
+                        {
+                            if (speedGauge.value === 0)
+                                engineGauge.value = 0.1
+                            if (speedGauge.value < 50)
+                                engineGauge.value = speedGauge.value / 25 + 0.7
+                            else
+                                engineGauge.value = 10 - (speedGauge.maximumValue - speedGauge.value - 60)/ 25
+                        }
+                    }
+                    else
+                        stackTime = 0
+                }
             }
         }
 
@@ -495,6 +524,55 @@ ApplicationWindow {
             Component.onCompleted: forceActiveFocus()
             focus: true
         }
+        /* Turn right */
+        Image {
+            id: turnRight
+            x: 500
+            width: 100
+            height: 100
+            opacity: 0
+            anchors{
+                right: fuelGauge.left
+                top: speedGauge.top
+            }
+            source: "qrc:/assets/right-arrow-on.png"
+        }
+        /* Turn Left */
+        Image {
+            x: 0
+            id: turnLeft
+            width: 100
+            height: 100
+            opacity: 0
+            anchors{
+                right: engineGauge.right
+                top: speedGauge.top
+            }
+            source: "qrc:/assets/left-arrow-on.png"
+        }
+        Timer {
+            interval: 750
+            running: true
+            repeat: true
+            onTriggered:{
+                /* Not turn */
+                if (turn === 1)
+                {
+                    turnLeft.opacity = 0;
+                    turnRight.opacity = 0;
+                }   /* Turn left */
+                else  if (turn === 0)
+                {
+                    turnLeft.opacity = (turnLeft.opacity === 1) ? 0 : 1;
+                    turnRight.opacity = 0;
+                }   /* Turn right */
+                else if (turn === 2)
+                {
+                    turnLeft.opacity = 0;
+                    turnRight.opacity = (turnRight.opacity === 1) ? 0 : 1
+                }
+            }
+        }
         /* Keyboard handler */
         Keys.onPressed: {
             /* Key A and D to decrease/increase fuel */
@@ -511,10 +589,18 @@ ApplicationWindow {
             } else
             if (event.key === Qt.Key_S) {
                 speedGauge.value = Math.min(speedGauge.value - 1, speedGauge.value)
+            } else
+            /* Turn left or right */
+            if (event.key === Qt.Key_Right) {
+                turn ++
+                if (turn > 2)
+                    turn = 2
+            } else
+            if (event.key === Qt.Key_Left) {
+                turn --
+                if (turn < 0)
+                    turn = 0
             }
         }
-
-
     }
-
 }

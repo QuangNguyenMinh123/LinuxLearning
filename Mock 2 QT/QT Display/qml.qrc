@@ -47,5 +47,9 @@
         <file>assets/Ellipse 5.svg</file>
         <file>assets/Ellipse 1.svg</file>
         <file>assets/cirlcle.svg</file>
+        <file>assets/left-arrow-on.svg</file>
+        <file>assets/right-arrow-on.svg</file>
+        <file>assets/left-arrow-on.png</file>
+        <file>assets/right-arrow-on.png</file>
     </qresource>
 </RCC>

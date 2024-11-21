@@ -12,13 +12,13 @@ CircularGauge {
     function fuelLevelProvider(value){
         var redIdx = 255;
         var greenIdx = 255;
-        if(value < 5 ){
-            greenIdx = value / 5
+        if(value > 5 ){
+            greenIdx = (10 - value) / 5
             redIdx = 1
         } else
-        if(value > 5 ){
+        if(value < 5 ){
             greenIdx = 1
-            redIdx =(10 - value) / 5
+            redIdx = value / 5
         } else
         {
             redIdx = 1
@@ -79,13 +79,12 @@ CircularGauge {
         }
 
         minorTickmark: Rectangle {
-            implicitWidth: outerRadius * 0.02
-            implicitHeight: outerRadius * 0.03
+            implicitWidth: outerRadius * 0.1
+            implicitHeight: outerRadius * 0.1
 
             antialiasing: true
             smooth: true
             color: styleData.value <= engineGauge.value ? fuelLevelProvider(engineGauge.value) : "darkGray"
         }
-
     }
 }
