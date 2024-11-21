@@ -463,12 +463,7 @@ ApplicationWindow {
             maximumValue: 10
             onCurSpeedChanged: {
                 /* Speeding */
-                if (curSpeed - preSpeed > 0)
-                    value ++
-                else /* Braking */
-                if (curSpeed - preSpeed < 0)
-                    value --
-                speedGauge.preValue = speedGauge.value
+                value = curSpeed / speedGauge.maximumValue * 10
             }
         }
 

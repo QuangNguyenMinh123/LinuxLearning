@@ -7,8 +7,25 @@ import QtQuick.Extras.Private 1.0
 import QtGraphicalEffects 1.0
 
 CircularGauge {
-    id: fuelGauge
+    id: engineGauge
     Behavior on value { NumberAnimation { duration: 500 }}
+    function fuelLevelProvider(value){
+        var redIdx = 255;
+        var greenIdx = 255;
+        if(value < 5 ){
+            greenIdx = value / 5
+            redIdx = 1
+        } else
+        if(value > 5 ){
+            greenIdx = 1
+            redIdx =(10 - value) / 5
+        } else
+        {
+            redIdx = 1
+            greenIdx= 1
+        }
+        return Qt.rgba(redIdx, greenIdx, 0, 1);
+    }
     style: CircularGaugeStyle {
         labelStepSize: 2
         labelInset: outerRadius / 2.2
@@ -18,8 +35,8 @@ CircularGauge {
         maximumValueAngle: -30
 
         background: Rectangle {
-            implicitHeight: fuelGauge.height
-            implicitWidth: fuelGauge.width
+            implicitHeight: engineGauge.height
+            implicitWidth: engineGauge.width
             color: "#1E1E1E"
             anchors.centerIn: parent
             radius: 360
@@ -49,7 +66,7 @@ CircularGauge {
         tickmarkLabel:  Text {
             font.pixelSize: Math.max(6, outerRadius * 0.1)
             text: styleData.value
-            color: styleData.value <= fuelGauge.value ? "white" : "#777776"
+            color: styleData.value <= engineGauge.value ? "white" : "#777776"
             antialiasing: true
         }
 
@@ -62,12 +79,13 @@ CircularGauge {
         }
 
         minorTickmark: Rectangle {
-            implicitWidth: outerRadius * 0.01
+            implicitWidth: outerRadius * 0.02
             implicitHeight: outerRadius * 0.03
 
             antialiasing: true
             smooth: true
-            color: styleData.value <= fuelGauge.value ? "white" : "darkGray"
+            color: styleData.value <= engineGauge.value ? fuelLevelProvider(engineGauge.value) : "darkGray"
         }
+
     }
 }

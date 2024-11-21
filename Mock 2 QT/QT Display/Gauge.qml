@@ -10,6 +10,7 @@ CircularGauge {
     id: gauge
     width: 500
     height: width
+    property int speedStack: 0
     property real outerRadius: width
     property string speedColor: "#32D74B"
     function speedColorProvider(value){
