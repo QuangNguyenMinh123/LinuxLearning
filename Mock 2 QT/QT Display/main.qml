@@ -13,6 +13,7 @@ ApplicationWindow {
     color: "#1E1E1E"
     visibility: "FullScreen"
     property int turn: 1
+    property bool overSpeed: false
     /* Display speed color */
     function speedColor(value){
         if(value < 60 ){
@@ -107,27 +108,28 @@ ApplicationWindow {
 
         /*  Speed Limit Label */
         Rectangle{
-            id:speedLimit
+            id: speedLimit
             width: 130
             height: 130
             radius: height/2
             color: "#D9D9D9"
             border.color: speedColor(maxspeedGauge.text)
             border.width: 10
-
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.bottom
+            opacity: 1
+            anchors.horizontalCenter: fuelGauge.horizontalCenter
+            anchors.bottom: fuelGauge.top
             anchors.bottomMargin: 50
 
             Label{
-                id:maxspeedGauge
-                text: getRandomInt(150, speedGauge.maximumValue).toFixed(0)
+                id: maxspeedGauge
+                property int maxOverSpeed: getRandomInt(50, speedGauge.maximumValue).toFixed(0)
+                text: maxOverSpeed
                 font.pixelSize: 45
                 font.family: "Inter"
                 font.bold: Font.Bold
                 color: "#01E6DE"
                 anchors.centerIn: parent
-
+                
                 function getRandomInt(min, max) {
                     return Math.floor(Math.random() * (max - min + 1)) + min;
                 }
@@ -146,9 +148,9 @@ ApplicationWindow {
         Image {
             id: car
             anchors{
-                bottom: speedLimit.top
+                bottom: parent.bottom
                 bottomMargin: 30
-                horizontalCenter:speedLimit.horizontalCenter
+                horizontalCenter:parent.horizontalCenter
             }
             source: "qrc:/assets/Car.svg"
         }
@@ -161,7 +163,7 @@ ApplicationWindow {
             height: 397
             anchors
             {
-                left: speedLimit.left
+                left: car.left
                 leftMargin: 100
                 bottom: parent.bottom
                 bottomMargin: 26.50
@@ -206,7 +208,7 @@ ApplicationWindow {
             width: 127
             height: 397
             anchors{
-                right: speedLimit.right
+                right: car.right
                 rightMargin: 100
                 bottom: parent.bottom
                 bottomMargin: 26.50
@@ -488,6 +490,8 @@ ApplicationWindow {
                                 engineGauge.value = speedGauge.value / 25 + 0.7
                             else
                                 engineGauge.value = 10 - (speedGauge.maximumValue - speedGauge.value - 60)/ 25
+                            if (stackTime % 20 === 0)
+                                engineGauge.value += 1
                         }
                     }
                     else
@@ -507,6 +511,13 @@ ApplicationWindow {
             anchors.topMargin:Math.floor(parent.height * 0.25) - 100
             anchors.horizontalCenter: parent.horizontalCenter
             focus: true
+            onValueChanged:
+            {
+                if (value > maxspeedGauge.maxOverSpeed)
+                    overSpeed = true
+                else
+                    overSpeed = false
+            }
         }
         /* Fuel Gauge */
         FuelGauge {
@@ -571,6 +582,12 @@ ApplicationWindow {
                     turnLeft.opacity = 0;
                     turnRight.opacity = (turnRight.opacity === 1) ? 0 : 1
                 }
+                if (overSpeed === true)
+                {
+                    speedLimit.opacity = (speedLimit.opacity === 1) ? 0 : 1
+                }
+                else
+                    speedLimit.opacity = 1
             }
         }
         /* Keyboard handler */
