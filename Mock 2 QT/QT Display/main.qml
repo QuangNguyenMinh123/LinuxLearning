@@ -14,6 +14,10 @@ ApplicationWindow {
     visibility: "FullScreen"
     property int turn: 1
     property bool overSpeed: false
+    property var butPreStatus: [0, 0, 0, 0, 0, 0]
+    property var butCurStatus: [0, 0, 0, 0, 0, 0]
+    property bool turnLeft: false
+    property bool turnRight: false
     /* Display speed color */
     function speedColor(value){
         if(value < 60 ){
@@ -694,11 +698,92 @@ ApplicationWindow {
             onPortClosed: {
                 console.log("Serial port is closed")
             }
-
             onDataReceived: {
-                console.log("Received data:" + data)
-
+                /* process every 50ms */
+                var dataString = data.toString()
+                var But0 = dataString[2]
+                var But1 = dataString[5]
+                var But2 = dataString[8]
+                var But3 = dataString[11]
+                var But4 = dataString[14]
+                var But5 = dataString[17]
+                var Adc = dataString.substring(19, 23)
+                /* Decrease fuel */
+                if (But0 === '0')
+                {
+                    butCurStatus[0] ++
+                    if (butCurStatus[0] >= 2)
+                    {
+                        fuelGauge.value = Math.min(fuelGauge.value - 1, fuelGauge.value)
+                    }
+                }
+                else
+                    butCurStatus[0] = 0
+                /* Increase fuel */
+                if (But1 === '0')
+                {
+                    butCurStatus[1] ++
+                    if (butCurStatus[1] >= 2)
+                    {
+                        fuelGauge.value = Math.max(0, fuelGauge.value + 1)
+                    }
+                }
+                else
+                    butCurStatus[1] = 0
+                /* Decrease speed */
+                if (But2 === '0')
+                {
+                    butCurStatus[2] ++
+                    if (butCurStatus[2] >= 2)
+                    {
+                        speedGauge.value = Math.min(speedGauge.value - 1, speedGauge.value)
+                    }
+                }
+                else
+                    butCurStatus[2] = 0
+                /* Increase speed */
+                if (But3 === '0')
+                {
+                    butCurStatus[3] ++
+                    if (butCurStatus[3] >= 2)
+                    {
+                        speedGauge.value = Math.max(0, speedGauge.value + 1)
+                    }
+                }
+                else
+                    butCurStatus[3] = 0
+                /* Turn Left */
+                if (But4 === '0')
+                {
+                    if (butPreStatus[4] === 1)
+                    {
+                        turn --
+                        if (turn < 0)
+                            turn = 0
+                    }
+                    butPreStatus[4] = 0
+                }
+                else
+                {
+                    butPreStatus[4] = 1
+                }
+                /* Turn right */
+                if (But5 === '0')
+                {
+                    if (butPreStatus[5] === 1)
+                    {
+                        turn ++
+                        if (turn > 2)
+                            turn = 2
+                    }
+                    butPreStatus[5] = 0
+                }
+                else
+                {
+                    butPreStatus[5] = 1
+                }
             }
+
        }
     }
 
