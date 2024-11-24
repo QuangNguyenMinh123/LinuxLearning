@@ -4,7 +4,7 @@ import QtQuick.Window 2.12
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.5
 import "./"
-
+import Serial 1.0
 ApplicationWindow {
     width: 1600
     height: 1080
@@ -684,5 +684,22 @@ ApplicationWindow {
                     turn = 0
             }
         }
+        SerialManager {
+            id: serialManager
+            Component.onCompleted: serialManager.openPort("/dev/ttyUSB0", 115200)
+            onPortOpened: {
+                console.log("Serial port is connected")
+            }
+
+            onPortClosed: {
+                console.log("Serial port is closed")
+            }
+
+            onDataReceived: {
+                console.log("Received data:" + data)
+
+            }
+       }
     }
+
 }

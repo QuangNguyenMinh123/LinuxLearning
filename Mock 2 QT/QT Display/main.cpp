@@ -1,13 +1,15 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include "radialbar.h"
-
+#include "SerialManager.h"
 int main(int argc, char *argv[])
 {
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
     QGuiApplication app(argc, argv);
+
+    qmlRegisterType<SerialManager>("Serial", 1, 0, "SerialManager");
 
     QQmlApplicationEngine engine;
     qmlRegisterType<RadialBar>("CustomControls", 1, 0, "RadialBar");
