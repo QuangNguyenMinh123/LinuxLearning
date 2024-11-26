@@ -82,3 +82,8 @@ To get a local copy up and running, follow these simple steps:
 
 ```bash
 git clone git@github.com:cppqtdev/Car-Dashboard-2.git
+
+## Link
+https://embarcados.com.br/beaglebone-black-qt5-yocto-parte-1/
+Switch to python 2: sudo ln -sf python2 /usr/bin/python
+Switch to python 3: sudo ln -sf python3 /usr/bin/python
