@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(Hello_Beagle_Bone LANGUAGES CXX)
+project(Demo_Dynamic_Beagle_Bone_Black LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -27,18 +27,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt5 COMPONENTS Core Quick REQUIRED)
 
 if(ANDROID)
-    add_library(Hello_Beagle_Bone SHARED
+    add_library(Demo_Dynamic_Beagle_Bone_Black SHARED
       main.cpp
       qml.qrc
     )
 else()
-    add_executable(Hello_Beagle_Bone
+    add_executable(Demo_Dynamic_Beagle_Bone_Black
       main.cpp
       qml.qrc
     )
 endif()
 
-target_compile_definitions(Hello_Beagle_Bone
+target_compile_definitions(Demo_Dynamic_Beagle_Bone_Black
   PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
-target_link_libraries(Hello_Beagle_Bone
+target_link_libraries(Demo_Dynamic_Beagle_Bone_Black
   PRIVATE Qt5::Core Qt5::Quick)

@@ -1,0 +1,55 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>assets/Dashboard.svg</file>
+        <file>assets/Vector 70.svg</file>
+        <file>assets/Low beam headlights.svg</file>
+        <file>assets/Vector 1.svg</file>
+        <file>assets/Vector 2.svg</file>
+        <file>assets/Seatbelt_red.svg</file>
+        <file>assets/ABS_grey.svg</file>
+        <file>assets/Lights.svg</file>
+        <file>assets/Parking lights.svg</file>
+        <file>assets/Rare fog lights.svg</file>
+        <file>assets/Airbag_grey.svg</file>
+        <file>assets/Parking_grey.svg</file>
+        <file>assets/car.png</file>
+        <file>assets/fuel.svg</file>
+        <file>assets/road.svg</file>
+        <file>assets/speedometer.svg</file>
+        <file>Gauge.qml</file>
+        <file>assets/background.png</file>
+        <file>assets/background.svg</file>
+        <file>assets/needle.svg</file>
+        <file>assets/tickmark.svg</file>
+        <file>assets/newcar.svg</file>
+        <file>assets/Car.svg</file>
+        <file>assets/Model 3.svg</file>
+        <file>assets/Model 3.png</file>
+        <file>assets/Light_White.svg</file>
+        <file>assets/Parking_lights_white.svg</file>
+        <file>assets/Low_beam_headlights_white.svg</file>
+        <file>assets/Rare_fog_lights_red.svg</file>
+        <file>assets/Seatbelt_grey.svg</file>
+        <file>assets/Airbag_red.svg</file>
+        <file>assets/Parking_red.svg</file>
+        <file>assets/ABS_red.svg</file>
+        <file>FuelGauge.qml</file>
+        <file>EngineGauge.qml</file>
+        <file>assets/Subtract.svg</file>
+        <file>assets/sub.svg</file>
+        <file>assets/ring.svg</file>
+        <file>assets/Rectangle 4.svg</file>
+        <file>assets/maxLimit.svg</file>
+        <file>assets/Info.txt</file>
+        <file>assets/img.txt</file>
+        <file>assets/Ellipse 6.svg</file>
+        <file>assets/Ellipse 5.svg</file>
+        <file>assets/Ellipse 1.svg</file>
+        <file>assets/cirlcle.svg</file>
+        <file>assets/left-arrow-on.svg</file>
+        <file>assets/right-arrow-on.svg</file>
+        <file>assets/left-arrow-on.png</file>
+        <file>assets/right-arrow-on.png</file>
+    </qresource>
+</RCC>
