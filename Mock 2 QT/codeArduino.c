@@ -5,6 +5,14 @@
 #define BUTTON_4    6
 #define BUTTON_5    7
 /*************************************************************/
+/* Connection:
+    Encoder:  M1 -> 3v3/5v
+              VCC -> 5v
+              M2 -> GND
+              C1 -> D2
+              C2 -> D3
+ */
+/*************************************************************/
 int button[6] = {BUTTON_0, BUTTON_1, BUTTON_2, BUTTON_3, BUTTON_4, BUTTON_5};
 int buttonState[6];
 int analogPin = A7;
