@@ -115,7 +115,7 @@ ApplicationWindow {
                 anchors.centerIn: parent
                 
                 function getRandomInt(min, max) {
-                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                    return 100/*Math.floor(Math.random() * (max - min + 1)) + min;*/
                 }
             }
         }
@@ -553,7 +553,7 @@ ApplicationWindow {
         /* Speedometer */
         Gauge {
             id: speedGauge
-            value: 0
+            value: serialManager.encoderVal / 2
             property int preValue: 0
             property int engineStatus: 0
             maximumValue: 250
@@ -674,6 +674,7 @@ ApplicationWindow {
         }
         SerialManager {
             id: serialManager
+            property int encoderVal: 0
             Component.onCompleted: serialManager.openPort("/dev/ttyUSB0", 115200)
             onPortOpened: {
                 console.log("Serial port is connected")
@@ -691,9 +692,11 @@ ApplicationWindow {
                 var But3 = dataString[11]
                 var But4 = dataString[14]
                 var But5 = dataString[17]
-                var Adc = dataString.substring(19, 23)
+                var encoderString = dataString.substring(19, 23)
+                encoderVal = parseInt(encoderString)
+                console.log("encoderVal: " + encoderVal)
                 /* Decrease fuel */
-                if (But0 === '0')
+                if (But2 === '0')
                 {
                     butCurStatus[0] ++
                     if (butCurStatus[0] >= 2)
@@ -704,7 +707,7 @@ ApplicationWindow {
                 else
                     butCurStatus[0] = 0
                 /* Increase fuel */
-                if (But1 === '0')
+                if (But3 === '0')
                 {
                     butCurStatus[1] ++
                     if (butCurStatus[1] >= 2)
@@ -715,27 +718,27 @@ ApplicationWindow {
                 else
                     butCurStatus[1] = 0
                 /* Decrease speed */
-                if (But2 === '0')
-                {
-                    butCurStatus[2] ++
-                    if (butCurStatus[2] >= 2)
-                    {
-                        speedGauge.value = Math.min(speedGauge.value - 1, speedGauge.value)
-                    }
-                }
-                else
-                    butCurStatus[2] = 0
-                /* Increase speed */
-                if (But3 === '0')
-                {
-                    butCurStatus[3] ++
-                    if (butCurStatus[3] >= 2)
-                    {
-                        speedGauge.value = Math.max(0, speedGauge.value + 1)
-                    }
-                }
-                else
-                    butCurStatus[3] = 0
+                // if (But2 === '0')
+                // {
+                //     butCurStatus[2] ++
+                //     if (butCurStatus[2] >= 2)
+                //     {
+                //         speedGauge.value = Math.min(speedGauge.value - 1, speedGauge.value)
+                //     }
+                // }
+                // else
+                //     butCurStatus[2] = 0
+                // /* Increase speed */
+                // if (But3 === '0')
+                // {
+                //     butCurStatus[3] ++
+                //     if (butCurStatus[3] >= 2)
+                //     {
+                //         speedGauge.value = Math.max(0, speedGauge.value + 1)
+                //     }
+                // }
+                // else
+                //     butCurStatus[3] = 0
                 /* Turn Left */
                 if (But4 === '0')
                 {
