@@ -2,6 +2,7 @@
 This is guideline instructing you run QT QML application on beagle bone black and displaying it into display via BBB's HDMI port
 In this case is car dashboard
 # Step 1: Install neccessary packages
+```
 sudo apt update
 sudo apt install read-edid xserver-xorg-video-fbdev x11-xserver-utils -y
 sudo apt-get -y update
@@ -27,13 +28,14 @@ sudo apt-get install -y qtdeclarative5-dev
 sudo apt-get install -y qt5-qtmultimedia qt5-qtwebengine qt5-qtsensors
 sudo apt-get install -y qt5-qmlscene
 sudo apt-get install -y libqt5serialport5-dev
-
+```
 # Setup environment with sudo su privilege
+```
 Xvfb :0 -screen 0 1280x1024x24 &
 export DISPLAY=:0
 export QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib/arm-linux-gnueabihf/qt5/plugins/platforms
 export QT_QPA_PLATFORM=linuxfb
-
+```
 # Compile and run on beagle bone black
 Copy folder QT_Display_Cmake to beagle bone black
     `cd QT_Display_Cmake` to go to project
@@ -44,5 +46,7 @@ Copy folder QT_Display_Cmake to beagle bone black
     `./QT_Display_Cmake` to run
 
 # How to search qtquick packages
+```
 apt-cache search qtquick
 sudo apt-get install -y <package name>
+```

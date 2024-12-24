@@ -2,7 +2,7 @@
 PWM driver for pin P9_14 GPIO50, or PWM1A
 # Tutorial
 Add to buildBBB/kernelbuildscripts/KERNEL/arch/arm/boot/dts/am335x-boneblack.dts
-"
+```
 /* User configuration for controlling pin P9_14 PWM */
 #include <dt-bindings/pwm/pwm.h>
 &am33xx_pinmux{
@@ -33,6 +33,6 @@ Add to buildBBB/kernelbuildscripts/KERNEL/arch/arm/boot/dts/am335x-boneblack.dts
         status = "okay";
     };
 };
-"
+```
 
-To control P9_16 or PWM1B, change "pwms = <&ehrpwm1 0 5000000 PWM_POLARITY_INVERTED>" to "pwms = <&ehrpwm1 1 5000000 PWM_POLARITY_INVERTED>"
+To control P9_16 or PWM1B, change `pwms = <&ehrpwm1 0 5000000 PWM_POLARITY_INVERTED>` to `pwms = <&ehrpwm1 1 5000000 PWM_POLARITY_INVERTED>`

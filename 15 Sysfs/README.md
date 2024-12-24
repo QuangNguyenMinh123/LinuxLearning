@@ -10,5 +10,5 @@ control read/write GPIO 60 using custom Sysfs
         |------[1k resistor]-----[LED]-----GND
 # Tutorial
 make all -> move Sysfs.ko to BBB and insmod
-echo in > /sys/bbb_gpio/direction
+`echo in > /sys/bbb_gpio/direction`
 compile test.c and run app
